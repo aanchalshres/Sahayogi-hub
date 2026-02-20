@@ -1,26 +1,92 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap");
+
+/* Tailwind v4 import */
 @import "tailwindcss";
 
+/* =========================
+   CSS VARIABLES
+========================= */
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: 220 13% 95%;
+  --foreground: 0 0% 10%;
+
+  --card: 0 0% 100%;
+  --card-foreground: 0 0% 10%;
+
+  --primary: 243 47% 53%;
+  --primary-foreground: 0 0% 100%;
+
+  --secondary: 160 84% 39%;
+  --secondary-foreground: 0 0% 100%;
+
+  --border: 220 7% 81%;
+  --input: 220 7% 81%;
+  --ring: 243 47% 53%;
+
+  --radius: 0.75rem;
+  
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+.dark {
+  --background: 220 13% 8%;
+  --foreground: 220 13% 95%;
+
+  --card: 220 13% 12%;
+  --card-foreground: 220 13% 95%;
+
+  --border: 220 13% 22%;
+  --input: 220 13% 22%;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* =========================
+   BASE STYLES
+========================= */
+
+* {
+  border-color: hsl(var(--border));
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
+  font-family: "Inter", system-ui, sans-serif;
+}
+
+/* =========================
+   UTILITIES
+========================= */
+
+.text-gradient {
+  background: linear-gradient(
+    to right,
+    hsl(var(--primary)),
+    hsl(var(--secondary))
+  );
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.card-elevated {
+  background-color: hsl(var(--card));
+  border-radius: 12px;
+  border: 1px solid hsl(var(--border));
+  padding: 20px;
+  transition: 0.2s;
+}
+
+.card-elevated:hover {
+  box-shadow: 0 6px 16px rgba(0,0,0,0.1);
+}
+
+.btn-primary {
+  background-color: #5B5BD6;
+  color: white;
+  border-radius: 10px;
+  padding: 10px 20px;
+  font-weight: 600;
+}
+
+.btn-primary:hover {
+  background-color: #4a4ac4;
 }
