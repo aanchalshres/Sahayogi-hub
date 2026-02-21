@@ -26,7 +26,7 @@ const Navbar = () => {
         <Link href="/" className="flex items-center gap-2">
 
           <Image
-            src="/logo2.png"
+            src="/logo3.png"
             alt="Sahayogi Logo"
             width={100}
             height={100}
@@ -57,13 +57,13 @@ const Navbar = () => {
           </Link>
 
           <Link href="/login">
-            <Button variant="ghost" size="sm">
+            <Button variant="ghost" size="sm" className="cursor-pointer transition-colors">
               Log In
             </Button>
           </Link>
 
-          <Link href="/signup">
-            <Button size="sm">
+          <Link href="/login?mode=signup">
+            <Button size="sm" className="cursor-pointer transition-colors">
               Sign Up
             </Button>
           </Link>
@@ -107,13 +107,13 @@ const Navbar = () => {
             </Link>
 
             <Link href="/login" onClick={() => setMobileOpen(false)}>
-              <Button variant="ghost" className="w-full">
+              <Button variant="ghost" className="w-full cursor-pointer transition-colors">
                 Log In
               </Button>
             </Link>
 
-            <Link href="/signup" onClick={() => setMobileOpen(false)}>
-              <Button className="bg-[#5B5BD6] hover:bg-[#4a4ac4] text-white">
+            <Link href="/login?mode=signup" onClick={() => setMobileOpen(false)}>
+              <Button className="w-full cursor-pointer bg-[#5B5BD6] text-white transition-colors hover:bg-[#4a4ac4]">
                 Sign Up
               </Button>
             </Link>
