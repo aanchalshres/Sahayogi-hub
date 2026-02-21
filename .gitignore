@@ -1,0 +1,12 @@
+# Root-level workspace hygiene
+# This repo has separate apps in /frontend and /api-backend.
+# Prevent accidental root Node artifacts from affecting tooling resolution.
+/node_modules/
+/.next/
+
+# Ignore accidental root lockfiles/package manifests only
+# (app-level lockfiles inside /frontend and /api-backend remain tracked)
+/package-lock.json
+/pnpm-lock.yaml
+/yarn.lock
+/bun.lockb
