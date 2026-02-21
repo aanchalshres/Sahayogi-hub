@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image"; // ✅ REQUIRED IMPORT
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { Button } from "@/app/components/ui/button";
 import { Menu, X } from "lucide-react";
@@ -22,9 +22,8 @@ const Navbar = () => {
 
       <div className="container flex h-16 items-center justify-between">
 
-        {/* ✅ LOGO + NAME */}
+        {/* LOGO + NAME */}
         <Link href="/" className="flex items-center gap-2">
-
           <Image
             src="/logo3.png"
             alt="Sahayogi Logo"
@@ -33,14 +32,24 @@ const Navbar = () => {
             className="rounded-lg"
             priority
           />
-
-
-
         </Link>
 
-
-        {/* ✅ DESKTOP MENU */}
+        {/* DESKTOP MENU */}
         <div className="hidden items-center gap-6 md:flex">
+
+          <Link
+            href="/about"
+            className="text-sm font-medium text-foreground/70 hover:text-foreground transition-colors"
+          >
+            About
+          </Link>
+
+          <Link
+            href="/contact"
+            className="text-sm font-medium text-foreground/70 hover:text-foreground transition-colors"
+          >
+            Contact
+          </Link>
 
           <Link
             href="/opportunities"
@@ -70,8 +79,7 @@ const Navbar = () => {
 
         </div>
 
-
-        {/* ✅ MOBILE MENU BUTTON */}
+        {/* MOBILE MENU BUTTON */}
         <button
           className="md:hidden text-foreground"
           onClick={() => setMobileOpen(!mobileOpen)}
@@ -83,12 +91,27 @@ const Navbar = () => {
 
       </div>
 
-
-      {/* ✅ MOBILE MENU */}
+      {/* MOBILE MENU */}
       {mobileOpen && (
         <div className="border-t bg-card p-4 md:hidden">
 
           <div className="flex flex-col gap-3">
+
+            <Link
+              href="/about"
+              onClick={() => setMobileOpen(false)}
+              className="text-sm font-medium text-muted-foreground"
+            >
+              About
+            </Link>
+
+            <Link
+              href="/contact"
+              onClick={() => setMobileOpen(false)}
+              className="text-sm font-medium text-muted-foreground"
+            >
+              Contact
+            </Link>
 
             <Link
               href="/opportunities"
