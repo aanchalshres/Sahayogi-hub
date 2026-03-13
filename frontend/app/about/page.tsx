@@ -1,7 +1,7 @@
 import React from "react";
 import Link from "next/link";
-import Image from "next/image";
 import Navbar from "../components/Navbar";
+import Footer from "../components/Footer";
 import { Button } from "../components/ui/button";
 import { 
   Heart, 
@@ -24,11 +24,11 @@ export default function AboutPage() {
       <Navbar />
       
       {/* Hero Section */}
-      <section className="relative py-24 bg-gradient-to-br from-green-50 via-white to-blue-50">
+      <section className="relative py-12 md:py-24 bg-linear-to-br from-green-50 via-white to-blue-50">
         <div className="container px-4">
           <div className="max-w-3xl mx-auto text-center">
             <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
-              About <span className="text-transparent bg-clip-text bg-gradient-to-r from-green-600 to-blue-600">Sahayogi</span>
+              About <span className="text-transparent bg-clip-text bg-linear-to-r from-green-600 to-blue-600">Sahayogi</span>
             </h1>
             <p className="text-xl text-gray-600 leading-relaxed">
               Connecting passionate volunteers with trusted NGOs to create meaningful, 
@@ -39,10 +39,10 @@ export default function AboutPage() {
       </section>
 
       {/* Mission & Vision */}
-      <section className="py-20 bg-white">
+      <section className="py-12 md:py-20 bg-white">
         <div className="container px-4">
           <div className="grid md:grid-cols-2 gap-12 max-w-5xl mx-auto">
-            <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-3xl p-8">
+            <div className="bg-linear-to-br from-green-50 to-green-100 rounded-3xl p-8">
               <div className="w-14 h-14 bg-green-600 rounded-2xl flex items-center justify-center mb-6">
                 <Target className="w-7 h-7 text-white" />
               </div>
@@ -54,7 +54,7 @@ export default function AboutPage() {
               </p>
             </div>
             
-            <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-3xl p-8">
+            <div className="bg-linear-to-br from-blue-50 to-blue-100 rounded-3xl p-8">
               <div className="w-14 h-14 bg-blue-600 rounded-2xl flex items-center justify-center mb-6">
                 <Eye className="w-7 h-7 text-white" />
               </div>
@@ -70,7 +70,7 @@ export default function AboutPage() {
       </section>
 
       {/* Core Values */}
-      <section className="py-20 bg-gray-50">
+      <section className="py-12 md:py-20 bg-gray-50">
         <div className="container px-4">
           <div className="text-center mb-16">
             <h2 className="text-3xl font-bold text-gray-900 mb-4">Our Core Values</h2>
@@ -116,7 +116,7 @@ export default function AboutPage() {
       </section>
 
       {/* Stats Section */}
-      <section className="py-20 bg-[#5B5BD6]">
+      <section className="py-12 md:py-20 bg-[#5B5BD6]">
         <div className="container px-4">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 max-w-4xl mx-auto text-center">
             <div>
@@ -140,7 +140,7 @@ export default function AboutPage() {
       </section>
 
       {/* Why Choose Us */}
-      <section className="py-20 bg-white">
+      <section className="py-12 md:py-20 bg-white">
         <div className="container px-4">
           <div className="text-center mb-16">
             <h2 className="text-3xl font-bold text-gray-900 mb-4">Why Choose Sahayogi?</h2>
@@ -187,7 +187,7 @@ export default function AboutPage() {
       </section>
 
       {/* Testimonials */}
-      <section className="py-20 bg-gradient-to-br from-green-50 to-blue-50">
+      <section className="py-12 md:py-20 bg-linear-to-br from-green-50 to-blue-50">
         <div className="container px-4">
           <div className="text-center mb-16">
             <h2 className="text-3xl font-bold text-gray-900 mb-4">What Our Users Say</h2>
@@ -262,7 +262,7 @@ export default function AboutPage() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 bg-white">
+      <section className="py-12 md:py-20 bg-white">
         <div className="container px-4">
           <div className="max-w-3xl mx-auto text-center">
             <h2 className="text-3xl font-bold text-gray-900 mb-4">Ready to Join Our Community?</h2>
@@ -287,31 +287,7 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="bg-gray-900 text-white py-12">
-        <div className="container px-4">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-            <div className="flex items-center gap-2">
-              <Image
-                src="/logo3.png"
-                alt="Sahayogi Logo"
-                width={32}
-                height={32}
-                className="rounded-lg"
-              />
-              <span className="text-lg font-bold">Sahayogi</span>
-            </div>
-            <div className="flex gap-6 text-gray-400">
-              <Link href="/about" className="hover:text-white transition-colors">About</Link>
-              <Link href="/contact" className="hover:text-white transition-colors">Contact</Link>
-              <Link href="/login" className="hover:text-white transition-colors">Login</Link>
-            </div>
-            <div className="text-gray-400 text-sm">
-              © 2024 Sahayogi. All rights reserved.
-            </div>
-          </div>
-        </div>
-      </footer>
+      <Footer />
     </>
   );
 }

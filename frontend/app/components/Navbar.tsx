@@ -11,12 +11,6 @@ const Navbar = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const pathname = usePathname();
 
-  const isDashboard =
-    pathname?.startsWith("/dashboard") ||
-    pathname?.startsWith("/org");
-
-  if (isDashboard) return null;
-
   return (
     <nav className="sticky top-0 z-50 bg-transparent backdrop-blur-md">
 
@@ -39,40 +33,38 @@ const Navbar = () => {
 
           <Link
             href="/about"
-            className="text-sm font-medium text-foreground/70 hover:text-foreground transition-colors"
+            className="text-sm font-medium text-foreground/70 relative group transition-colors"
           >
             About
+            <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-linear-to-r from-[#5B5BD6] to-[#7c7ce8] group-hover:w-full transition-all duration-300"></span>
           </Link>
 
           <Link
             href="/contact"
-            className="text-sm font-medium text-foreground/70 hover:text-foreground transition-colors"
+            className="text-sm font-medium text-foreground/70 relative group transition-colors"
           >
             Contact
+            <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-linear-to-r from-[#5B5BD6] to-[#7c7ce8] group-hover:w-full transition-all duration-300"></span>
           </Link>
 
           <Link
             href="/opportunities"
-            className="text-sm font-medium text-foreground/70 hover:text-foreground transition-colors"
+            className="text-sm font-medium text-foreground/70 relative group transition-colors"
           >
             Opportunities
+            <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-linear-to-r from-[#5B5BD6] to-[#7c7ce8] group-hover:w-full transition-all duration-300"></span>
           </Link>
 
           <Link
             href="/badges"
-            className="text-sm font-medium text-foreground/70 hover:text-foreground transition-colors"
+            className="text-sm font-medium text-foreground/70 relative group transition-colors"
           >
             Badges
-          </Link>
-
-          <Link href="/login">
-            <Button variant="ghost" size="sm" className="cursor-pointer transition-colors">
-              Log In
-            </Button>
+            <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-linear-to-r from-[#5B5BD6] to-[#7c7ce8] group-hover:w-full transition-all duration-300"></span>
           </Link>
 
           <Link href="/login?mode=signup">
-            <Button size="sm" className="cursor-pointer transition-colors">
+            <Button size="sm" className="bg-[#5B5BD6] text-white hover:bg-[#4a4ac4] cursor-pointer transition-colors">
               Sign Up
             </Button>
           </Link>
@@ -100,39 +92,37 @@ const Navbar = () => {
             <Link
               href="/about"
               onClick={() => setMobileOpen(false)}
-              className="text-sm font-medium text-muted-foreground"
+              className="text-sm font-medium text-muted-foreground relative group transition-colors"
             >
               About
+              <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-linear-to-r from-[#5B5BD6] to-[#7c7ce8] group-hover:w-full transition-all duration-300"></span>
             </Link>
 
             <Link
               href="/contact"
               onClick={() => setMobileOpen(false)}
-              className="text-sm font-medium text-muted-foreground"
+              className="text-sm font-medium text-muted-foreground relative group transition-colors"
             >
               Contact
+              <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-linear-to-r from-[#5B5BD6] to-[#7c7ce8] group-hover:w-full transition-all duration-300"></span>
             </Link>
 
             <Link
               href="/opportunities"
               onClick={() => setMobileOpen(false)}
-              className="text-sm font-medium text-muted-foreground"
+              className="text-sm font-medium text-muted-foreground relative group transition-colors"
             >
               Opportunities
+              <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-linear-to-r from-[#5B5BD6] to-[#7c7ce8] group-hover:w-full transition-all duration-300"></span>
             </Link>
 
             <Link
               href="/badges"
               onClick={() => setMobileOpen(false)}
-              className="text-sm font-medium text-muted-foreground"
+              className="text-sm font-medium text-muted-foreground relative group transition-colors"
             >
               Badges
-            </Link>
-
-            <Link href="/login" onClick={() => setMobileOpen(false)}>
-              <Button variant="ghost" className="w-full cursor-pointer transition-colors">
-                Log In
-              </Button>
+              <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-linear-to-r from-[#5B5BD6] to-[#7c7ce8] group-hover:w-full transition-all duration-300"></span>
             </Link>
 
             <Link href="/login?mode=signup" onClick={() => setMobileOpen(false)}>
