@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import Navbar from "@/app/components/Navbar";
 import Footer from "@/app/components/Footer";
 
@@ -28,9 +29,16 @@ export default function VolunteerDashboard() {
       <Navbar />
       <div className="min-h-screen bg-[#F0F1F3] p-10 py-12 md:py-12">
 
-        <h1 className="text-3xl font-bold text-[#111827] mb-8">
-          Volunteer Tasks
-        </h1>
+        <div className="flex justify-between items-center mb-8">
+          <h1 className="text-3xl font-bold text-[#111827]">
+            Volunteer Tasks
+          </h1>
+          <Link href="/volunteer/badges">
+            <button className="bg-[#4F46C8] hover:bg-[#3f3fa3] text-white px-6 py-2 rounded-lg font-medium transition">
+              View My Badges
+            </button>
+          </Link>
+        </div>
 
       {tasks.length === 0 && (
         <p className="text-gray-500">No tasks available</p>
