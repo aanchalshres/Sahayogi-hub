@@ -2,8 +2,8 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import Navbar from "../components/Navbar";
+import Footer from "../components/Footer";
 import { Button } from "../components/ui/button";
 import { 
   Mail, 
@@ -67,11 +67,11 @@ export default function ContactPage() {
       <Toaster position="top-right" />
       
       {/* Hero Section */}
-      <section className="relative py-20 bg-gradient-to-br from-green-50 via-white to-blue-50">
+      <section className="relative py-12 md:py-20 bg-linear-to-br from-green-50 via-white to-blue-50">
         <div className="container px-4">
           <div className="max-w-3xl mx-auto text-center">
             <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
-              Get in <span className="text-transparent bg-clip-text bg-gradient-to-r from-green-600 to-blue-600">Touch</span>
+              Get in <span className="text-transparent bg-clip-text bg-linear-to-r from-green-600 to-blue-600">Touch</span>
             </h1>
             <p className="text-xl text-gray-600 leading-relaxed">
               Have questions about volunteering or need support? We'd love to hear from you.
@@ -85,7 +85,7 @@ export default function ContactPage() {
       <section className="py-16 bg-white">
         <div className="container px-4">
           <div className="grid md:grid-cols-4 gap-6 max-w-5xl mx-auto">
-            <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-2xl p-6 text-center">
+            <div className="bg-linear-to-br from-green-50 to-green-100 rounded-2xl p-6 text-center">
               <div className="w-14 h-14 bg-green-600 rounded-xl flex items-center justify-center mx-auto mb-4">
                 <Mail className="w-7 h-7 text-white" />
               </div>
@@ -94,7 +94,7 @@ export default function ContactPage() {
               <p className="text-gray-500 text-sm">support@sahayogi.org</p>
             </div>
             
-            <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-2xl p-6 text-center">
+            <div className="bg-linear-to-br from-blue-50 to-blue-100 rounded-2xl p-6 text-center">
               <div className="w-14 h-14 bg-blue-600 rounded-xl flex items-center justify-center mx-auto mb-4">
                 <Phone className="w-7 h-7 text-white" />
               </div>
@@ -103,7 +103,7 @@ export default function ContactPage() {
               <p className="text-gray-500 text-sm">Mon-Fri, 9AM-6PM</p>
             </div>
             
-            <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-2xl p-6 text-center">
+            <div className="bg-linear-to-br from-purple-50 to-purple-100 rounded-2xl p-6 text-center">
               <div className="w-14 h-14 bg-purple-600 rounded-xl flex items-center justify-center mx-auto mb-4">
                 <MapPin className="w-7 h-7 text-white" />
               </div>
@@ -112,7 +112,7 @@ export default function ContactPage() {
               <p className="text-gray-500 text-sm">All 77 Districts</p>
             </div>
             
-            <div className="bg-gradient-to-br from-yellow-50 to-yellow-100 rounded-2xl p-6 text-center">
+            <div className="bg-linear-to-br from-yellow-50 to-yellow-100 rounded-2xl p-6 text-center">
               <div className="w-14 h-14 bg-yellow-600 rounded-xl flex items-center justify-center mx-auto mb-4">
                 <Clock className="w-7 h-7 text-white" />
               </div>
@@ -228,7 +228,7 @@ export default function ContactPage() {
                 
                 <div className="space-y-4">
                   <div className="flex items-start gap-4 p-4 bg-green-50 rounded-xl">
-                    <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center shrink-0">
                       <MessageSquare className="w-5 h-5 text-green-600" />
                     </div>
                     <div>
@@ -238,7 +238,7 @@ export default function ContactPage() {
                   </div>
                   
                   <div className="flex items-start gap-4 p-4 bg-blue-50 rounded-xl">
-                    <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center shrink-0">
                       <Zap className="w-5 h-5 text-blue-600" />
                     </div>
                     <div>
@@ -248,7 +248,7 @@ export default function ContactPage() {
                   </div>
                   
                   <div className="flex items-start gap-4 p-4 bg-purple-50 rounded-xl">
-                    <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center shrink-0">
                       <Headphones className="w-5 h-5 text-purple-600" />
                     </div>
                     <div>
@@ -260,7 +260,7 @@ export default function ContactPage() {
               </div>
 
               {/* FAQ Teaser */}
-              <div className="bg-gradient-to-br from-[#5B5BD6] to-[#7C3AED] rounded-2xl shadow-lg p-8 text-white">
+              <div className="bg-linear-to-br from-[#5B5BD6] to-[#7C3AED] rounded-2xl shadow-lg p-8 text-white">
                 <h3 className="text-xl font-bold mb-4">Frequently Asked Questions</h3>
                 <p className="text-white/80 mb-6">
                   Find quick answers to common questions about volunteering and our platform.
@@ -288,15 +288,15 @@ export default function ContactPage() {
                 <h3 className="text-xl font-bold text-gray-900 mb-4">Headquarters</h3>
                 <div className="space-y-3 text-gray-600">
                   <p className="flex items-center gap-3">
-                    <MapPin className="w-5 h-5 text-[#5B5BD6] flex-shrink-0" />
+                    <MapPin className="w-5 h-5 text-[#5B5BD6] shrink-0" />
                     <span>Thamel, Kathmandu 44600<br />Nepal</span>
                   </p>
                   <p className="flex items-center gap-3">
-                    <Mail className="w-5 h-5 text-[#5B5BD6] flex-shrink-0" />
+                    <Mail className="w-5 h-5 text-[#5B5BD6] shrink-0" />
                     <span>info@sahayogi.org</span>
                   </p>
                   <p className="flex items-center gap-3">
-                    <Phone className="w-5 h-5 text-[#5B5BD6] flex-shrink-0" />
+                    <Phone className="w-5 h-5 text-[#5B5BD6] shrink-0" />
                     <span>+977-1-4XXXXXX</span>
                   </p>
                 </div>
@@ -321,31 +321,7 @@ export default function ContactPage() {
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="bg-gray-900 text-white py-12">
-        <div className="container px-4">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-            <div className="flex items-center gap-2">
-              <Image
-                src="/logo3.png"
-                alt="Sahayogi Logo"
-                width={32}
-                height={32}
-                className="rounded-lg"
-              />
-              <span className="text-lg font-bold">Sahayogi</span>
-            </div>
-            <div className="flex gap-6 text-gray-400">
-              <Link href="/about" className="hover:text-white transition-colors">About</Link>
-              <Link href="/contact" className="hover:text-white transition-colors">Contact</Link>
-              <Link href="/login" className="hover:text-white transition-colors">Login</Link>
-            </div>
-            <div className="text-gray-400 text-sm">
-              © 2026 Sahayogi. All rights reserved.
-            </div>
-          </div>
-        </div>
-      </footer>
+      <Footer />
     </>
   );
 }

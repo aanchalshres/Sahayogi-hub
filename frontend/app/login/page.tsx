@@ -6,6 +6,8 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Toaster, toast } from '@/app/components/ui/sonner';
 import { User, Building2, ArrowRight, Loader2 } from 'lucide-react';
+import Navbar from '@/app/components/Navbar';
+import Footer from '@/app/components/Footer';
 
 interface FormData {
   email: string;
@@ -58,7 +60,10 @@ export default function AuthPage() {
           localStorage.setItem('user', JSON.stringify(result.user));
         }
 
-        setTimeout(() => router.push('/dashboard'), 1500);
+        const userRole = (result.user?.role as 'volunteer' | 'ngo' | undefined) ?? selectedRole;
+        const destination = userRole === 'volunteer' ? '/volunteer' : '/dashboard';
+
+        setTimeout(() => router.push(destination), 1500);
       } else {
         toast.error(result.message || 'Authentication failed');
       }
@@ -70,10 +75,12 @@ export default function AuthPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-blue-50 flex items-center justify-center p-4">
-      <Toaster position="top-right" />
+    <>
+      <Navbar />
+      <div className="min-h-screen bg-linear-to-br from-green-50 via-white to-blue-50 flex items-center justify-center p-4">
+        <Toaster position="top-right" />
 
-      <div className="w-full max-w-md">
+        <div className="w-full max-w-md">
         {/* Logo and Title */}
         <div className="text-center mb-8">
           <Link href="/" className="inline-block">
@@ -393,7 +400,9 @@ export default function AuthPage() {
             ← Back to Home
           </Link>
         </div>
+        </div>
       </div>
-    </div>
+      <Footer />
+    </>
   );
 }
