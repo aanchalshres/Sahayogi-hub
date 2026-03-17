@@ -7,6 +7,7 @@ import { Button } from "@/app/components/ui/button";
 import { Menu, X } from "lucide-react";
 import { useState } from "react";
 
+
 const Navbar = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const pathname = usePathname();
@@ -20,10 +21,11 @@ const Navbar = () => {
   return (
     <nav className="sticky top-0 z-50 bg-transparent backdrop-blur-md">
 
-      <div className="container flex h-16 items-center justify-between">
+      {/* added px-4 to shift content inward */}
+      <div className="container flex h-16 items-center justify-between px-4">
 
-        {/* LOGO + NAME */}
-        <Link href="/" className="flex items-center gap-2">
+        {/* LOGO (shift slightly right using ml-2) */}
+        <Link href="/" className="flex items-center gap-2 ml-2">
           <Image
             src="/logo3.png"
             alt="Sahayogi Logo"
@@ -35,28 +37,21 @@ const Navbar = () => {
         </Link>
 
         {/* DESKTOP MENU */}
-        <div className="hidden items-center gap-6 md:flex">
+        {/* added mr-2 to shift left slightly */}
+        <div className="hidden items-center gap-4 md:flex mr-2">
 
-          <Link
-            href="/about"
+          {/* <Link
+            href="/volunteer"
             className="text-sm font-medium text-foreground/70 hover:text-foreground transition-colors"
           >
-            About
+            Volunteer
           </Link>
-
           <Link
-            href="/contact"
+            href="/org"
             className="text-sm font-medium text-foreground/70 hover:text-foreground transition-colors"
           >
-            Contact
-          </Link>
-
-          <Link
-            href="/opportunities"
-            className="text-sm font-medium text-foreground/70 hover:text-foreground transition-colors"
-          >
-            Opportunities
-          </Link>
+            Organization
+          </Link> */}
 
           <Link
             href="/badges"
@@ -65,23 +60,37 @@ const Navbar = () => {
             Badges
           </Link>
 
-          <Link href="/login">
-            <Button variant="ghost" size="sm" className="cursor-pointer transition-colors">
-              Log In
-            </Button>
+          <Link
+            href="/about"
+            className="text-sm font-medium text-foreground/70 hover:text-foreground transition-colors"
+          >
+            About Us
           </Link>
 
-          <Link href="/login?mode=signup">
-            <Button size="sm" className="cursor-pointer transition-colors">
-              Sign Up
-            </Button>
-          </Link>
+          <div className="flex items-center gap-2">
+
+            <Link href="/login">
+              <Button variant="ghost" size="sm">
+                Log In
+              </Button>
+            </Link>
+
+            <Link href="/signup">
+              <Button
+                size="sm"
+                className="bg-[#5B5BD6] hover:bg-[#4a4ac4] text-white ractangle-full px-3"
+              >
+                Sign Up
+              </Button>
+            </Link>
+
+          </div>
 
         </div>
 
         {/* MOBILE MENU BUTTON */}
         <button
-          className="md:hidden text-foreground"
+          className="md:hidden text-foreground mr-2"
           onClick={() => setMobileOpen(!mobileOpen)}
         >
           {mobileOpen
@@ -96,22 +105,6 @@ const Navbar = () => {
         <div className="border-t bg-card p-4 md:hidden">
 
           <div className="flex flex-col gap-3">
-
-            <Link
-              href="/about"
-              onClick={() => setMobileOpen(false)}
-              className="text-sm font-medium text-muted-foreground"
-            >
-              About
-            </Link>
-
-            <Link
-              href="/contact"
-              onClick={() => setMobileOpen(false)}
-              className="text-sm font-medium text-muted-foreground"
-            >
-              Contact
-            </Link>
 
             <Link
               href="/opportunities"
@@ -130,13 +123,13 @@ const Navbar = () => {
             </Link>
 
             <Link href="/login" onClick={() => setMobileOpen(false)}>
-              <Button variant="ghost" className="w-full cursor-pointer transition-colors">
+              <Button variant="ghost" className="w-full">
                 Log In
               </Button>
             </Link>
 
-            <Link href="/login?mode=signup" onClick={() => setMobileOpen(false)}>
-              <Button className="w-full cursor-pointer bg-[#5B5BD6] text-white transition-colors hover:bg-[#4a4ac4]">
+            <Link href="/signup" onClick={() => setMobileOpen(false)}>
+              <Button className="bg-[#5B5BD6] hover:bg-[#4a4ac4] text-white w-full rounded-full">
                 Sign Up
               </Button>
             </Link>
