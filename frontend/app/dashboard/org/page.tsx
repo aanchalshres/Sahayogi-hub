@@ -1,8 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import Navbar from "@/app/components/Navbar";
-import Footer from "@/app/components/Footer";
 
 interface Task {
   title: string;
@@ -41,13 +39,12 @@ export default function OrgPage() {
     };
 
     const storedTasks = JSON.parse(localStorage.getItem("tasks") || "[]");
-
     storedTasks.push(task);
-
     localStorage.setItem("tasks", JSON.stringify(storedTasks));
 
     setSuccess(true);
 
+    // Reset form
     setTitle("");
     setCategory("");
     setSkills("");
@@ -61,35 +58,34 @@ export default function OrgPage() {
   };
 
   return (
-    <>
-      <Navbar />
-      <div className="min-h-screen bg-[#F0F1F3] flex justify-center items-center p-10 py-12 md:py-12">
-        <div className="max-w-2xl w-full bg-white p-8 rounded-lg border border-[#CACDD3] shadow">
-        <h1 className="text-3xl font-bold mb-6 text-[#111827]">
-          Post Volunteer Task
+    <div className="min-h-screen bg-[#F0F1F3] flex justify-center items-start py-16 px-4">
+      <div className="max-w-2xl w-full bg-white rounded-2xl shadow-xl border border-[#CACDD3] p-8 md:p-12">
+        <h1 className="text-3xl md:text-4xl font-bold mb-6 text-[#111827] text-center">
+          Post a Volunteer Task
         </h1>
 
         {success && (
-          <div className="mb-4 p-3 bg-green-100 text-green-700 rounded">
+          <div className="mb-6 p-4 text-green-800 bg-green-100 rounded-lg text-center font-medium">
             Task posted successfully!
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-
+        <form onSubmit={handleSubmit} className="space-y-5">
+          {/* Task Title */}
           <input
             type="text"
             placeholder="Task Title"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            className="w-full p-3 border border-[#CACDD3] rounded"
+            className="w-full p-4 border border-[#CACDD3] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#4F46C8] focus:border-[#4F46C8] transition"
             required
           />
 
+          {/* Category */}
           <select
             value={category}
             onChange={(e) => setCategory(e.target.value)}
-            className="w-full p-3 border border-[#CACDD3] rounded"
+            className="w-full p-4 border border-[#CACDD3] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#4F46C8] focus:border-[#4F46C8] transition"
             required
           >
             <option value="">Select Category</option>
@@ -98,62 +94,69 @@ export default function OrgPage() {
             <option value="Environment">Environment</option>
           </select>
 
+          {/* Skills */}
           <input
             type="text"
             placeholder="Skills (comma separated)"
             value={skills}
             onChange={(e) => setSkills(e.target.value)}
-            className="w-full p-3 border border-[#CACDD3] rounded"
+            className="w-full p-4 border border-[#CACDD3] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#4F46C8] focus:border-[#4F46C8] transition"
           />
 
+          {/* Quota */}
           <input
             type="number"
             placeholder="Volunteer Quota"
             value={quota}
             onChange={(e) => setQuota(e.target.value)}
-            className="w-full p-3 border border-[#CACDD3] rounded"
+            className="w-full p-4 border border-[#CACDD3] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#4F46C8] focus:border-[#4F46C8] transition"
             required
           />
 
+          {/* District */}
           <input
             type="text"
             placeholder="District"
             value={district}
             onChange={(e) => setDistrict(e.target.value)}
-            className="w-full p-3 border border-[#CACDD3] rounded"
+            className="w-full p-4 border border-[#CACDD3] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#4F46C8] focus:border-[#4F46C8] transition"
             required
           />
 
+          {/* Location */}
           <input
             type="text"
             placeholder="Location"
             value={location}
             onChange={(e) => setLocation(e.target.value)}
-            className="w-full p-3 border border-[#CACDD3] rounded"
+            className="w-full p-4 border border-[#CACDD3] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#4F46C8] focus:border-[#4F46C8] transition"
           />
 
+          {/* Date */}
           <input
             type="date"
             value={date}
             onChange={(e) => setDate(e.target.value)}
-            className="w-full p-3 border border-[#CACDD3] rounded"
+            className="w-full p-4 border border-[#CACDD3] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#4F46C8] focus:border-[#4F46C8] transition"
           />
 
+          {/* Description */}
           <textarea
             placeholder="Task Description"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            className="w-full p-3 border border-[#CACDD3] rounded"
+            className="w-full p-4 border border-[#CACDD3] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#4F46C8] focus:border-[#4F46C8] transition min-h-[120px]"
           />
 
-          <button className="bg-[#4F46C8] text-white px-6 py-3 rounded w-full">
+          {/* Submit Button */}
+          <button
+            type="submit"
+            className="w-full bg-[#4F46C8] hover:bg-[#3b3aa5] text-white font-semibold py-4 rounded-lg shadow-md hover:shadow-lg transition-all duration-300"
+          >
             Post Task
           </button>
-
         </form>
       </div>
     </div>
-    <Footer />
-    </>
   );
 }
