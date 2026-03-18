@@ -25,6 +25,7 @@ class User extends Authenticatable
         'email',
         'password',
         'role',
+        'phone',
     ];
 
     /**
@@ -48,5 +49,15 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    public function ngoProfile()
+    {
+        return $this->hasOne(\App\Models\NgoProfile::class);
+    }
+
+    public function volunteerProfile()
+    {
+    return $this->hasOne(\App\Models\VolunteerProfile::class);
     }
 }

@@ -5,15 +5,19 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
-class NgoProfile extends Model
+class VolunteerProfile extends Model
 {
     use HasFactory;
 
     protected $fillable = [
         'user_id',
-        'organization_name',
-        'registration_number',
-        'office_location',
+        'bio',
+        'skills',
+        'primary_location',
+    ];
+
+    protected $casts = [
+        'skills' => 'array',
     ];
 
     public function user()
