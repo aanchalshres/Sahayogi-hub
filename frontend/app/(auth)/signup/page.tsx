@@ -64,9 +64,13 @@ const Signup = () => {
         <Card className="w-full max-w-md shadow-xl border border-[#CACDD3] rounded-xl bg-white">
 
           <CardHeader className="text-center space-y-3">
-            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-[#4F46C8]">
-              <Heart className="h-6 w-6 text-white" />
-            </div>
+            <div className="flex justify-center">
+    <img
+      src="/logo1.png"      // Place your logo in public folder
+      alt="Ultimate IT Logo" // Use proper company name
+      className="h-20 w-20 object-contain" // Bigger than 6x6 for visibility
+    />
+  </div>
 
             <CardTitle className="text-2xl font-bold text-[#111827]">
               Create Account
