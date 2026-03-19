@@ -1,7 +1,7 @@
 import React from "react";
 import Link from "next/link";
 import Navbar from "../components/Navbar";
-import Footer from "../components/footer";
+import Footer from "../components/Footer";
 import { Button } from "../components/ui/button";
 import { 
   Heart, 

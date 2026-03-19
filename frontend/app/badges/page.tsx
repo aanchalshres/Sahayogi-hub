@@ -1,6 +1,6 @@
 import Link from "next/link";
 import Navbar from "../components/Navbar";
-import Footer from "../components/footer";
+import Footer from "../components/Footer";
 import { Button } from "../components/ui/button";
 import { Award, ArrowRight, Star, Users, Clock, TrendingUp } from "lucide-react";
 
