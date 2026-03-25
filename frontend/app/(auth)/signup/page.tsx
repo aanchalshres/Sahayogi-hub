@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/app/components/ui/ca
 import { Input } from "@/app/components/ui/input";
 import { Label } from "@/app/components/ui/label";
 import Link from "next/link";
-import { Heart, User, Building2 } from "lucide-react";
+import { User, Building2 } from "lucide-react";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
@@ -14,18 +14,45 @@ const Signup = () => {
   const router = useRouter();
 
   const [role, setRole] = useState<"volunteer" | "organization" | null>(null);
+
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+
+  // Volunteer
   const [location, setLocation] = useState("");
+
+  // NGO Fields
+  const [regNo, setRegNo] = useState("");
+  const [panNo, setPanNo] = useState("");
+  const [address, setAddress] = useState("");
+  const [phone, setPhone] = useState("");
+
+  // Files
+  const [regFile, setRegFile] = useState<File | null>(null);
+  const [panFile, setPanFile] = useState<File | null>(null);
+  const [letterhead, setLetterhead] = useState<File | null>(null);
+
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!name || !email || !password || (role === "volunteer" && !location)) {
+    if (
+      !name ||
+      !email ||
+      !password ||
+      (role === "volunteer" && !location) ||
+      (role === "organization" &&
+        (!regNo || !panNo || !address || !phone || !regFile || !panFile))
+    ) {
       setError("Please fill in all required fields.");
+      return;
+    }
+
+    if (role === "organization" && panNo.length !== 9) {
+      setError("PAN number must be 9 digits.");
       return;
     }
 
@@ -39,6 +66,16 @@ const Signup = () => {
         email,
         password,
         ...(role === "volunteer" && { location }),
+        ...(role === "organization" && {
+          regNo,
+          panNo,
+          address,
+          phone,
+          // ⚠️ Files stored as name only (since localStorage can't store files)
+          regFile: regFile?.name,
+          panFile: panFile?.name,
+          letterhead: letterhead?.name,
+        }),
       };
 
       let users = JSON.parse(localStorage.getItem("users") || "[]");
@@ -60,17 +97,13 @@ const Signup = () => {
       <Navbar />
 
       <div className="container mx-auto flex items-center justify-center py-20 px-4">
-
         <Card className="w-full max-w-md shadow-xl border border-[#CACDD3] rounded-xl bg-white">
-
+          
+          {/* HEADER */}
           <CardHeader className="text-center space-y-3">
             <div className="flex justify-center">
-    <img
-      src="/logo1.png"      // Place your logo in public folder
-      alt="Ultimate IT Logo" // Use proper company name
-      className="h-20 w-20 object-contain" // Bigger than 6x6 for visibility
-    />
-  </div>
+              <img src="/logo1.png" alt="Logo" className="h-20 w-20 object-contain" />
+            </div>
 
             <CardTitle className="text-2xl font-bold text-[#111827]">
               Create Account
@@ -81,52 +114,45 @@ const Signup = () => {
             </p>
           </CardHeader>
 
+          {/* BODY */}
           <CardContent className="space-y-4">
 
+            {/* ROLE SELECT */}
             {!role ? (
               <div className="space-y-3">
-
                 <p className="text-sm font-medium text-center text-[#111827]">
                   I want to join as:
                 </p>
 
-                {/* Volunteer */}
                 <button
                   onClick={() => setRole("volunteer")}
-                  className="flex w-full items-center gap-4 rounded-xl border-2 border-[#CACDD3] p-4 text-left hover:border-[#4F46C8] hover:bg-[#4F46C8]/10 transition-colors"
+                  className="flex w-full items-center gap-4 rounded-xl border-2 border-[#CACDD3] p-4 hover:border-[#4F46C8] hover:bg-[#4F46C8]/10"
                 >
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#4F46C8]/10">
-                    <User className="h-5 w-5 text-[#4F46C8]" />
-                  </div>
-
+                  <User className="text-[#4F46C8]" />
                   <div>
-                    <p className="font-semibold text-[#111827]">Volunteer</p>
-                    <p className="text-sm text-[#6B7280]">
+                    <p className="font-semibold">Volunteer</p>
+                    <p className="text-sm text-gray-500">
                       Find opportunities and make a difference
                     </p>
                   </div>
                 </button>
 
-                {/* Organization */}
                 <button
                   onClick={() => setRole("organization")}
-                  className="flex w-full items-center gap-4 rounded-xl border-2 border-[#CACDD3] p-4 text-left hover:border-[#7683D6] hover:bg-[#7683D6]/10 transition-colors"
+                  className="flex w-full items-center gap-4 rounded-xl border-2 border-[#CACDD3] p-4 hover:border-[#7683D6] hover:bg-[#7683D6]/10"
                 >
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#7683D6]/10">
-                    <Building2 className="h-5 w-5 text-[#7683D6]" />
-                  </div>
-
+                  <Building2 className="text-[#7683D6]" />
                   <div>
-                    <p className="font-semibold text-[#111827]">Organization</p>
-                    <p className="text-sm text-[#6B7280]">
+                    <p className="font-semibold">Organization (NGO)</p>
+                    <p className="text-sm text-gray-500">
                       Post opportunities and find volunteers
                     </p>
                   </div>
                 </button>
-
               </div>
             ) : (
 
+              /* FORM */
               <form onSubmit={handleSubmit} className="space-y-4">
 
                 <button
@@ -137,93 +163,107 @@ const Signup = () => {
                   ← Change role
                 </button>
 
-                <div className="space-y-2">
-                  <Label htmlFor="name" className="text-[#111827]">
-                    {role === "organization" ? "Organization Name" : "Full Name"}
-                  </Label>
-
+                {/* NAME */}
+                <div>
+                  <Label>{role === "organization" ? "Organization Name" : "Full Name"}</Label>
                   <Input
-                    id="name"
-                    placeholder={role === "organization" ? "NGO Nepal" : "Ram Sharma"}
-                    className="border-[#CACDD3] focus-visible:ring-[#4F46C8]"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     required
                   />
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="email" className="text-[#111827]">
-                    Email
-                  </Label>
-
+                {/* EMAIL */}
+                <div>
+                  <Label>Email</Label>
                   <Input
-                    id="email"
                     type="email"
-                    placeholder="you@example.com"
-                    className="border-[#CACDD3] focus-visible:ring-[#4F46C8]"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
                   />
                 </div>
 
-                {role === "volunteer" && (
-                  <div className="space-y-2">
-                    <Label htmlFor="location" className="text-[#111827]">
-                      Location
-                    </Label>
+                {/* NGO FIELDS */}
+                {role === "organization" && (
+                  <>
+                    <div>
+                      <Label>Registration No.</Label>
+                      <Input value={regNo} onChange={(e) => setRegNo(e.target.value)} required />
+                    </div>
 
-                    <Input
-                      id="location"
-                      placeholder="Kathmandu, Nepal"
-                      className="border-[#CACDD3] focus-visible:ring-[#4F46C8]"
-                      value={location}
-                      onChange={(e) => setLocation(e.target.value)}
-                      required
-                    />
+                    <div>
+                      <Label>PAN No.</Label>
+                      <Input value={panNo} onChange={(e) => setPanNo(e.target.value)} required />
+                    </div>
+
+                    <div>
+                      <Label>Address</Label>
+                      <Input value={address} onChange={(e) => setAddress(e.target.value)} required />
+                    </div>
+
+                    <div>
+                      <Label>Phone</Label>
+                      <Input value={phone} onChange={(e) => setPhone(e.target.value)} required />
+                    </div>
+
+                    <div>
+                      <Label>Registration Certificate</Label>
+                      <Input type="file" onChange={(e) => setRegFile(e.target.files?.[0] || null)} required />
+                    </div>
+
+                    <div>
+                      <Label>PAN Certificate</Label>
+                      <Input type="file" onChange={(e) => setPanFile(e.target.files?.[0] || null)} required />
+                    </div>
+
+                    <div>
+                      <Label>Letterhead (Optional)</Label>
+                      <Input type="file" onChange={(e) => setLetterhead(e.target.files?.[0] || null)} />
+                    </div>
+
+                    <p className="text-xs text-gray-500">
+                      Upload clear documents for verification
+                    </p>
+                  </>
+                )}
+
+                {/* VOLUNTEER */}
+                {role === "volunteer" && (
+                  <div>
+                    <Label>Location</Label>
+                    <Input value={location} onChange={(e) => setLocation(e.target.value)} required />
                   </div>
                 )}
 
-                <div className="space-y-2">
-                  <Label htmlFor="password" className="text-[#111827]">
-                    Password
-                  </Label>
-
+                {/* PASSWORD */}
+                <div>
+                  <Label>Password</Label>
                   <Input
-                    id="password"
                     type="password"
-                    placeholder="••••••••"
-                    className="border-[#CACDD3] focus-visible:ring-[#4F46C8]"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
                   />
                 </div>
 
-                {error && (
-                  <p className="text-sm text-red-500">{error}</p>
-                )}
+                {error && <p className="text-red-500 text-sm">{error}</p>}
 
                 <Button
-                  type="submit"
-                  className="w-full bg-[#4F46C8] hover:bg-[#4338CA] text-white rounded-full"
-                  size="lg"
-                  disabled={loading}
-                >
-                  {loading ? "Creating Account..." : "Create Account"}
-                </Button>
-
+  type="submit"
+  className="w-full bg-[#4F46C8] hover:bg-[#4338CA] text-white rounded-full transition-all duration-200"
+  disabled={loading}
+>
+  {loading ? "Creating..." : "Create Account"}
+</Button>
               </form>
             )}
 
-            <div className="border-t border-[#B9C0D4] pt-4">
-              <p className="text-center text-sm text-[#6B7280]">
+            {/* FOOTER */}
+            <div className="border-t pt-4">
+              <p className="text-center text-sm">
                 Already have an account?{" "}
-                <Link
-                  href="/login"
-                  className="font-medium text-[#4F46C8] hover:underline"
-                >
+                <Link href="/login" className="text-blue-600">
                   Login
                 </Link>
               </p>
