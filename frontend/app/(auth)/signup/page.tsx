@@ -13,7 +13,7 @@ import { useRouter } from "next/navigation";
 const Signup = () => {
   const router = useRouter();
 
-  const [role, setRole] = useState<"volunteer" | "organization" | null>(null);
+  const [role, setRole] = useState<"volunteer" | "ngo" | null>(null);
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -21,15 +21,16 @@ const Signup = () => {
 
   // Volunteer
   const [location, setLocation] = useState("");
-
-  // NGO Fields
-  const [regNo, setRegNo] = useState("");
-  const [panNo, setPanNo] = useState("");
-  const [address, setAddress] = useState("");
   const [phone, setPhone] = useState("");
 
+  // NGO Fields
+  const [organizationName, setOrganizationName] = useState("");
+  const [registrationNumber, setRegistrationNumber] = useState("");
+  const [panNumber, setPanNumber] = useState("");
+  const [officeLocation, setOfficeLocation] = useState("");
+
   // Files
-  const [regFile, setRegFile] = useState<File | null>(null);
+  const [registrationFile, setRegistrationFile] = useState<File | null>(null);
   const [panFile, setPanFile] = useState<File | null>(null);
   const [letterhead, setLetterhead] = useState<File | null>(null);
 
@@ -43,53 +44,73 @@ const Signup = () => {
       !name ||
       !email ||
       !password ||
+      !phone ||
       (role === "volunteer" && !location) ||
-      (role === "organization" &&
-        (!regNo || !panNo || !address || !phone || !regFile || !panFile))
+      (role === "ngo" &&
+        (!organizationName || !registrationNumber || !panNumber || !officeLocation || !registrationFile || !panFile))
     ) {
       setError("Please fill in all required fields.");
-      return;
-    }
-
-    if (role === "organization" && panNo.length !== 9) {
-      setError("PAN number must be 9 digits.");
       return;
     }
 
     setError("");
     setLoading(true);
 
-    setTimeout(() => {
-      const userData = {
-        role,
-        name,
-        email,
-        password,
-        ...(role === "volunteer" && { location }),
-        ...(role === "organization" && {
-          regNo,
-          panNo,
-          address,
-          phone,
-          // ⚠️ Files stored as name only (since localStorage can't store files)
-          regFile: regFile?.name,
-          panFile: panFile?.name,
-          letterhead: letterhead?.name,
-        }),
-      };
+    // Create FormData for file uploads
+    const formData = new FormData();
+    formData.append("name", name);
+    formData.append("email", email);
+    formData.append("password", password);
+    formData.append("phone", phone);
+    if (role) {
+      formData.append("role", role);
+    }
 
-      let users = JSON.parse(localStorage.getItem("users") || "[]");
-      users.push(userData);
-      localStorage.setItem("users", JSON.stringify(users));
-
-      setLoading(false);
-
-      if (role === "volunteer") {
-        router.push("/dashboard");
-      } else {
-        router.push("/dashboard/org");
+    if (role === "volunteer") {
+      formData.append("location", location);
+    } else if (role === "ngo") {
+      formData.append("organizationName", organizationName);
+      formData.append("registrationNumber", registrationNumber);
+      formData.append("panNumber", panNumber);
+      formData.append("officeLocation", officeLocation);
+      if (registrationFile) {
+        formData.append("registrationFile", registrationFile);
       }
-    }, 1000);
+      if (panFile) {
+        formData.append("panFile", panFile);
+      }
+      if (letterhead) {
+        formData.append("letterhead", letterhead);
+      }
+    }
+
+    // Call backend API
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+    fetch(`${apiUrl}/api/register`, {
+      method: "POST",
+      body: formData,
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        setLoading(false);
+        if (data.access_token) {
+          // Save token
+          localStorage.setItem("authToken", data.access_token);
+          localStorage.setItem("user", JSON.stringify(data.user));
+
+          if (role === "volunteer") {
+            router.push("/dashboard");
+          } else {
+            router.push("/dashboard/org");
+          }
+        } else {
+          setError(data.message || "Registration failed");
+        }
+      })
+      .catch((err) => {
+        setLoading(false);
+        setError("Network error: " + err.message);
+      });
   };
 
   return (
@@ -138,7 +159,7 @@ const Signup = () => {
                 </button>
 
                 <button
-                  onClick={() => setRole("organization")}
+                  onClick={() => setRole("ngo")}
                   className="flex w-full items-center gap-4 rounded-xl border-2 border-[#CACDD3] p-4 hover:border-[#7683D6] hover:bg-[#7683D6]/10"
                 >
                   <Building2 className="text-[#7683D6]" />
@@ -165,7 +186,7 @@ const Signup = () => {
 
                 {/* NAME */}
                 <div>
-                  <Label>{role === "organization" ? "Organization Name" : "Full Name"}</Label>
+                  <Label>{role === "ngo" ? "Contact Person Name" : "Full Name"}</Label>
                   <Input
                     value={name}
                     onChange={(e) => setName(e.target.value)}
@@ -184,32 +205,42 @@ const Signup = () => {
                   />
                 </div>
 
+                {/* PHONE (FOR BOTH) */}
+                <div>
+                  <Label>Phone</Label>
+                  <Input
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    required
+                  />
+                </div>
+
                 {/* NGO FIELDS */}
-                {role === "organization" && (
+                {role === "ngo" && (
                   <>
                     <div>
+                      <Label>Organization Name</Label>
+                      <Input value={organizationName} onChange={(e) => setOrganizationName(e.target.value)} required />
+                    </div>
+
+                    <div>
                       <Label>Registration No.</Label>
-                      <Input value={regNo} onChange={(e) => setRegNo(e.target.value)} required />
+                      <Input value={registrationNumber} onChange={(e) => setRegistrationNumber(e.target.value)} required />
                     </div>
 
                     <div>
                       <Label>PAN No.</Label>
-                      <Input value={panNo} onChange={(e) => setPanNo(e.target.value)} required />
+                      <Input value={panNumber} onChange={(e) => setPanNumber(e.target.value)} required />
                     </div>
 
                     <div>
-                      <Label>Address</Label>
-                      <Input value={address} onChange={(e) => setAddress(e.target.value)} required />
-                    </div>
-
-                    <div>
-                      <Label>Phone</Label>
-                      <Input value={phone} onChange={(e) => setPhone(e.target.value)} required />
+                      <Label>Office Location</Label>
+                      <Input value={officeLocation} onChange={(e) => setOfficeLocation(e.target.value)} required />
                     </div>
 
                     <div>
                       <Label>Registration Certificate</Label>
-                      <Input type="file" onChange={(e) => setRegFile(e.target.files?.[0] || null)} required />
+                      <Input type="file" onChange={(e) => setRegistrationFile(e.target.files?.[0] || null)} required />
                     </div>
 
                     <div>
