@@ -1,4 +1,4 @@
-import { Task, NGO, Activity, DashboardStats, AdminUser } from '@/types';
+import { Task, NGO, Activity, DashboardStats, AdminUser } from '@/app/types';
 
 export const mockTasks: Task[] = [
   {
@@ -53,76 +53,70 @@ export const mockNGOs: NGO[] = [
     id: 'ngo1',
     organizationName: 'Helping Hands',
     registrationNumber: 'REG12345',
-    panNumber: 'PAN12345',
-    location: 'Kathmandu',
-    district: 'Kathmandu',
+    officeLocation: 'Kathmandu',
+    status: 'pending',
+    ownerName: 'Sita Sharma',
+    email: 'contact@helpinghands.org',
+    phone: '9800000001',
+    createdAt: '2024-05-20T10:00:00Z',
     documents: {
       registrationCertificate: 'reg-cert.pdf',
       panCard: 'pan-card.pdf',
       organizationProfile: 'profile.pdf',
     },
-    status: 'pending',
-    submittedAt: '2024-05-20T10:00:00Z',
-    ownerName: 'Sita Sharma',
-    email: 'contact@helpinghands.org',
-    phone: '9800000001',
   },
   {
     id: 'ngo2',
     organizationName: 'Red Cross',
     registrationNumber: 'REG54321',
-    panNumber: 'PAN54321',
-    location: 'Lalitpur',
-    district: 'Lalitpur',
+    officeLocation: 'Lalitpur',
+    status: 'verified',
+    ownerName: 'Ram Bahadur',
+    email: 'info@redcross.org',
+    phone: '9800000002',
+    createdAt: '2024-05-22T11:00:00Z',
     documents: {
       registrationCertificate: 'reg-cert2.pdf',
       panCard: 'pan-card2.pdf',
       organizationProfile: 'profile2.pdf',
     },
-    status: 'verified',
-    submittedAt: '2024-05-22T11:00:00Z',
-    ownerName: 'Ram Bahadur',
-    email: 'info@redcross.org',
-    phone: '9800000002',
   },
   {
     id: 'ngo3',
     organizationName: 'Green Nepal',
     registrationNumber: 'REG67890',
-    panNumber: 'PAN67890',
-    location: 'Bhaktapur',
-    district: 'Bhaktapur',
+    officeLocation: 'Bhaktapur',
+    status: 'rejected',
+    ownerName: 'Mina Karki',
+    email: 'hello@greennepal.org',
+    phone: '9800000003',
+    createdAt: '2024-05-25T09:00:00Z',
     documents: {
       registrationCertificate: 'reg-cert3.pdf',
       panCard: 'pan-card3.pdf',
       organizationProfile: 'profile3.pdf',
     },
-    status: 'rejected',
-    submittedAt: '2024-05-25T09:00:00Z',
-    ownerName: 'Mina Karki',
-    email: 'hello@greennepal.org',
-    phone: '9800000003',
   },
 ];
 
 export const mockActivities: Activity[] = [
   {
     id: 'a1',
-    type: 'ngo_registered',
+    type: 'ngo-registered',
     message: 'Helping Hands registered as a new NGO.',
     timestamp: '2024-05-20T10:00:00Z',
     metadata: { ngoId: 'ngo1', ngoName: 'Helping Hands' },
   },
   {
     id: 'a2',
-    type: 'task_created',
+    type: 'task-created',
     message: 'Task "Blood Donation Camp" was created.',
     timestamp: '2024-06-02T09:00:00Z',
     metadata: { ngoId: 'ngo2', taskId: 'task2', taskTitle: 'Blood Donation Camp' },
   },
   {
     id: 'a3',
-    type: 'ngo_verified',
+    type: 'ngo-verified',
     message: 'Red Cross was verified.',
     timestamp: '2024-05-22T11:00:00Z',
     metadata: { ngoId: 'ngo2', ngoName: 'Red Cross' },
@@ -144,7 +138,7 @@ export const mockAdmin: AdminUser = {
   name: 'Admin User',
   email: 'admin@sahayogi.com',
   role: 'super_admin',
-  avatar: undefined,
+  createdAt: '2024-01-01T00:00:00Z',
 };
 
 export const categories = [
