@@ -9,7 +9,6 @@ import { Label } from "@/app/components/ui/label";
 import { Badge } from "@/app/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/app/components/ui/avatar";
 
-// Skill list (typed automatically as string[])
 const allSkills: string[] = [
   "First Aid",
   "Medical",
@@ -40,68 +39,115 @@ const Profile = () => {
 
   return (
     <DashboardLayout role="volunteer">
-      <div className="mx-auto max-w-2xl space-y-6">
-        <h1 className="text-2xl font-bold">Profile Settings</h1>
+      <div className="max-w-3xl mx-auto space-y-6">
 
-        <Card className="card-elevated">
-          <CardContent className="space-y-6 p-6">
-            
-            {/* Avatar */}
-            <div className="flex items-center gap-4">
-              <Avatar className="h-20 w-20">
-                <AvatarFallback className="bg-primary text-primary-foreground text-2xl">
-                  RS
-                </AvatarFallback>
-              </Avatar>
+        {/* HEADER */}
+        <div>
+          <h1 className="text-2xl font-bold text-[#111827]">
+            Profile Settings
+          </h1>
+          <p className="text-[#6B7280] text-sm">
+            Manage your personal information and skills
+          </p>
+        </div>
+
+        {/* MAIN CARD */}
+        <Card className="bg-white border border-[#E5E7EB] rounded-2xl shadow-sm">
+          <CardContent className="p-6 space-y-6">
+
+            {/* AVATAR SECTION */}
+            <div className="flex items-center justify-between border-b pb-4">
+              <div className="flex items-center gap-4">
+                <Avatar className="h-20 w-20">
+                  <AvatarFallback className="bg-[#4F46C8] text-white text-2xl">
+                    RS
+                  </AvatarFallback>
+                </Avatar>
+
+                <div>
+                  <h2 className="font-semibold text-[#111827]">
+                    Ram Sharma
+                  </h2>
+                  <p className="text-sm text-[#6B7280]">
+                    Volunteer
+                  </p>
+                </div>
+              </div>
+
               <Button variant="outline" size="sm">
                 Change Photo
               </Button>
             </div>
 
-            {/* Form */}
-            <div className="grid gap-4 sm:grid-cols-2">
+            {/* FORM */}
+            <div className="grid gap-5 sm:grid-cols-2">
+
               <div className="space-y-2">
-                <Label htmlFor="name">Full Name</Label>
-                <Input id="name" defaultValue="Ram Sharma" />
+                <Label>Full Name</Label>
+                <Input
+                  className="bg-white"
+                  defaultValue="Ram Sharma"
+                />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input id="email" type="email" defaultValue="ram@example.com" />
+                <Label>Email</Label>
+                <Input
+                  type="email"
+                  className="bg-white"
+                  defaultValue="ram@example.com"
+                />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="location">Location</Label>
-                <Input id="location" defaultValue="Kathmandu, Nepal" />
+                <Label>Location</Label>
+                <Input
+                  className="bg-white"
+                  defaultValue="Kathmandu, Nepal"
+                />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="availability">Availability</Label>
-                <Input id="availability" defaultValue="Weekends" />
+                <Label>Availability</Label>
+                <Input
+                  className="bg-white"
+                  defaultValue="Weekends"
+                />
               </div>
+
             </div>
 
-            {/* Skills */}
-            <div className="space-y-2">
+            {/* SKILLS */}
+            <div className="space-y-3">
               <Label>Skills</Label>
+
               <div className="flex flex-wrap gap-2">
-                {allSkills.map((skill: string) => (
-                  <Badge
-                    key={skill}
-                    variant={skills.includes(skill) ? "default" : "outline"}
-                    className="cursor-pointer"
-                    onClick={() => toggleSkill(skill)}
-                  >
-                    {skill}
-                  </Badge>
-                ))}
+                {allSkills.map((skill) => {
+                  const selected = skills.includes(skill);
+
+                  return (
+                    <span
+                      key={skill}
+                      onClick={() => toggleSkill(skill)}
+                      className={`px-3 py-1.5 rounded-full text-sm cursor-pointer border transition ${
+                        selected
+                          ? "bg-[#4F46C8] text-white border-[#4F46C8]"
+                          : "bg-white text-gray-600 border-gray-300 hover:bg-gray-100"
+                      }`}
+                    >
+                      {skill}
+                    </span>
+                  );
+                })}
               </div>
             </div>
 
-            {/* Save Button */}
-            <Button size="lg" className="w-full">
-              Save Changes
-            </Button>
+            {/* SAVE BUTTON */}
+            <div className="pt-4 border-t flex justify-end">
+              <Button className="bg-[#4F46C8] hover:bg-[#3f3db5] text-white px-6">
+                Save Changes
+              </Button>
+            </div>
 
           </CardContent>
         </Card>

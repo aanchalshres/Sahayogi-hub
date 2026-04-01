@@ -8,22 +8,25 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
   return (
-    <div className="h-screen flex">
+    <div className="h-screen flex overflow-hidden bg-[#F0F1F3]">
+
       {/* SIDEBAR */}
       <OrgSidebar
         isOpen={sidebarOpen}
         toggleSidebar={() => setSidebarOpen(!sidebarOpen)}
       />
 
-      {/* MAIN SECTION: Navbar + Content */}
-      <div className="flex-1 flex flex-col">
+      {/* MAIN */}
+      <div className="flex-1 flex flex-col min-h-0">
+
         {/* NAVBAR */}
         <OrgNavbar sidebarOpen={sidebarOpen} />
 
-        {/* MAIN CONTENT */}
-        <div className="flex-1 bg-[#F0F1F3] p-6 overflow-y-auto">
+        {/* CONTENT */}
+        <div className="flex-1 overflow-y-auto p-1">
           {children}
         </div>
+
       </div>
     </div>
   );
