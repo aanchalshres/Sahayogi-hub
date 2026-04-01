@@ -1,79 +1,191 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import DashboardLayout from "@/app/components/DashboardLayout";
+import { Card, CardContent } from "@/app/components/ui/card";
+import { Button } from "@/app/components/ui/button";
+import { Badge } from "@/app/components/ui/badge";
 
 interface Task {
+  id: number;
   title: string;
-  category: string;
-  skills: string[];
-  quota: string;
-  district: string;
-  location: string;
-  date: string;
   description: string;
+  category: string;
+  district: string;
+  quota: number;
+  skills: string[];
+  isEmergency: boolean;
+  volunteers: number;
 }
 
-export default function DashboardPage() {
+export default function VolunteerPage() {
   const [tasks, setTasks] = useState<Task[]>([]);
+  const router = useRouter();
+
+  // 🔍 Filters
+  const [search, setSearch] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("all");
+  const [districtFilter, setDistrictFilter] = useState("all");
 
   useEffect(() => {
-    const storedTasks = JSON.parse(localStorage.getItem("tasks") || "[]");
-    setTasks(storedTasks);
+    const stored = JSON.parse(localStorage.getItem("tasks") || "[]");
+    setTasks(stored);
   }, []);
 
+  // 👉 Redirect to apply page
+  const handleApply = (task: Task) => {
+    localStorage.setItem("selectedTask", JSON.stringify(task));
+    router.push(`/dashboard/apply/${task.id}`);
+  };
+
+  // 🧠 FILTER LOGIC
+  const filteredTasks = tasks.filter((task) => {
+    const matchSearch =
+      task.title.toLowerCase().includes(search.toLowerCase());
+
+    const matchCategory =
+      categoryFilter === "all" || task.category === categoryFilter;
+
+    const matchDistrict =
+      districtFilter === "all" || task.district === districtFilter;
+
+    return matchSearch && matchCategory && matchDistrict;
+  });
+
   return (
-    <div className="min-h-screen bg-[#F0F1F3] p-6 md:p-10">
-      <h1 className="text-3xl md:text-4xl font-bold text-[#111827] mb-8 text-center md:text-left">
-        Volunteer Tasks
-      </h1>
+    <DashboardLayout role="volunteer">
+      <div className="p-6 space-y-6 bg-[#F0F1F3] min-h-screen">
 
-      {tasks.length === 0 && (
-        <p className="text-gray-500 text-center md:text-left">No tasks available</p>
-      )}
+        {/* HEADER */}
+        <div>
+          <h1 className="text-2xl font-bold text-[#111827]">
+            Volunteer Opportunities
+          </h1>
+          <p className="text-[#6B7280]">
+            Browse and apply to tasks.
+          </p>
+        </div>
 
-      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {tasks.map((task, index) => (
-          <div
-            key={index}
-            className="bg-white border border-[#CACDD3] rounded-2xl p-6 shadow hover:shadow-xl transition-shadow duration-300 flex flex-col justify-between"
+        {/* 🔍 FILTERS */}
+        <div className="flex gap-2 items-center">
+
+          <input
+            type="text"
+            placeholder="Search by NGO / Task title..."
+            className="p-1.25 border rounded-md w-250"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+
+          <select
+            className="p-2 border rounded-md w-56"
+            value={categoryFilter}
+            onChange={(e) => setCategoryFilter(e.target.value)}
           >
-            {/* Title */}
-            <h2 className="text-xl md:text-2xl font-semibold text-[#111827] mb-2">
-              {task.title}
-            </h2>
+            <option value="all">All Categories</option>
+            <option value="Health">Health</option>
+            <option value="Education">Education</option>
+            <option value="Disaster">Disaster</option>
+            <option value="Environment">Environment</option>
+            <option value="Infrastructure">Infrastructure</option>
+            <option value="Social Welfare">Social Welfare</option>
+            <option value="Technology">Technology</option>
+            <option value="Community">Community</option>
+          </select>
 
-            {/* Category & District */}
-            <p className="text-sm text-gray-500 mb-3">
-              {task.category} • {task.district}
-            </p>
+          <select
+            className="p-2 border rounded-md w-56"
+            value={districtFilter}
+            onChange={(e) => setDistrictFilter(e.target.value)}
+          >
+            <option value="all">All Locations</option>
+            <option value="Kathmandu">Kathmandu</option>
+            <option value="Lalitpur">Lalitpur</option>
+            <option value="Bhaktapur">Bhaktapur</option>
+            <option value="Pokhara">Pokhara</option>
+            <option value="Chitwan">Chitwan</option>
+            <option value="Biratnagar">Biratnagar</option>
+            <option value="Dharan">Dharan</option>
+            <option value="Hetauda">Hetauda</option>
+          </select>
+        </div>
 
-            {/* Description */}
-            <p className="text-gray-600 mb-4 flex-1">{task.description}</p>
+        {/* TASK LIST */}
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
 
-            {/* Quota */}
-            <p className="text-sm font-medium mb-3">
-              Volunteers Needed: <span className="text-[#4F46C8]">{task.quota}</span>
-            </p>
+          {filteredTasks.length === 0 && (
+            <p className="text-[#6B7280]">No tasks found.</p>
+          )}
 
-            {/* Skills */}
-            <div className="flex flex-wrap gap-2 mb-4">
-              {task.skills.map((skill, i) => (
-                <span
-                  key={i}
-                  className="bg-[#B9C0D4] text-[#111827] px-3 py-1 rounded-full text-xs hover:bg-[#A0A8C0] transition"
-                >
-                  {skill}
-                </span>
-              ))}
-            </div>
+          {filteredTasks.map((task) => {
+            const remaining = task.quota - task.volunteers;
 
-            {/* Apply Button */}
-            <button className="mt-auto w-full bg-[#4F46C8] hover:bg-[#3b3aa5] text-white font-semibold py-3 rounded-lg shadow-md hover:shadow-lg transition-all duration-300">
-              Apply
-            </button>
-          </div>
-        ))}
+            return (
+              <Card key={task.id} className="bg-white border rounded-xl">
+                <CardContent className="p-5 space-y-3">
+
+                  <div className="flex justify-between items-center">
+                    <h2 className="font-semibold text-[#111827]">
+                      {task.title}
+                    </h2>
+
+                    {task.isEmergency && (
+                      <Badge className="bg-red-500 text-white">
+                        🚨 Emergency
+                      </Badge>
+                    )}
+                  </div>
+
+                  <Badge className="bg-[#F0F1F3] text-[#111827]">
+                    {task.category}
+                  </Badge>
+
+                  <p className="text-sm text-[#6B7280]">
+                    📍 {task.district}
+                  </p>
+
+                  <p className="text-sm text-[#6B7280]">
+                    👥 {task.volunteers}/{task.quota}
+                  </p>
+
+                  <div className="flex flex-wrap gap-2">
+                    {task.skills.map((skill) => (
+                      <Badge key={skill} className="bg-[#F0F1F3] text-[#111827]">
+                        {skill}
+                      </Badge>
+                    ))}
+                  </div>
+
+                  <div className="h-2 bg-[#F0F1F3] rounded-full">
+                    <div
+                      className="h-2 bg-[#4F46C8] rounded-full"
+                      style={{
+                        width: `${(task.volunteers / task.quota) * 100}%`,
+                      }}
+                    />
+                  </div>
+
+                  <Button
+                    onClick={() => handleApply(task)}
+                    disabled={remaining === 0}
+                    className={`w-full ${
+                      remaining === 0
+                        ? "bg-gray-400"
+                        : task.isEmergency
+                        ? "bg-red-500 hover:bg-red-600"
+                        : "bg-[#4F46C8] hover:bg-[#3f3db5]"
+                    } text-white`}
+                  >
+                    {remaining === 0 ? "Full" : "Apply"}
+                  </Button>
+
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
       </div>
-    </div>
+    </DashboardLayout>
   );
 }

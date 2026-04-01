@@ -7,7 +7,13 @@ import { Input } from "@/app/components/ui/input";
 import { Label } from "@/app/components/ui/label";
 import { Textarea } from "@/app/components/ui/textarea";
 import { Badge } from "@/app/components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/app/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/app/components/ui/select";
 import { useState } from "react";
 import { useToast } from "@/app/hooks/use-toast";
 import { CheckCircle } from "lucide-react";
@@ -32,6 +38,7 @@ const districtOptions = [
 
 const CreateOpportunity: React.FC = () => {
   const { toast } = useToast();
+
   const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
   const [isEmergency, setIsEmergency] = useState(false);
   const [title, setTitle] = useState("");
@@ -42,40 +49,84 @@ const CreateOpportunity: React.FC = () => {
 
   const toggleSkill = (skill: string) => {
     setSelectedSkills((prev) =>
-      prev.includes(skill) ? prev.filter((s) => s !== skill) : [...prev, skill]
+      prev.includes(skill)
+        ? prev.filter((s) => s !== skill)
+        : [...prev, skill]
     );
   };
 
+  // ✅ CLEAN & CORRECT SUBMIT FUNCTION
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!title.trim()) {
-      toast({ title: "Validation Error", description: "Title is required.", variant: "destructive" });
+      toast({
+        title: "Validation Error",
+        description: "Title is required.",
+        variant: "destructive",
+      });
       return;
     }
+
     if (!category) {
-      toast({ title: "Validation Error", description: "Please select a category.", variant: "destructive" });
+      toast({
+        title: "Validation Error",
+        description: "Please select a category.",
+        variant: "destructive",
+      });
       return;
     }
+
     if (!district) {
-      toast({ title: "Validation Error", description: "Please select a district.", variant: "destructive" });
+      toast({
+        title: "Validation Error",
+        description: "Please select a district.",
+        variant: "destructive",
+      });
       return;
     }
+
     if (!quota || Number(quota) <= 0) {
-      toast({ title: "Validation Error", description: "Quota must be a positive number.", variant: "destructive" });
+      toast({
+        title: "Validation Error",
+        description: "Quota must be a positive number.",
+        variant: "destructive",
+      });
       return;
     }
+
     if (selectedSkills.length === 0) {
-      toast({ title: "Validation Error", description: "Select at least one skill.", variant: "destructive" });
+      toast({
+        title: "Validation Error",
+        description: "Select at least one skill.",
+        variant: "destructive",
+      });
       return;
     }
+
+    // ✅ Create task object
+    const newTask = {
+      id: Date.now(),
+      title,
+      description,
+      category,
+      district,
+      quota: Number(quota),
+      skills: selectedSkills,
+      isEmergency,
+      volunteers: 0,
+    };
+
+    // ✅ Save to localStorage
+    const existingTasks = JSON.parse(localStorage.getItem("tasks") || "[]");
+    localStorage.setItem("tasks", JSON.stringify([newTask, ...existingTasks]));
 
     toast({
       title: "Task Created!",
-      description: `"${title}" has been posted successfully.`,
+      description: `"${title}" posted successfully.`,
     });
 
-    // Reset form
+    // ✅ Reset form
     setTitle("");
     setDescription("");
     setCategory("");
@@ -87,143 +138,131 @@ const CreateOpportunity: React.FC = () => {
 
   return (
     <DashboardLayout role="organization">
-      <div className="mx-auto max-w-2xl space-y-6">
-        {/* Page Header */}
+      <div className="mx-auto max-w-2xl space-y-6 bg-[#F0F1F3] p-4 rounded-xl">
+
+        {/* Header */}
         <div>
-          <h1 className="text-2xl font-bold text-[#111827]">Post New Task</h1>
-          <p className="text-[#6B7280]">Create a volunteer opportunity for your organization.</p>
+          <h1 className="text-2xl font-bold text-[#111827]">
+            Post New Task
+          </h1>
+          <p className="text-[#6B7280]">
+            Create a volunteer opportunity for your organization.
+          </p>
         </div>
 
-        {/* Form Card */}
-        <Card className="bg-[#B9C0D4] border border-[#CACDD3]">
+        {/* Card */}
+        <Card className="bg-white border border-[#CACDD3]">
           <CardContent className="p-6">
             <form onSubmit={handleSubmit} className="space-y-5">
 
               {/* Title */}
               <div className="space-y-2">
-                <Label htmlFor="title" className="text-[#111827]">
-                  Title <span className="text-destructive">*</span>
+                <Label className="text-[#111827]">
+                  Title <span className="text-red-500">*</span>
                 </Label>
                 <Input
-                  id="title"
-                  placeholder="e.g., Community Health Camp"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  maxLength={100}
-                  className="border-[#CACDD3] text-[#111827]"
+                  placeholder="e.g., Community Health Camp"
+                  className="border-[#CACDD3] bg-white text-[#111827]"
                 />
               </div>
 
-              {/* Category & District */}
+              {/* Category + District */}
               <div className="grid gap-4 sm:grid-cols-2">
+
                 <div className="space-y-2">
-                  <Label className="text-[#111827]">Category <span className="text-destructive">*</span></Label>
+                  <Label>Category *</Label>
                   <Select value={category} onValueChange={setCategory}>
-                    <SelectTrigger className="border-[#CACDD3] text-[#111827]">
+                    <SelectTrigger className="bg-white border-[#CACDD3]">
                       <SelectValue placeholder="Select category" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="bg-white text-black">
                       {categoryOptions.map((c) => (
-                        <SelectItem key={c} value={c}>{c}</SelectItem>
+                        <SelectItem key={c} value={c}>
+                          {c}
+                        </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
 
                 <div className="space-y-2">
-                  <Label className="text-[#111827]">District <span className="text-destructive">*</span></Label>
+                  <Label>District *</Label>
                   <Select value={district} onValueChange={setDistrict}>
-                    <SelectTrigger className="border-[#CACDD3] text-[#111827]">
+                    <SelectTrigger className="bg-white border-[#CACDD3]">
                       <SelectValue placeholder="Select district" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="bg-white text-black">
                       {districtOptions.map((d) => (
-                        <SelectItem key={d} value={d}>{d}</SelectItem>
+                        <SelectItem key={d} value={d}>
+                          {d}
+                        </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
+
               </div>
 
               {/* Quota */}
-              <div className="space-y-2">
-                <Label htmlFor="quota" className="text-[#111827]">Volunteer Quota <span className="text-destructive">*</span></Label>
-                <Input
-                  id="quota"
-                  type="number"
-                  placeholder="e.g., 20"
-                  min={1}
-                  max={1000}
-                  value={quota}
-                  onChange={(e) => setQuota(e.target.value)}
-                  className="border-[#CACDD3] text-[#111827]"
-                />
-              </div>
+              <Input
+                type="number"
+                placeholder="Volunteer quota"
+                value={quota}
+                onChange={(e) => setQuota(e.target.value)}
+                className="bg-white border-[#CACDD3]"
+              />
 
               {/* Skills */}
-              <div className="space-y-2">
-                <Label className="text-[#111827]">Required Skills <span className="text-destructive">*</span></Label>
-                <div className="flex flex-wrap gap-2">
-                  {skillOptions.map((skill) => (
-                    <Badge
-                      key={skill}
-                      variant={selectedSkills.includes(skill) ? "default" : "outline"}
-                      className="cursor-pointer select-none transition-colors text-[#111827] border-[#CACDD3]"
-                      onClick={() => toggleSkill(skill)}
-                    >
-                      {selectedSkills.includes(skill) && <CheckCircle className="mr-1 h-3 w-3" />}
-                      {skill}
-                    </Badge>
-                  ))}
-                </div>
-                {selectedSkills.length > 0 && (
-                  <p className="text-xs text-[#6B7280]">{selectedSkills.length} skill(s) selected</p>
-                )}
+              <div className="flex flex-wrap gap-2">
+                {skillOptions.map((skill) => (
+                  <Badge
+                    key={skill}
+                    onClick={() => toggleSkill(skill)}
+                    className={`cursor-pointer ${
+                      selectedSkills.includes(skill)
+                        ? "bg-[#4F46C8] text-white"
+                        : "bg-white border"
+                    }`}
+                  >
+                    {skill}
+                  </Badge>
+                ))}
               </div>
 
               {/* Description */}
-              <div className="space-y-2">
-                <Label htmlFor="description" className="text-[#111827]">Description</Label>
-                <Textarea
-                  id="description"
-                  rows={4}
-                  placeholder="Describe the task, requirements, and expectations..."
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  maxLength={1000}
-                  className="border-[#CACDD3] text-[#111827]"
-                />
-                <p className="text-xs text-[#6B7280] text-right">{description.length}/1000</p>
-              </div>
+              <Textarea
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Description..."
+                className="bg-white border-[#CACDD3]"
+              />
 
               {/* Priority */}
-              <div className="space-y-2">
-                <Label className="text-[#111827]">Priority</Label>
-                <div className="flex gap-3">
-                  <Button
-                    type="button"
-                    variant={!isEmergency ? "default" : "outline"}
-                    size="sm"
-                    className={`bg-[#4F46C8] text-white ${!isEmergency ? "" : "bg-[#F0F1F3] text-[#111827]"}`}
-                    onClick={() => setIsEmergency(false)}
-                  >
-                    Regular
-                  </Button>
-                  <Button
-                    type="button"
-                    variant={isEmergency ? "emergency" : "outline"}
-                    size="sm"
-                    className={`bg-[#7683D6] text-white ${isEmergency ? "" : "bg-[#F0F1F3] text-[#111827]"}`}
-                    onClick={() => setIsEmergency(true)}
-                  >
-                    🚨 Emergency
-                  </Button>
-                </div>
+              <div className="flex gap-3">
+                <Button
+                  type="button"
+                  onClick={() => setIsEmergency(false)}
+                  className={!isEmergency ? "bg-[#4F46C8] text-white" : "bg-gray-200"}
+                >
+                  Regular
+                </Button>
+
+                <Button
+                  type="button"
+                  onClick={() => setIsEmergency(true)}
+                  className={isEmergency ? "bg-red-500 text-white" : "bg-gray-200"}
+                >
+                  🚨 Emergency
+                </Button>
               </div>
 
-              <Button type="submit" className="w-full bg-[#4F46C8] hover:bg-[#3b3aa5] text-white" size="lg">
+              {/* Submit */}
+              <Button type="submit" className="w-full bg-[#4F46C8] text-white">
                 Post Task
               </Button>
+
             </form>
           </CardContent>
         </Card>
