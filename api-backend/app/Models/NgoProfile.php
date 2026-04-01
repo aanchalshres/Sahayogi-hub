@@ -13,7 +13,12 @@ class NgoProfile extends Model
         'user_id',
         'organization_name',
         'registration_number',
+        'pan_number',
         'office_location',
+        'registration_file_path',
+        'pan_file_path',
+        'letterhead_file_path',
+        'is_verified',
     ];
 
     public function user()
