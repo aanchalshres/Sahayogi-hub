@@ -56,61 +56,94 @@ const Signup = () => {
     setError("");
     setLoading(true);
 
-    // Create FormData for file uploads
-    const formData = new FormData();
-    formData.append("name", name);
-    formData.append("email", email);
-    formData.append("password", password);
-    formData.append("phone", phone);
-    if (role) {
-      formData.append("role", role);
-    }
-
-    if (role === "volunteer") {
-      formData.append("location", location);
-    } else if (role === "ngo") {
-      formData.append("organizationName", organizationName);
-      formData.append("registrationNumber", registrationNumber);
-      formData.append("panNumber", panNumber);
-      formData.append("officeLocation", officeLocation);
-      if (registrationFile) {
-        formData.append("registrationFile", registrationFile);
-      }
-      if (panFile) {
-        formData.append("panFile", panFile);
-      }
-      if (letterhead) {
-        formData.append("letterhead", letterhead);
-      }
-    }
-
-    // Call backend API
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
-    fetch(`${apiUrl}/api/register`, {
-      method: "POST",
-      body: formData,
-    })
-      .then((res) => res.json())
-      .then((data) => {
-        setLoading(false);
-        if (data.access_token) {
-          // Save token
-          localStorage.setItem("authToken", data.access_token);
-          localStorage.setItem("user", JSON.stringify(data.user));
 
-          if (role === "volunteer") {
+    if (role === "volunteer" && !registrationFile && !panFile && !letterhead) {
+      // Send JSON for volunteer
+      fetch(`${apiUrl}/api/register`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Accept": "application/json",
+        },
+        body: JSON.stringify({
+          name,
+          email,
+          password,
+          phone,
+          role,
+          location,
+        }),
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          setLoading(false);
+          if (data.access_token) {
+            localStorage.setItem("authToken", data.access_token);
+            localStorage.setItem("user", JSON.stringify(data.user));
             router.push("/dashboard");
           } else {
-            router.push("/dashboard/org");
+            setError(data.message || "Registration failed");
           }
-        } else {
-          setError(data.message || "Registration failed");
+        })
+        .catch((err) => {
+          setLoading(false);
+          setError("Network error: " + err.message);
+        });
+    } else {
+      // Send FormData for NGO or if files are present
+      const formData = new FormData();
+      formData.append("name", name);
+      formData.append("email", email);
+      formData.append("password", password);
+      formData.append("phone", phone);
+      if (role) {
+        formData.append("role", role);
+      }
+      if (role === "volunteer") {
+        formData.append("location", location);
+      } else if (role === "ngo") {
+        formData.append("organizationName", organizationName);
+        formData.append("registrationNumber", registrationNumber);
+        formData.append("panNumber", panNumber);
+        formData.append("officeLocation", officeLocation);
+        if (registrationFile) {
+          formData.append("registrationFile", registrationFile);
         }
+        if (panFile) {
+          formData.append("panFile", panFile);
+        }
+        if (letterhead) {
+          formData.append("letterhead", letterhead);
+        }
+      }
+      fetch(`${apiUrl}/api/register`, {
+        method: "POST",
+        headers: {
+          "Accept": "application/json",
+        },
+        body: formData,
       })
-      .catch((err) => {
-        setLoading(false);
-        setError("Network error: " + err.message);
-      });
+        .then((res) => res.json())
+        .then((data) => {
+          setLoading(false);
+          if (data.access_token) {
+            localStorage.setItem("authToken", data.access_token);
+            localStorage.setItem("user", JSON.stringify(data.user));
+            if (role === "volunteer") {
+              router.push("/dashboard");
+            } else {
+              router.push("/dashboard/org");
+            }
+          } else {
+            setError(data.message || "Registration failed");
+          }
+        })
+        .catch((err) => {
+          setLoading(false);
+          setError("Network error: " + err.message);
+        });
+    }
   };
 
   return (
