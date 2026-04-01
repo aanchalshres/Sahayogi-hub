@@ -13,7 +13,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, role = "vol
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
-    <div className="flex min-h-screen w-full bg-[#F0F1F3] text-[#111827]">
+    <div className="flex min-h-screen bg-[#F0F1F3] text-[#111827]">
       
       {/* Desktop sidebar */}
       <div className="hidden md:block">

@@ -7,7 +7,7 @@ import { Handshake, Facebook, Twitter, Instagram, Linkedin } from "lucide-react"
 const Footer = () => {
   return (
     <footer className="border-t border-[#CACDD3] bg-[#F0F1F3]">
-      <div className="container px-4 py-12">
+      <div className="container mx-auto px-4 py-12">
 
         {/* TOP SECTION */}
         <div className="grid gap-10 md:grid-cols-2 lg:grid-cols-4">
@@ -19,8 +19,8 @@ const Footer = () => {
               <Image
                 src="/logo1.png"
                 alt="Sahayogi Logo"
-                width={36}
-                height={36}
+                width={100}
+                height={100}
                 className="rounded-lg"
               />
 
@@ -65,10 +65,10 @@ const Footer = () => {
             <div className="flex flex-col gap-2">
 
               <Link
-                href="/opportunities"
+                href="/about"
                 className="text-sm text-[#6B7280] hover:text-[#4F46C8] transition-colors"
               >
-                Opportunities
+                About Us
               </Link>
 
               <Link

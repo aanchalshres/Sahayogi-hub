@@ -14,7 +14,11 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        //
+        // Register route middleware
+        $middleware->alias([
+            'role' => \App\Http\Middleware\CheckRole::class,
+            'verified_ngo' => \App\Http\Middleware\VerifiedNgo::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->render(function (AuthenticationException $exception, Request $request) {

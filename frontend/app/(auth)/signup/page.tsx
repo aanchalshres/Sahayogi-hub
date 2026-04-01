@@ -9,6 +9,7 @@ import Link from "next/link";
 import { User, Building2 } from "lucide-react";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@/app/providers/AuthProvider";
 
 const Signup = () => {
   const router = useRouter();
@@ -78,10 +79,10 @@ const Signup = () => {
         .then((res) => res.json())
         .then((data) => {
           setLoading(false);
-          if (data.access_token) {
-            localStorage.setItem("authToken", data.access_token);
+          if (data.access_token || data.token) {
+            localStorage.setItem("authToken", data.access_token || data.token);
             localStorage.setItem("user", JSON.stringify(data.user));
-            router.push("/dashboard");
+            router.push("/dashboard/volunteer");
           } else {
             setError(data.message || "Registration failed");
           }
@@ -127,13 +128,13 @@ const Signup = () => {
         .then((res) => res.json())
         .then((data) => {
           setLoading(false);
-          if (data.access_token) {
-            localStorage.setItem("authToken", data.access_token);
+          if (data.access_token || data.token) {
+            localStorage.setItem("authToken", data.access_token || data.token);
             localStorage.setItem("user", JSON.stringify(data.user));
             if (role === "volunteer") {
-              router.push("/dashboard");
+              router.push("/dashboard/volunteer");
             } else {
-              router.push("/dashboard/org");
+              router.push("/dashboard/ngo");
             }
           } else {
             setError(data.message || "Registration failed");
@@ -150,11 +151,11 @@ const Signup = () => {
     <div className="min-h-screen bg-[#F0F1F3]">
       <Navbar />
 
-      <div className="container mx-auto flex items-center justify-center py-20 px-4">
+      <div className="container mx-auto flex items-center justify-center py-8 sm:py-16 lg:py-20 px-3 sm:px-4">
         <Card className="w-full max-w-md shadow-xl border border-[#CACDD3] rounded-xl bg-white">
           
           {/* HEADER */}
-          <CardHeader className="text-center space-y-3">
+          <CardHeader className="text-center space-y-3 px-4 sm:px-6 pt-6">
             <div className="flex justify-center">
               <img src="/logo1.png" alt="Logo" className="h-20 w-20 object-contain" />
             </div>
@@ -169,7 +170,7 @@ const Signup = () => {
           </CardHeader>
 
           {/* BODY */}
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-4 px-4 sm:px-6 pb-6">
 
             {/* ROLE SELECT */}
             {!role ? (

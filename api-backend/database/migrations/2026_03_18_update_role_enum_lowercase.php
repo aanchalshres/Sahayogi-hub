@@ -13,12 +13,12 @@ return new class extends Migration
         // Step 2: Now convert existing data to lowercase (constraint is gone, so this works)
         DB::statement("UPDATE users SET role = LOWER(role)");
         DB::statement("ALTER TABLE users DROP COLUMN role");
-        DB::statement("ALTER TABLE users ADD COLUMN role VARCHAR(255) CHECK (role IN ('volunteer', 'ngo'))");
+        DB::statement("ALTER TABLE users ADD COLUMN role VARCHAR(255) CHECK (role IN ('volunteer', 'ngo', 'admin'))");
     }
 
     public function down(): void
     {
         DB::statement("ALTER TABLE users DROP COLUMN role");
-        DB::statement("ALTER TABLE users ADD COLUMN role VARCHAR(255) CHECK (role IN ('NGO', 'Volunteer'))");
+        DB::statement("ALTER TABLE users ADD COLUMN role VARCHAR(255) CHECK (role IN ('volunteer', 'ngo', 'admin'))");
     }
 };

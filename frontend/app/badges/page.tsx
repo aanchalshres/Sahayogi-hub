@@ -30,19 +30,15 @@ export default function BadgesPage() {
     <>
       <Navbar />
 
-      <section className="relative py-12 md:py-24 bg-linear-to-br from-blue-50 via-white to-purple-50 overflow-hidden">
-        <div className="absolute inset-0 opacity-30">
-          <div className="absolute top-12 left-12 w-56 h-56 bg-blue-200 rounded-full blur-3xl"></div>
-          <div className="absolute bottom-12 right-12 w-72 h-72 bg-purple-200 rounded-full blur-3xl"></div>
-        </div>
-        <div className="container relative z-10 px-4 text-center">
-          <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/80 backdrop-blur-sm rounded-full border border-blue-200 shadow-sm mb-8">
-            <Award className="w-4 h-4 text-blue-600" />
-            <span className="text-sm font-medium text-blue-700">Recognition That Matters</span>
+      <section className="relative py-12 md:py-24 bg-[#F0F1F3] overflow-hidden">
+        <div className="container mx-auto relative z-10 px-4 text-center">
+          <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/80 backdrop-blur-sm rounded-full border border-[#E8E7F9] shadow-sm mb-8">
+            <Award className="w-4 h-4 text-[#4F46C8]" />
+            <span className="text-sm font-medium text-[#4F46C8]">Recognition That Matters</span>
           </div>
           <h1 className="text-4xl md:text-6xl font-bold text-gray-900 mb-6">
             Badges and
-            <span className="text-transparent bg-clip-text bg-linear-to-r from-blue-600 to-purple-600"> Certificates</span>
+            <span className="text-transparent bg-clip-text bg-linear-to-r from-[#4F46C8] to-[#7683D6]"> Certificates</span>
           </h1>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto">
             Your volunteer hours are tracked and celebrated with digital badges that reflect your real contribution.
@@ -51,7 +47,7 @@ export default function BadgesPage() {
       </section>
 
       <section className="py-12 md:py-20 bg-white">
-        <div className="container px-4">
+        <div className="container mx-auto px-4">
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Badge Milestones</h2>
             <p className="text-gray-600 max-w-2xl mx-auto">
@@ -66,7 +62,7 @@ export default function BadgesPage() {
                   <Star className="w-8 h-8 text-white" />
                 </div>
                 <h3 className="text-xl font-bold text-gray-900 mb-2">{badge.title}</h3>
-                <p className="text-sm font-semibold text-[#5B5BD6] mb-3">{badge.hours}</p>
+                <p className="text-sm font-semibold text-[#4F46C8] mb-3">{badge.hours}</p>
                 <p className="text-gray-600">{badge.description}</p>
               </div>
             ))}
@@ -74,8 +70,8 @@ export default function BadgesPage() {
         </div>
       </section>
 
-      <section className="py-12 md:py-20 bg-linear-to-r from-[#5B5BD6] to-[#7C3AED]">
-        <div className="container px-4">
+      <section className="py-12 md:py-20 bg-[#4F46C8]">
+        <div className="container mx-auto px-4">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 max-w-4xl mx-auto text-center">
             <div className="bg-white/10 rounded-2xl p-6 backdrop-blur-sm">
               <Users className="w-8 h-8 text-white mx-auto mb-3" />
@@ -96,7 +92,7 @@ export default function BadgesPage() {
 
           <div className="text-center mt-12">
             <Link href="/login?mode=signup">
-              <Button size="lg" className="bg-white text-[#5B5BD6] hover:bg-gray-100 px-8 py-6 rounded-xl">
+              <Button size="lg" className="bg-white text-[#4F46C8] hover:bg-gray-100 px-8 py-6 rounded-xl">
                 Earn Your First Badge
                 <ArrowRight className="ml-2 w-5 h-5" />
               </Button>

@@ -10,6 +10,7 @@ import {
   ChevronLeft,
   ChevronRight,
   FileText,
+  ArrowRight,
 } from 'lucide-react';
 
 interface Column<T> {
@@ -28,6 +29,7 @@ interface DataTableProps<T> {
   onReject?: (item: T) => void;
   onDelete?: (item: T) => void;
   onViewDocuments?: (item: T) => void;
+  onRowClick?: (item: T) => void;
   emptyMessage?: string;
   emptyType?: 'ngos' | 'tasks' | 'flagged' | 'search';
   emptyActionLabel?: string;
@@ -47,6 +49,7 @@ export function DataTable<T>({
   onReject,
   onDelete,
   onViewDocuments,
+  onRowClick,
   emptyMessage,
   emptyType = 'ngos',
   emptyActionLabel,
@@ -106,7 +109,10 @@ export function DataTable<T>({
             {paginatedData.map((item, index) => (
               <tr
                 key={keyExtractor(item)}
-                className="group hover:bg-gray-50/80 transition-colors duration-200 animate-slide-in-right"
+                onClick={() => onRowClick?.(item)}
+                className={`group hover:bg-blue-50/50 transition-all duration-200 animate-slide-in-right ${
+                  onRowClick ? 'cursor-pointer hover:shadow-md' : ''
+                }`}
                 style={{ animationDelay: `${index * 80}ms` }}
               >
                 {columns.map((column) => (
@@ -175,6 +181,11 @@ export function DataTable<T>({
                         </Button>
                       )}
                     </div>
+                  </td>
+                )}
+                {!showActions && onRowClick && (
+                  <td className="px-4 py-4 text-right">
+                    <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-blue-600 group-hover:translate-x-0.5 transition-all duration-200 opacity-0 group-hover:opacity-100" />
                   </td>
                 )}
               </tr>

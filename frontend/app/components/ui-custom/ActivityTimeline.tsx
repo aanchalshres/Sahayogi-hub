@@ -1,4 +1,4 @@
-import type { Activity } from '@/types';
+import type { Activity } from '@/app/types';
 import {
   Building2,
   CheckCircle2,

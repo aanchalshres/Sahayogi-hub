@@ -9,9 +9,11 @@ import Link from "next/link";
 import { Heart } from "lucide-react";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@/app/providers/AuthProvider";
 
 const Login = () => {
   const router = useRouter();
+  const { login, isLoading: authLoading } = useAuth();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -21,8 +23,22 @@ const Login = () => {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    // Validate inputs
     if (!email || !password) {
-      setError("Please enter both email and password.");
+      if (!email && !password) {
+        setError("Email and password are required.");
+      } else if (!email) {
+        setError("Email address is required.");
+      } else {
+        setError("Password is required.");
+      }
+      return;
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      setError("Please enter a valid email address.");
       return;
     }
 
@@ -30,18 +46,27 @@ const Login = () => {
     setLoading(true);
 
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      localStorage.setItem(
-        "user",
-        JSON.stringify({
-          email,
-        })
-      );
-
-      router.push("/dashboard");
+      await login(email, password);
+      
+      // Get user role from localStorage after login
+      const userStr = localStorage.getItem("user");
+      const user = userStr ? JSON.parse(userStr) : null;
+      
+      // Redirect based on role
+      if (user?.role === "admin") {
+        router.push("/dashboard/admin");
+      } else if (user?.role === "ngo") {
+        router.push("/dashboard/ngo");
+      } else {
+        router.push("/dashboard/volunteer");
+      }
     } catch (err) {
-      setError("Invalid email or password.");
+      // Handle errors from login
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError("An unexpected error occurred. Please try again.");
+      }
     } finally {
       setLoading(false);
     }
@@ -58,9 +83,9 @@ const Login = () => {
             
      <div className="flex justify-center">
     <img
-      src="/logo1.png"      // Place your logo in public folder
-      alt="Ultimate IT Logo" // Use proper company name
-      className="h-20 w-20 object-contain" // Bigger than 6x6 for visibility
+      src="/logo1.png"      
+      alt="Ultimate IT Logo"
+      className="h-20 w-20 object-contain"
     />
   </div>
           

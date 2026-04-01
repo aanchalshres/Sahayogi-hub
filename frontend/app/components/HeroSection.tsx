@@ -15,7 +15,7 @@ export default function HeroSection() {
         {/* Headline */}
         <h1 className="text-5xl md:text-6xl font-bold text-[#111827] mb-6">
           Connect. Help.{" "}
-          <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#4F46C8] to-[#7683D6]">
+          <span className="text-transparent bg-clip-text bg-linear-to-r from-[#4F46C8] to-[#7683D6]">
             Make an Impact.
           </span>
         </h1>
