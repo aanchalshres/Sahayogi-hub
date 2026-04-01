@@ -58,6 +58,16 @@ class User extends Authenticatable
 
     public function volunteerProfile()
     {
-    return $this->hasOne(\App\Models\VolunteerProfile::class);
+        return $this->hasOne(\App\Models\VolunteerProfile::class);
+    }
+
+    public function tasks()
+    {
+        return $this->hasMany(\App\Models\Task::class);
+    }
+
+    public function applications()
+    {
+        return $this->hasMany(\App\Models\Application::class, 'volunteer_id');
     }
 }

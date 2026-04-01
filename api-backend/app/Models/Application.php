@@ -3,8 +3,26 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Application extends Model
 {
-    //
+    use HasFactory;
+
+    protected $fillable = [
+        'task_id',
+        'volunteer_id',
+        'status',
+    ];
+
+    // Relationships
+    public function task()
+    {
+        return $this->belongsTo(Task::class);
+    }
+
+    public function volunteer()
+    {
+        return $this->belongsTo(User::class, 'volunteer_id');
+    }
 }

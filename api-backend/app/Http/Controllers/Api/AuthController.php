@@ -57,7 +57,15 @@ class AuthController extends Controller
         return response()->json([
             'message' => 'Registration successful',
             'token' => $token,
-            'user' => $user->load('ngoProfile', 'volunteerProfile'),
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'role' => $user->role,
+                'phone' => $user->phone,
+                'ngoProfile' => $user->ngoProfile,
+                'volunteerProfile' => $user->volunteerProfile,
+            ],
         ], 201);
     }
 
@@ -84,7 +92,15 @@ class AuthController extends Controller
         return response()->json([
             'message' => 'Login successful',
             'token' => $token,
-            'user' => $user->load('ngoProfile', 'volunteerProfile'),
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'role' => $user->role,
+                'phone' => $user->phone,
+                'ngoProfile' => $user->ngoProfile,
+                'volunteerProfile' => $user->volunteerProfile,
+            ],
         ]);
     }
 
@@ -93,8 +109,17 @@ class AuthController extends Controller
     // =========================
     public function me(Request $request)
     {
+        $user = $request->user();
         return response()->json([
-            'user' => $request->user()->load('ngoProfile', 'volunteerProfile'),
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'role' => $user->role,
+                'phone' => $user->phone,
+                'ngoProfile' => $user->ngoProfile,
+                'volunteerProfile' => $user->volunteerProfile,
+            ],
         ]);
     }
 
