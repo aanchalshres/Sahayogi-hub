@@ -4,6 +4,18 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
+// Helper function to set cookies
+const setCookie = (name: string, value: string) => {
+  if (typeof document === 'undefined') return;
+  document.cookie = `${name}=${value}; path=/`;
+};
+
+// Helper function to remove cookies
+const removeCookie = (name: string) => {
+  if (typeof document === 'undefined') return;
+  document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/`;
+};
+
 export interface User {
   id: string;
   email: string;
@@ -24,28 +36,63 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [token, setToken] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+// Helper to get auth data synchronously from storage
+const getAuthDataSync = () => {
+  if (typeof window === 'undefined') return { token: null, user: null };
+  
+  const storedToken = localStorage.getItem("authToken");
+  const storedUser = localStorage.getItem("user");
 
-  // Load persisted auth data on mount
-  useEffect(() => {
-    const storedToken = localStorage.getItem("authToken");
-    const storedUser = localStorage.getItem("user");
-
-    if (storedToken && storedUser) {
-      try {
-        const parsedUser = JSON.parse(storedUser);
-        setToken(storedToken);
-        setUser(parsedUser);
-      } catch (error) {
-        console.error("Failed to parse stored user:", error);
-        localStorage.removeItem("authToken");
-        localStorage.removeItem("user");
-      }
+  if (storedToken && storedUser) {
+    try {
+      const parsedUser = JSON.parse(storedUser);
+      return { token: storedToken, user: parsedUser };
+    } catch (error) {
+      return { token: null, user: null };
     }
-    setIsLoading(false);
+  }
+  
+  return { token: null, user: null };
+};
+
+export function AuthProvider({ children }: { children: React.ReactNode }) {
+  // Initialize state from localStorage synchronously
+  const initialAuth = getAuthDataSync();
+  const [user, setUser] = useState<User | null>(initialAuth.user);
+  const [token, setToken] = useState<string | null>(initialAuth.token);
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Sync cookies on mount and listen for auth changes
+  useEffect(() => {
+    const { token: storedToken, user: storedUser } = getAuthDataSync();
+    
+    if (storedToken && storedUser) {
+      // Ensure cookies are set for middleware access
+      setCookie("token", storedToken);
+      setCookie("role", storedUser.role);
+    }
+
+    // Listen for custom auth-updated events (fired by signup/login)
+    const handleAuthUpdated = () => {
+      const { token: newToken, user: newUser } = getAuthDataSync();
+      setToken(newToken);
+      setUser(newUser);
+    };
+
+    // Also listen for storage changes from other tabs
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === "authToken" || e.key === "user") {
+        handleAuthUpdated();
+      }
+    };
+
+    window.addEventListener("auth-updated", handleAuthUpdated);
+    window.addEventListener("storage", handleStorageChange);
+    
+    return () => {
+      window.removeEventListener("auth-updated", handleAuthUpdated);
+      window.removeEventListener("storage", handleStorageChange);
+    };
   }, []);
 
   // Login function
@@ -62,11 +109,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           body: JSON.stringify({ email, password }),
         });
 
-        const data = await response.json();
-
         if (!response.ok) {
-          throw new Error(data.message || "Login failed");
+          const contentType = response.headers.get('content-type');
+          let errorMessage = 'Login failed';
+          try {
+            if (contentType?.includes('application/json')) {
+              const errorData = await response.json();
+              errorMessage = errorData.message || errorMessage;
+            } else {
+              const text = await response.text();
+              errorMessage = text || `HTTP ${response.status}`;
+            }
+          } catch (e) {
+            errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+          }
+          throw new Error(errorMessage);
         }
+
+        const data = await response.json();
 
         // Store token and user
         const authToken = data.token || data.access_token;
@@ -79,6 +139,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         localStorage.setItem("authToken", authToken);
         localStorage.setItem("user", JSON.stringify(userData));
+        
+        // Set cookies for middleware access
+        setCookie("token", authToken);
+        setCookie("role", userData.role);
 
         setToken(authToken);
         setUser(userData);
@@ -87,6 +151,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(null);
         localStorage.removeItem("authToken");
         localStorage.removeItem("user");
+        removeCookie("token");
+        removeCookie("role");
         throw error;
       } finally {
         setIsLoading(false);
@@ -120,6 +186,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       localStorage.removeItem("authToken");
       localStorage.removeItem("user");
       
+      // Clear cookies
+      removeCookie("token");
+      removeCookie("role");
+      
       // Redirect to login page
       window.location.href = "/login";
     }
@@ -129,8 +199,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const updateToken = useCallback((newToken: string | null) => {
     if (newToken) {
       localStorage.setItem("authToken", newToken);
+      setCookie("token", newToken);
     } else {
       localStorage.removeItem("authToken");
+      removeCookie("token");
     }
     setToken(newToken);
   }, []);
@@ -139,8 +211,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const updateUser = useCallback((newUser: User | null) => {
     if (newUser) {
       localStorage.setItem("user", JSON.stringify(newUser));
+      setCookie("role", newUser.role);
     } else {
       localStorage.removeItem("user");
+      removeCookie("role");
     }
     setUser(newUser);
   }, []);

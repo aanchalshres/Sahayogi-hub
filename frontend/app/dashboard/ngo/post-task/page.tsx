@@ -15,8 +15,9 @@ import {
   SelectValue,
 } from "@/app/components/ui/select";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { useToast } from "@/app/hooks/use-toast";
-import { CheckCircle } from "lucide-react";
+import { ArrowLeft, CheckCircle } from "lucide-react";
 
 const skillOptions = [
   "First Aid", "Medical", "Logistics", "Construction", "Teaching",
@@ -37,10 +38,12 @@ const districtOptions = [
 ];
 
 const CreateOpportunity: React.FC = () => {
+  const router = useRouter();
   const { toast } = useToast();
 
   const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
   const [isEmergency, setIsEmergency] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState("");
@@ -55,9 +58,9 @@ const CreateOpportunity: React.FC = () => {
     );
   };
 
-  // ✅ CLEAN & CORRECT SUBMIT FUNCTION
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsSubmitting(true);
 
     if (!title.trim()) {
       toast({
@@ -65,6 +68,7 @@ const CreateOpportunity: React.FC = () => {
         description: "Title is required.",
         variant: "destructive",
       });
+      setIsSubmitting(false);
       return;
     }
 
@@ -74,6 +78,7 @@ const CreateOpportunity: React.FC = () => {
         description: "Please select a category.",
         variant: "destructive",
       });
+      setIsSubmitting(false);
       return;
     }
 
@@ -83,6 +88,7 @@ const CreateOpportunity: React.FC = () => {
         description: "Please select a district.",
         variant: "destructive",
       });
+      setIsSubmitting(false);
       return;
     }
 
@@ -92,6 +98,7 @@ const CreateOpportunity: React.FC = () => {
         description: "Quota must be a positive number.",
         variant: "destructive",
       });
+      setIsSubmitting(false);
       return;
     }
 
@@ -101,53 +108,81 @@ const CreateOpportunity: React.FC = () => {
         description: "Select at least one skill.",
         variant: "destructive",
       });
+      setIsSubmitting(false);
       return;
     }
 
-    // ✅ Create task object
-    const newTask = {
-      id: Date.now(),
-      title,
-      description,
-      category,
-      district,
-      quota: Number(quota),
-      skills: selectedSkills,
-      isEmergency,
-      volunteers: 0,
-    };
+    try {
+      // ✅ Create task object
+      const newTask = {
+        id: Date.now(),
+        title,
+        description,
+        category,
+        district,
+        quota: Number(quota),
+        skills: selectedSkills,
+        isEmergency,
+        volunteers: 0,
+      };
 
-    // ✅ Save to localStorage
-    const existingTasks = JSON.parse(localStorage.getItem("tasks") || "[]");
-    localStorage.setItem("tasks", JSON.stringify([newTask, ...existingTasks]));
+      // ✅ Save to localStorage
+      const existingTasks = JSON.parse(localStorage.getItem("tasks") || "[]");
+      localStorage.setItem("tasks", JSON.stringify([newTask, ...existingTasks]));
 
-    toast({
-      title: "Task Created!",
-      description: `"${title}" posted successfully.`,
-    });
+      toast({
+        title: "Task Created!",
+        description: `"${title}" posted successfully.`,
+      });
 
-    // ✅ Reset form
-    setTitle("");
-    setDescription("");
-    setCategory("");
-    setDistrict("");
-    setQuota("");
-    setSelectedSkills([]);
-    setIsEmergency(false);
+      // ✅ Reset form
+      setTitle("");
+      setDescription("");
+      setCategory("");
+      setDistrict("");
+      setQuota("");
+      setSelectedSkills([]);
+      setIsEmergency(false);
+
+      // ✅ Navigate back after 1 second
+      setTimeout(() => {
+        router.push("/dashboard/ngo");
+      }, 1000);
+    } catch (error) {
+      console.error("Error creating task:", error);
+      toast({
+        title: "Error",
+        description: "Failed to create task. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
     <DashboardLayout role="organization">
       <div className="mx-auto max-w-2xl space-y-6 bg-[#F0F1F3] px-4 rounded-xl">
 
-        {/* Header */}
-        <div>
-          <h1 className="text-2xl font-bold text-[#111827]">
-            Post New Task
-          </h1>
-          <p className="text-[#6B7280]">
-            Create a volunteer opportunity for your organization.
-          </p>
+        {/* Header with Back Button */}
+        <div className="flex items-center justify-between">
+          <div className="flex-1">
+            <h1 className="text-2xl font-bold text-[#111827]">
+              Post New Task
+            </h1>
+            <p className="text-[#6B7280]">
+              Create a volunteer opportunity for your organization.
+            </p>
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => router.back()}
+            className="gap-2 text-sm"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Back
+          </Button>
         </div>
 
         {/* Card */}
@@ -259,8 +294,12 @@ const CreateOpportunity: React.FC = () => {
               </div>
 
               {/* Submit */}
-              <Button type="submit" className="w-full bg-[#4F46C8] text-white">
-                Post Task
+              <Button 
+                type="submit" 
+                className="w-full bg-[#4F46C8] text-white"
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? "Posting..." : "Post Task"}
               </Button>
 
             </form>

@@ -48,9 +48,20 @@ const Login = () => {
     try {
       await login(email, password);
       
-      // Get user role from localStorage after login
+      // Get user data from localStorage after login
       const userStr = localStorage.getItem("user");
+      const tokenStr = localStorage.getItem("authToken");
       const user = userStr ? JSON.parse(userStr) : null;
+      const token = tokenStr;
+      
+      // IMPORTANT: Set token and role cookies for middleware
+      if (token && user) {
+        document.cookie = `token=${token}; path=/`;
+        document.cookie = `role=${user.role}; path=/`;
+        
+        // Dispatch event to sync AuthProvider
+        window.dispatchEvent(new CustomEvent("auth-updated"));
+      }
       
       // Redirect based on role
       if (user?.role === "admin") {

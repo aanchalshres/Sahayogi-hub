@@ -2,8 +2,9 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
+use App\Models\TaskSkill;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
 
 class Task extends Model
 {
@@ -36,5 +37,10 @@ class Task extends Model
     public function applications()
     {
         return $this->hasMany(Application::class);
+    }
+
+    public function skills()
+    {
+        return $this->hasMany(TaskSkill::class);
     }
 }

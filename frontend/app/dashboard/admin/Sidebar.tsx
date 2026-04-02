@@ -16,18 +16,14 @@ import {
   X,
 } from 'lucide-react';
 
-interface SidebarProps {
-  pendingCount?: number;
-}
-
 const menuItems = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, href: '/dashboard/admin' },
-  { id: 'ngo-verification', label: 'NGO Verification', icon: Users, badge: true, href: '/dashboard/admin/ngo-verification' },
+  { id: 'ngo-verification', label: 'NGO Verification', icon: Users, href: '/dashboard/admin/ngo-verification' },
   { id: 'task-moderation', label: 'Task Moderation', icon: CheckCircle, href: '/dashboard/admin/task-moderation' },
   { id: 'settings', label: 'Settings', icon: Settings, href: '/dashboard/admin/settings' },
 ];
 
-export function Sidebar({ pendingCount = 0 }: SidebarProps) {
+export function Sidebar() {
   const router = useRouter();
   const pathname = usePathname();
   const { logout } = useAuth();
@@ -49,7 +45,7 @@ export function Sidebar({ pendingCount = 0 }: SidebarProps) {
       {/* Mobile Menu Button */}
       <button
         onClick={() => setIsMobileOpen(!isMobileOpen)}
-        className="lg:hidden fixed top-4 left-4 z-50 p-2 rounded-lg bg-white shadow-md border border-gray-200"
+        className="lg:hidden fixed top-4 left-4 z-50 p-2 rounded-lg bg-[#B9C0D4] shadow-md border border-[#CACDD3]"
       >
         {isMobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
       </button>
@@ -65,13 +61,13 @@ export function Sidebar({ pendingCount = 0 }: SidebarProps) {
       {/* Sidebar */}
       <aside
         className={cn(
-          'fixed left-0 top-0 h-full z-40 bg-white border-r border-gray-200 transition-all duration-200 ease-in-out',
+          'fixed left-0 top-0 h-full z-40 bg-[#B9C0D4] border-r border-[#CACDD3] transition-all duration-200 ease-in-out',
           isCollapsed ? 'w-20' : 'w-64',
           isMobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
         )}
       >
         {/* Logo Section */}
-        <div className="h-16 flex items-center px-4 border-b border-gray-100">
+        <div className="h-16 flex items-center px-4 border-b border-[#CACDD3]">
           <div className="flex items-center gap-2">
             <Image
               src="/logo1.png"
@@ -79,12 +75,13 @@ export function Sidebar({ pendingCount = 0 }: SidebarProps) {
               width={50}
               height={50}
               className="rounded-lg shrink-0"
+              style={{ width: 'auto', height: 'auto' }}
               priority
             />
             {!isCollapsed && (
               <div className="overflow-hidden">
-                <h1 className="font-semibold text-gray-900 whitespace-nowrap">Sahayogi</h1>
-                <p className="text-xs text-gray-500 whitespace-nowrap">Admin Panel</p>
+                <h1 className="font-semibold text-[#111827] whitespace-nowrap">Sahayogi</h1>
+                <p className="text-xs text-[#6B7280] whitespace-nowrap">Admin Panel</p>
               </div>
             )}
           </div>
@@ -95,7 +92,6 @@ export function Sidebar({ pendingCount = 0 }: SidebarProps) {
           {menuItems.map((item) => {
             const Icon = item.icon;
             const active = isActive(item.href);
-            const badgeCount = item.badge ? pendingCount : 0;
 
             return (
               <button
@@ -107,29 +103,19 @@ export function Sidebar({ pendingCount = 0 }: SidebarProps) {
                 className={cn(
                   'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 group relative',
                   active
-                    ? 'bg-sahayogi-blue-light text-sahayogi-blue'
-                    : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                    ? 'bg-[#9FA8DA] text-[#4F46C8]'
+                    : 'text-[#6B7280] hover:bg-[#AAB2C8] hover:text-[#111827]'
                 )}
               >
                 <Icon
                   className={cn(
                     'w-5 h-5 shrink-0 transition-transform duration-200',
-                    active ? 'text-sahayogi-blue' : 'text-gray-400 group-hover:text-gray-600',
+                    active ? 'text-[#4F46C8]' : 'text-[#6B7280] group-hover:text-[#111827]',
                     'group-hover:scale-110'
                   )}
                 />
                 {!isCollapsed && (
                   <span className="truncate whitespace-nowrap flex-1 text-left">{item.label}</span>
-                )}
-                {!isCollapsed && badgeCount > 0 && (
-                  <span className="ml-auto bg-red-600 text-white text-xs font-semibold px-2 py-0.5 rounded-full animate-pulse">
-                    {badgeCount}
-                  </span>
-                )}
-                {isCollapsed && badgeCount > 0 && (
-                  <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-600 text-white text-[10px] font-semibold flex items-center justify-center rounded-full animate-pulse">
-                    {badgeCount}
-                  </span>
                 )}
 
                 {/* Active Indicator */}

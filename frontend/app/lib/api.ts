@@ -49,13 +49,38 @@ export async function apiCall(
  * Parse JSON response
  */
 export async function parseResponse<T>(response: Response): Promise<T> {
-  const data = await response.json();
-
+  // Check if response is OK first
   if (!response.ok) {
-    throw new Error(data.message || "API request failed");
+    const contentType = response.headers.get('content-type');
+    let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+    
+    try {
+      if (contentType?.includes('application/json')) {
+        const data = await response.json();
+        errorMessage = data.message || errorMessage;
+      } else if (response.status === 404) {
+        // For 404s, don't try to parse the HTML response body
+        errorMessage = `Endpoint not found (404)`;
+      }
+      // For other non-JSON responses, just use the status
+    } catch (e) {
+      // If parsing fails, use status text
+      errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+    }
+    throw new Error(errorMessage);
   }
 
-  return data;
+  const contentType = response.headers.get('content-type');
+  if (!contentType?.includes('application/json')) {
+    throw new Error('Invalid response: expected JSON');
+  }
+
+  try {
+    const data = await response.json();
+    return data;
+  } catch (e) {
+    throw new Error('Failed to parse JSON response');
+  }
 }
 
 /**

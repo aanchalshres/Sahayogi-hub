@@ -49,13 +49,13 @@ export function Header({ pageTitle, breadcrumbs = [], onSearch }: HeaderProps) {
   };
 
   return (
-    <header className="h-16 bg-white/90 backdrop-blur-xl border-b border-gray-200 sticky top-0 z-30">
+    <header className="h-16 bg-[#B9C0D4]/80 backdrop-blur-xl border-b border-[#CACDD3] sticky top-0 z-30">
       <div className="h-full px-6 flex items-center justify-between">
         {/* Left - Page Title & Breadcrumbs */}
         <div className="flex flex-col justify-center">
           {/* Breadcrumbs */}
           {breadcrumbs.length > 0 && (
-            <nav className="flex items-center text-xs text-gray-500 mb-0.5">
+            <nav className="flex items-center text-xs text-[#6B7280] mb-0.5">
               <ol className="flex items-center space-x-1">
                 <li>
                   <a
@@ -69,7 +69,7 @@ export function Header({ pageTitle, breadcrumbs = [], onSearch }: HeaderProps) {
                 </li>
                 {breadcrumbs.map((item, index) => (
                   <li key={index} className="flex items-center">
-                    <ChevronRight className="w-3 h-3 text-gray-400 mx-1" />
+                    <ChevronRight className="w-3 h-3 text-[#CACDD3] mx-1" />
                     {item.href ? (
                       <a
                         href={item.href}
@@ -80,18 +80,18 @@ export function Header({ pageTitle, breadcrumbs = [], onSearch }: HeaderProps) {
                         {item.label}
                       </a>
                     ) : (
-                      <span className="text-gray-400">{item.label}</span>
+                      <span className="text-[#CACDD3]">{item.label}</span>
                     )}
                   </li>
                 ))}
                 <li className="flex items-center">
-                  <ChevronRight className="w-3 h-3 text-gray-400 mx-1" />
-                  <span className="text-gray-900 font-medium">{pageTitle}</span>
+                  <ChevronRight className="w-3 h-3 text-[#CACDD3] mx-1" />
+                  <span className="text-[#111827] font-medium">{pageTitle}</span>
                 </li>
               </ol>
             </nav>
           )}
-          <h2 className="text-xl font-semibold text-gray-900">{pageTitle}</h2>
+          <h2 className="text-xl font-semibold text-[#111827]">{pageTitle}</h2>
         </div>
 
         {/* Center - Global Search */}
@@ -104,14 +104,14 @@ export function Header({ pageTitle, breadcrumbs = [], onSearch }: HeaderProps) {
         >
           <Search
             className="absolute left-3 w-4 h-4 transition-colors duration-200"
-            style={{ color: isSearchFocused ? "hsl(234, 100%, 62%)" : "rgb(156, 163, 175)" }}
+            style={{ color: isSearchFocused ? "#4F46C8" : "#9CA3AF" }}
           />
           <Input
             placeholder="Search NGOs, tasks..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10 bg-gray-50 border-gray-200 transition-all duration-200"
-            style={isSearchFocused ? { backgroundColor: "white", borderColor: "hsl(234, 100%, 62%)", boxShadow: "0 10px 15px -3px rgb(0 0 0 / 0.1)" } : {}}
+            className="pl-10 bg-[#F0F1F3] border-[#CACDD3] transition-all duration-200"
+            style={isSearchFocused ? { backgroundColor: "white", borderColor: "#4F46C8", boxShadow: "0 10px 15px -3px rgb(0 0 0 / 0.1)" } : {}}
             onFocus={() => setIsSearchFocused(true)}
             onBlur={() => setIsSearchFocused(false)}
           />
@@ -125,9 +125,9 @@ export function Header({ pageTitle, breadcrumbs = [], onSearch }: HeaderProps) {
               <Button
                 variant="ghost"
                 size="icon"
-                className="relative hover:bg-gray-100 transition-colors"
+                className="relative hover:bg-[#AAB2C8] transition-colors"
               >
-                <Bell className="w-5 h-5 text-gray-600" />
+                <Bell className="w-5 h-5 text-[#6B7280]" />
                 {notificationCount > 0 && (
                   <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-600 text-white text-xs font-semibold flex items-center justify-center rounded-full animate-pulse">
                     {notificationCount}
@@ -141,22 +141,22 @@ export function Header({ pageTitle, breadcrumbs = [], onSearch }: HeaderProps) {
               <div className="max-h-64 overflow-y-auto">
                 <DropdownMenuItem className="flex flex-col items-start py-3 cursor-pointer">
                   <span className="text-sm font-medium">New NGO Registration</span>
-                  <span className="text-xs text-gray-500">Himalayan Helpers submitted for verification</span>
-                  <span className="text-xs text-gray-400 mt-1">2 minutes ago</span>
+                  <span className="text-xs text-[#6B7280]">Himalayan Helpers submitted for verification</span>
+                  <span className="text-xs text-[#9CA3AF] mt-1">2 minutes ago</span>
                 </DropdownMenuItem>
                 <DropdownMenuItem className="flex flex-col items-start py-3 cursor-pointer">
                   <span className="text-sm font-medium">Task Approved</span>
-                  <span className="text-xs text-gray-500">Blood Donation Camp is now active</span>
-                  <span className="text-xs text-gray-400 mt-1">15 minutes ago</span>
+                  <span className="text-xs text-[#6B7280]">Blood Donation Camp is now active</span>
+                  <span className="text-xs text-[#9CA3AF] mt-1">15 minutes ago</span>
                 </DropdownMenuItem>
                 <DropdownMenuItem className="flex flex-col items-start py-3 cursor-pointer">
                   <span className="text-sm font-medium">Volunteer Application</span>
-                  <span className="text-xs text-gray-500">John Doe applied for Tree Plantation</span>
-                  <span className="text-xs text-gray-400 mt-1">1 hour ago</span>
+                  <span className="text-xs text-[#6B7280]">John Doe applied for Tree Plantation</span>
+                  <span className="text-xs text-[#9CA3AF] mt-1">1 hour ago</span>
                 </DropdownMenuItem>
               </div>
               <DropdownMenuSeparator />
-              <DropdownMenuItem className="justify-center cursor-pointer" style={{ color: "hsl(234, 100%, 62%)" }}>
+              <DropdownMenuItem className="justify-center cursor-pointer" style={{ color: "#4F46C8" }}>
                 View all notifications
               </DropdownMenuItem>
             </DropdownMenuContent>
@@ -167,16 +167,16 @@ export function Header({ pageTitle, breadcrumbs = [], onSearch }: HeaderProps) {
             <DropdownMenuTrigger asChild>
               <Button
                 variant="ghost"
-                className="flex items-center gap-2 hover:bg-gray-100 transition-colors"
+                className="flex items-center gap-2 hover:bg-[#AAB2C8] transition-colors"
               >
-                <div className="w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-bold shadow-lg" style={{ backgroundColor: "hsl(234, 100%, 62%)" }}>
+                <div className="w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-bold shadow-lg" style={{ backgroundColor: "#4F46C8" }}>
                   {getInitials(mockAdmin.name)}
                 </div>
                 <div className="hidden sm:block text-left">
-                  <p className="text-sm font-medium text-gray-900">{mockAdmin.name}</p>
-                  <p className="text-xs text-gray-500">{mockAdmin.role === 'super_admin' ? 'Super Admin' : 'Admin'}</p>
+                  <p className="text-sm font-medium text-[#111827]">{mockAdmin.name}</p>
+                  <p className="text-xs text-[#6B7280]">{mockAdmin.role === 'super_admin' ? 'Super Admin' : 'Admin'}</p>
                 </div>
-                <ChevronDown className="w-4 h-4 text-gray-400" />
+                <ChevronDown className="w-4 h-4 text-[#6B7280]" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">

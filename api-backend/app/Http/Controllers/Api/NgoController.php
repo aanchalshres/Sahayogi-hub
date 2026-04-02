@@ -43,7 +43,11 @@ class NgoController extends Controller
         ]);
 
         if (!empty($validated['skills'])) {
-            $task->skills()->attach($validated['skills']);
+            foreach ($validated['skills'] as $skillName) {
+                $task->skills()->create([
+                    'skill_name' => $skillName,
+                ]);
+            }
         }
 
         return response()->json([

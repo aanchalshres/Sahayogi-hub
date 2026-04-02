@@ -115,8 +115,8 @@ export function TaskModeration() {
       header: 'Task',
       render: (task: Task) => (
         <div>
-          <p className="text-sm font-medium text-gray-900">{task.title}</p>
-          <p className="text-xs text-gray-500">{task.ngoName}</p>
+          <p className="text-sm font-medium text-[#111827]">{task.title}</p>
+          <p className="text-xs text-[#6B7280]">{task.ngoName}</p>
         </div>
       ),
     },
@@ -124,7 +124,7 @@ export function TaskModeration() {
       key: 'category',
       header: 'Category',
       render: (task: Task) => (
-        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-sahayogi-blue-light text-sahayogi-blue">
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-[#9FA8DA] text-[#4F46C8]">
           <Tag className="w-3 h-3" />
           {task.category}
         </span>
@@ -134,8 +134,8 @@ export function TaskModeration() {
       key: 'district',
       header: 'District',
       render: (task: Task) => (
-        <div className="flex items-center gap-1.5 text-sm text-gray-600">
-          <MapPin className="w-4 h-4 text-gray-400" />
+        <div className="flex items-center gap-1.5 text-sm text-[#6B7280]">
+          <MapPin className="w-4 h-4 text-[#6B7280]" />
           {task.district}
         </div>
       ),
@@ -147,13 +147,13 @@ export function TaskModeration() {
         <div className="flex items-center gap-1.5">
           <Users className="w-4 h-4 text-gray-400" />
           <div className="flex items-center gap-1">
-            <span className={`text-sm font-medium ${task.filledQuota >= task.quota ? 'text-emerald-600' : 'text-gray-700'}`}>
+            <span className={`text-sm font-medium ${task.filledQuota >= task.quota ? 'text-emerald-600' : 'text-[#111827]'}`}>
               {task.filledQuota}
             </span>
-            <span className="text-sm text-gray-400">/</span>
-            <span className="text-sm text-gray-600">{task.quota}</span>
+            <span className="text-sm text-[#6B7280]">/</span>
+            <span className="text-sm text-[#6B7280]">{task.quota}</span>
           </div>
-          <div className="w-16 h-1.5 bg-gray-100 rounded-full overflow-hidden ml-2">
+          <div className="w-16 h-1.5 bg-[#AAB2C8] rounded-full overflow-hidden ml-2">
             <div
               className={`h-full rounded-full transition-all ${task.filledQuota / task.quota >= 0.8 ? 'bg-emerald-500' : 'bg-sahayogi-blue'}`}
               style={{ width: `${(task.filledQuota / task.quota) * 100}%` }}
@@ -174,8 +174,8 @@ export function TaskModeration() {
       {/* Header */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Task Moderation</h1>
-          <p className="text-sm text-gray-500 mt-1">
+          <h1 className="text-2xl font-bold text-[#111827]">Task Moderation</h1>
+          <p className="text-sm text-[#6B7280] mt-1">
             Monitor and moderate volunteer tasks across the platform
           </p>
         </div>
@@ -198,12 +198,12 @@ export function TaskModeration() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div className="bg-white rounded-lg border border-gray-200 p-4">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center">
-                <ClipboardList className="w-5 h-5 text-blue-600" />
+              <div className="w-10 h-10 rounded-lg bg-[#E8EAFB] flex items-center justify-center">
+                <ClipboardList className="w-5 h-5 text-[#4F46C8]" />
               </div>
               <div>
-                <p className="text-sm text-gray-500">Total Tasks</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
+                <p className="text-sm text-[#6B7280]">Total Tasks</p>
+                <p className="text-2xl font-bold text-[#111827]">{stats.total}</p>
               </div>
             </div>
           </div>
@@ -244,10 +244,10 @@ export function TaskModeration() {
       )}
 
       {/* Filters */}
-      <div className="bg-white rounded-xl border border-gray-200 p-4">
+        <div className="bg-white rounded-xl border border-[#CACDD3] p-4">
         <div className="flex flex-col lg:flex-row gap-4">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#6B7280]" />
             <Input
               placeholder="Search by task title or NGO name..."
               value={searchQuery}
@@ -258,7 +258,7 @@ export function TaskModeration() {
           <div className="flex flex-col sm:flex-row gap-3">
             <Select value={categoryFilter} onValueChange={setCategoryFilter}>
               <SelectTrigger className="w-40">
-                <Tag className="w-4 h-4 mr-2 text-gray-400" />
+                <Tag className="w-4 h-4 mr-2 text-[#6B7280]" />
                 <SelectValue placeholder="Category" />
               </SelectTrigger>
               <SelectContent>
@@ -271,7 +271,7 @@ export function TaskModeration() {
             </Select>
             <Select value={districtFilter} onValueChange={setDistrictFilter}>
               <SelectTrigger className="w-40">
-                <MapPin className="w-4 h-4 mr-2 text-gray-400" />
+                <MapPin className="w-4 h-4 mr-2 text-[#6B7280]" />
                 <SelectValue placeholder="District" />
               </SelectTrigger>
               <SelectContent>
@@ -284,7 +284,7 @@ export function TaskModeration() {
             </Select>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="w-40">
-                <Filter className="w-4 h-4 mr-2 text-gray-400" />
+                <Filter className="w-4 h-4 mr-2 text-[#6B7280]" />
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
               <SelectContent>
@@ -326,50 +326,50 @@ export function TaskModeration() {
 
       {/* View Task Modal */}
       <Dialog open={isViewModalOpen} onOpenChange={setIsViewModalOpen}>
-        <DialogContent className="sm:max-w-lg">
+        <DialogContent className="sm:max-w-lg bg-white">
           <DialogHeader>
-            <DialogTitle className="text-xl font-semibold text-gray-900">
+            <DialogTitle className="text-xl font-semibold text-[#111827]">
               {selectedTask?.title}
             </DialogTitle>
-            <DialogDescription className="text-gray-500">
+            <DialogDescription className="text-[#6B7280]">
               Posted by {selectedTask?.ngoName}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 mt-4">
             <div className="flex flex-wrap gap-2">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium bg-sahayogi-blue-light text-sahayogi-blue">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium bg-[#9FA8DA] text-[#4F46C8]">
                 <Tag className="w-4 h-4" />
                 {selectedTask?.category}
               </span>
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-700">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium bg-[#AAB2C8] text-[#111827]">
                 <MapPin className="w-4 h-4" />
                 {selectedTask?.district}
               </span>
               {selectedTask?.status && <StatusBadge status={selectedTask.status} />}
             </div>
 
-            <div className="bg-gray-50 rounded-lg p-4">
-              <p className="text-sm text-gray-700">{selectedTask?.description}</p>
+            <div className="bg-[#F0F1F3] rounded-lg p-4">
+              <p className="text-sm text-[#111827]">{selectedTask?.description}</p>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
-              <div className="bg-white border border-gray-200 rounded-lg p-4">
-                <p className="text-sm text-gray-500">Volunteer Quota</p>
-                <p className="text-lg font-semibold text-gray-900 mt-1">
+              <div className="bg-white border border-[#CACDD3] rounded-lg p-4">
+                <p className="text-sm text-[#6B7280]">Volunteer Quota</p>
+                <p className="text-lg font-semibold text-[#111827] mt-1">
                   {selectedTask?.filledQuota} / {selectedTask?.quota}
                 </p>
-                <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden mt-2">
+                <div className="w-full h-2 bg-[#AAB2C8] rounded-full overflow-hidden mt-2">
                   <div
-                    className="h-full bg-sahayogi-blue rounded-full"
+                    className="h-full bg-[#4F46C8] rounded-full"
                     style={{
                       width: `${((selectedTask?.filledQuota || 0) / (selectedTask?.quota || 1)) * 100}%`,
                     }}
                   />
                 </div>
               </div>
-              <div className="bg-white border border-gray-200 rounded-lg p-4">
-                <p className="text-sm text-gray-500">Date Range</p>
-                <p className="text-sm font-medium text-gray-900 mt-1">
+              <div className="bg-white border border-[#CACDD3] rounded-lg p-4">
+                <p className="text-sm text-[#6B7280]">Date Range</p>
+                <p className="text-sm font-medium text-[#111827] mt-1">
                   {selectedTask?.startDate} to {selectedTask?.endDate}
                 </p>
               </div>

@@ -21,12 +21,22 @@ class AuthController extends Controller
             'phone' => 'required|string|max:20',
             'password' => 'required|string|min:6',
             'role' => 'required|in:volunteer,ngo',
+            // NGO-specific fields (optional during registration, can be filled later)
+            'organizationName' => 'nullable|string|max:255',
+            'registrationNumber' => 'nullable|string|max:255',
+            'officeLocation' => 'nullable|string|max:255',
+            'panNumber' => 'nullable|string|max:255',
+            'registrationFile' => 'nullable|file|mimes:pdf,doc,docx,jpg,jpeg,png',
+            'panFile' => 'nullable|file|mimes:pdf,doc,docx,jpg,jpeg,png',
+            'letterhead' => 'nullable|file|mimes:pdf,doc,docx,jpg,jpeg,png',
+            // Volunteer-specific fields
+            'location' => 'nullable|string|max:255',
         ]);
 
-        $user = DB::transaction(function () use ($validated) {
+        $user = DB::transaction(function () use ($validated, $request) {
 
             $user = User::create([
-                'name' => $validated['name'], // also NGO name
+                'name' => $validated['name'],
                 'email' => $validated['email'],
                 'phone' => $validated['phone'],
                 'password' => Hash::make($validated['password']),
@@ -38,14 +48,39 @@ class AuthController extends Controller
                 $user->volunteerProfile()->create([
                     'bio' => null,
                     'skills' => [],
-                    'primary_location' => null,
+                    'primary_location' => $request->input('location'),
                 ]);
             }
 
             // If NGO → create profile
             if ($validated['role'] === 'ngo') {
+                // Handle file uploads
+                $registrationFilePath = null;
+                $panFilePath = null;
+                $letterheadFilePath = null;
+
+                if ($request->hasFile('registrationFile')) {
+                    $registrationFilePath = $request->file('registrationFile')->store('ngo-documents', 'public');
+                }
+
+                if ($request->hasFile('panFile')) {
+                    $panFilePath = $request->file('panFile')->store('ngo-documents', 'public');
+                }
+
+                if ($request->hasFile('letterhead')) {
+                    $letterheadFilePath = $request->file('letterhead')->store('ngo-documents', 'public');
+                }
+
                 $user->ngoProfile()->create([
                     'organization_name' => $validated['name'],
+                    'registration_number' => $request->input('registrationNumber'),
+                    'office_location' => $request->input('officeLocation'),
+                    'pan_number' => $request->input('panNumber'),
+                    'registration_file_path' => $registrationFilePath,
+                    'pan_file_path' => $panFilePath,
+                    'letterhead_file_path' => $letterheadFilePath,
+                    'is_verified' => false,
+                    'status' => 'pending',
                 ]);
             }
 

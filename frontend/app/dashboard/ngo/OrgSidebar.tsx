@@ -46,9 +46,9 @@ export default function OrgSidebar({ isOpen, toggleSidebar }: { isOpen: boolean;
           <Image
             src="/logo3.png"
             alt="Org Logo"
-            width={isOpen ? 90 : 32}
+            width={90}
             height={50}
-            style={{ width: 'auto', height: 'auto' }}
+            style={{ width: isOpen ? '90px' : '32px', height: 'auto' }}
             className="rounded-lg transition-all duration-300"
             priority
           />
@@ -92,7 +92,7 @@ export default function OrgSidebar({ isOpen, toggleSidebar }: { isOpen: boolean;
       <div className="p-2 border-t border-[#CACDD3]">
         <button 
           onClick={handleLogout}
-          className="flex items-center gap-3 text-sm text-[#6B7280] hover:text-[#111827] w-full px-2 py-2 rounded-lg hover:bg-[#AAB2C8] transition"
+          className="flex items-center gap-3 text-sm text-[#6B7280] hover:text-red-600 w-full px-2 py-2 rounded-lg hover:bg-red-50 transition-colors"
         >
           <LogOut className="w-5 h-5" />
           {isOpen && <span>Logout</span>}

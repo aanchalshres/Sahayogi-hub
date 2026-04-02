@@ -59,15 +59,15 @@ export function StatsCard({
   return (
     <div
       ref={cardRef}
-      className={`bg-white rounded-xl border border-gray-200 p-6 shadow-card transition-all duration-300 hover:shadow-card-hover hover:-translate-y-1 group transform-gpu ${
+      className={`bg-white rounded-xl border border-[#CACDD3] p-6 shadow-card transition-all duration-300 hover:shadow-card-hover hover:-translate-y-1 group transform-gpu ${
         isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
       }`}
       style={{ transitionDelay: `${delay}ms` }}
     >
       <div className="flex items-start justify-between">
         <div className="flex-1">
-          <p className="text-sm font-medium text-gray-500 mb-1">{title}</p>
-          <h3 className="text-3xl font-bold text-gray-900 tabular-nums">
+          <p className="text-sm font-medium text-[#6B7280] mb-1">{title}</p>
+          <h3 className="text-3xl font-bold text-[#111827] tabular-nums">
             {displayValue.toLocaleString()}
           </h3>
           {change && (
@@ -77,7 +77,7 @@ export function StatsCard({
                   ? 'text-emerald-600'
                   : changeType === 'negative'
                   ? 'text-red-600'
-                  : 'text-gray-500'
+                  : 'text-[#6B7280]'
               }`}
             >
               {changeType === 'positive' && '+'}

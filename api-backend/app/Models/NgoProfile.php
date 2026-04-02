@@ -19,6 +19,7 @@ class NgoProfile extends Model
         'pan_file_path',
         'letterhead_file_path',
         'is_verified',
+        'status',
     ];
 
     public function user()

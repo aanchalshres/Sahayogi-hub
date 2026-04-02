@@ -5,15 +5,21 @@ import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { Button } from "@/app/components/ui/button";
 import { Menu, X, LogOut } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/app/providers/AuthProvider";
 
 
 const Navbar = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
   const { user, logout, isAuthenticated } = useAuth();
+
+  // Only render auth-dependent content after mount to avoid hydration mismatch
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const isDashboard =
     pathname?.startsWith("/dashboard") ||
@@ -46,6 +52,7 @@ const Navbar = () => {
             width={100}
             height={100}
             className="rounded-lg"
+            style={{ width: 'auto', height: 'auto' }}
             priority
           />
         </Link>
@@ -82,7 +89,7 @@ const Navbar = () => {
           </Link>
 
           <div className="flex items-center gap-2">
-            {isAuthenticated && user ? (
+            {mounted && isAuthenticated && user ? (
               <>
                 <Link href={getDashboardLink()}>
                   <Button variant="ghost" size="sm">
@@ -93,7 +100,7 @@ const Navbar = () => {
                   variant="ghost"
                   size="sm"
                   onClick={handleLogout}
-                  className="flex items-center gap-1 hover:text-red-500 hover:bg-red-50 transition-colors"
+                  className="flex items-center gap-1 hover:text-red-600 hover:bg-red-50 transition-colors"
                 >
                   <LogOut className="w-4 h-4" />
                   Logout
@@ -150,7 +157,7 @@ const Navbar = () => {
               Badges
             </Link>
 
-            {isAuthenticated && user ? (
+            {mounted && isAuthenticated && user ? (
               <>
                 <Link href={getDashboardLink()} onClick={() => setMobileOpen(false)}>
                   <Button variant="ghost" className="w-full">

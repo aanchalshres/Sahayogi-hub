@@ -163,8 +163,8 @@ function Dashboard({ }: DashboardProps) {
       header: 'Organization',
       render: (ngo: NGO) => (
         <div>
-          <p className="text-sm font-medium text-gray-900">{ngo.organizationName}</p>
-          <p className="text-xs text-gray-500">{ngo.ownerName}</p>
+          <p className="text-sm font-medium text-[#111827]">{ngo.organizationName}</p>
+          <p className="text-xs text-[#6B7280]">{ngo.ownerName}</p>
         </div>
       ),
     },
@@ -172,21 +172,21 @@ function Dashboard({ }: DashboardProps) {
       key: 'registrationNumber',
       header: 'Reg. Number',
       render: (ngo: NGO) => (
-        <span className="text-sm text-gray-600 font-mono">{ngo.registrationNumber}</span>
+        <span className="text-sm text-[#6B7280] font-mono">{ngo.registrationNumber}</span>
       ),
     },
     {
       key: 'location',
       header: 'Location',
       render: (ngo: NGO) => (
-        <span className="text-sm text-gray-600">{ngo.officeLocation}</span>
+        <span className="text-sm text-[#6B7280]">{ngo.officeLocation}</span>
       ),
     },
     {
       key: 'createdAt',
       header: 'Submitted',
       render: (ngo: NGO) => (
-        <span className="text-sm text-gray-500">
+        <span className="text-sm text-[#6B7280]">
           {ngo.createdAt ? new Date(ngo.createdAt).toLocaleDateString('en-US', {
             month: 'short',
             day: 'numeric',
@@ -203,8 +203,8 @@ function Dashboard({ }: DashboardProps) {
       header: 'Task',
       render: (task: Task) => (
         <div>
-          <p className="text-sm font-medium text-gray-900">{task.title}</p>
-          <p className="text-xs text-gray-500">{task.ngoName}</p>
+          <p className="text-sm font-medium text-[#111827]">{task.title}</p>
+          <p className="text-xs text-[#6B7280]">{task.ngoName}</p>
         </div>
       ),
     },
@@ -212,7 +212,7 @@ function Dashboard({ }: DashboardProps) {
       key: 'category',
       header: 'Category',
       render: (task: Task) => (
-        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium" style={{ backgroundColor: "hsl(234, 100%, 97%)", color: "hsl(234, 100%, 62%)" }}>
+        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium" style={{ backgroundColor: "#E8EAFB", color: "#4F46C8" }}>
           {task.category}
         </span>
       ),
@@ -221,14 +221,14 @@ function Dashboard({ }: DashboardProps) {
       key: 'district',
       header: 'District',
       render: (task: Task) => (
-        <span className="text-sm text-gray-600">{task.district}</span>
+        <span className="text-sm text-[#6B7280]">{task.district}</span>
       ),
     },
     {
       key: 'quota',
       header: 'Quota',
       render: (task: Task) => (
-        <span className="text-sm text-gray-600">
+        <span className="text-sm text-[#6B7280]">
           {task.filledQuota}/{task.quota}
         </span>
       ),
@@ -241,11 +241,11 @@ function Dashboard({ }: DashboardProps) {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="min-h-screen bg-[#F0F1F3] p-6">
       {/* Header Section */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-        <p className="text-gray-600 mt-1">Welcome back! Here's what's happening on Sahayogi.</p>
+        <h1 className="text-3xl font-bold text-[#111827]">Dashboard</h1>
+        <p className="text-[#6B7280] mt-1">Welcome back! Here's what's happening on Sahayogi.</p>
         
         {/* Quick Actions */}
         <div className="flex items-center gap-3 mt-6">
@@ -261,9 +261,9 @@ function Dashboard({ }: DashboardProps) {
           <Button
             onClick={() => router.push('/dashboard/admin/ngo-verification')}
             className="gap-2 text-white"
-            style={{ backgroundColor: "hsl(234, 100%, 62%)" }}
-            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = "hsl(234, 71%, 42%)"}
-            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = "hsl(234, 100%, 62%)"}
+            style={{ backgroundColor: "#4F46C8" }}
+            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = "#3730A3"}
+            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = "#4F46C8"}
           >
             <FileCheck className="w-4 h-4" />
             Verify NGOs
@@ -293,8 +293,8 @@ function Dashboard({ }: DashboardProps) {
               title="Total Users"
               value={stats.totalUsers}
               icon={Users}
-              iconBgStyle={{ backgroundColor: "hsl(234, 100%, 97%)" }}
-              iconStyle={{ color: "hsl(234, 100%, 62%)" }}
+              iconBgStyle={{ backgroundColor: "#E8EAFB" }}
+              iconStyle={{ color: "#4F46C8" }}
             />
             <StatsCard
               title="Total Volunteers"
@@ -359,19 +359,19 @@ function Dashboard({ }: DashboardProps) {
 
         {/* Pending NGO Approvals */}
         <div className="lg:col-span-2">
-          <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
-            <div className="p-6 border-b border-gray-200 flex items-center justify-between">
+          <div className="bg-white rounded-lg border border-[#CACDD3] shadow-sm">
+            <div className="p-6 border-b border-[#CACDD3] flex items-center justify-between">
               <div>
-                <h3 className="text-lg font-semibold text-gray-900">Pending NGO Approvals</h3>
-                <p className="text-sm text-gray-600 mt-1">NGOs awaiting verification</p>
+                <h3 className="text-lg font-semibold text-[#111827]">Pending NGO Approvals</h3>
+                <p className="text-sm text-[#6B7280] mt-1">NGOs awaiting verification</p>
               </div>
               <Button
                 variant="ghost"
                 onClick={() => router.push('/dashboard/admin/ngo-verification')}
                 className="gap-1"
-                style={{ color: "hsl(234, 100%, 62%)" }}
-                onMouseEnter={(e) => e.currentTarget.style.color = "hsl(234, 71%, 42%)"}
-                onMouseLeave={(e) => e.currentTarget.style.color = "hsl(234, 100%, 62%)"}
+                style={{ color: "#4F46C8" }}
+                onMouseEnter={(e) => e.currentTarget.style.color = "#3730A3"}
+                onMouseLeave={(e) => e.currentTarget.style.color = "#4F46C8"}
               >
                 View All
                 <ArrowRight className="w-4 h-4" />
@@ -381,7 +381,7 @@ function Dashboard({ }: DashboardProps) {
               {isLoading ? (
                 <div className="space-y-4">
                   {Array.from({ length: 3 }).map((_, i) => (
-                    <div key={i} className="h-12 bg-gray-100 rounded animate-pulse" />
+                    <div key={i} className="h-12 bg-[#AAB2C8] rounded animate-pulse" />
                   ))}
                 </div>
               ) : ngos.length === 0 ? (
