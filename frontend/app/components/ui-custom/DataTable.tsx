@@ -71,7 +71,7 @@ export function DataTable<T>({
 
   if (data.length === 0) {
     return (
-      <div className="bg-white rounded-xl border border-gray-200 shadow-card">
+      <div className="bg-white rounded-xl border border-[#CACDD3] shadow-card">
         <EmptyState
           type={emptyType}
           message={emptyMessage}
@@ -83,15 +83,15 @@ export function DataTable<T>({
   }
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 shadow-card overflow-hidden">
+    <div className="bg-white rounded-xl border border-[#CACDD3] shadow-card overflow-hidden">
       <div className="overflow-x-auto">
         <table className="w-full">
-          <thead className="bg-gray-50 border-b border-gray-200">
+          <thead className="bg-[#F0F1F3] border-b border-[#CACDD3]">
             <tr>
               {columns.map((column) => (
                 <th
                   key={column.key}
-                  className={`px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider ${
+                  className={`px-6 py-4 text-left text-xs font-semibold text-[#6B7280] uppercase tracking-wider ${
                     column.width || ''
                   }`}
                 >
@@ -99,18 +99,18 @@ export function DataTable<T>({
                 </th>
               ))}
               {showActions && (
-                <th className="px-6 py-4 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-4 text-right text-xs font-semibold text-[#6B7280] uppercase tracking-wider">
                   Actions
                 </th>
               )}
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-100">
+          <tbody className="divide-y divide-[#CACDD3]">
             {paginatedData.map((item, index) => (
               <tr
                 key={keyExtractor(item)}
                 onClick={() => onRowClick?.(item)}
-                className={`group hover:bg-blue-50/50 transition-all duration-200 animate-slide-in-right ${
+                className={`group hover:bg-[#E8EAFB]/50 transition-all duration-200 animate-slide-in-right ${
                   onRowClick ? 'cursor-pointer hover:shadow-md' : ''
                 }`}
                 style={{ animationDelay: `${index * 80}ms` }}
@@ -120,7 +120,7 @@ export function DataTable<T>({
                     {column.render ? (
                       column.render(item)
                     ) : (
-                      <span className="text-sm text-gray-900">
+                      <span className="text-sm text-[#111827]">
                         {(item as Record<string, string>)[column.key] || '-'}
                       </span>
                     )}
@@ -134,7 +134,7 @@ export function DataTable<T>({
                           variant="ghost"
                           size="sm"
                           onClick={() => onViewDocuments(item)}
-                          className="text-sahayogi-blue hover:text-sahayogi-blue-dark hover:bg-sahayogi-blue-light"
+                          className="text-[#4F46C8] hover:text-[#3730A3] hover:bg-[#9FA8DA]"
                         >
                           <FileText className="w-4 h-4 mr-1" />
                           Docs
@@ -145,7 +145,7 @@ export function DataTable<T>({
                           variant="ghost"
                           size="icon"
                           onClick={() => onView(item)}
-                          className="text-gray-600 hover:text-sahayogi-blue hover:bg-sahayogi-blue-light"
+                          className="text-[#6B7280] hover:text-[#4F46C8] hover:bg-[#9FA8DA]"
                         >
                           <Eye className="w-4 h-4" />
                         </Button>
@@ -185,7 +185,7 @@ export function DataTable<T>({
                 )}
                 {!showActions && onRowClick && (
                   <td className="px-4 py-4 text-right">
-                    <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-blue-600 group-hover:translate-x-0.5 transition-all duration-200 opacity-0 group-hover:opacity-100" />
+                    <ArrowRight className="w-5 h-5 text-[#CACDD3] group-hover:text-[#4F46C8] group-hover:translate-x-0.5 transition-all duration-200 opacity-0 group-hover:opacity-100" />
                   </td>
                 )}
               </tr>
@@ -196,8 +196,8 @@ export function DataTable<T>({
 
       {/* Pagination */}
       {totalPages > 1 && (
-        <div className="px-6 py-4 border-t border-gray-100 flex items-center justify-between">
-          <p className="text-sm text-gray-500">
+        <div className="px-6 py-4 border-t border-[#CACDD3] flex items-center justify-between">
+          <p className="text-sm text-[#6B7280]">
             Showing {startIndex + 1} to {Math.min(startIndex + itemsPerPage, data.length)} of{' '}
             {data.length} entries
           </p>
@@ -211,7 +211,7 @@ export function DataTable<T>({
             >
               <ChevronLeft className="w-4 h-4" />
             </Button>
-            <span className="text-sm text-gray-600">
+            <span className="text-sm text-[#6B7280]">
               Page {currentPage} of {totalPages}
             </span>
             <Button

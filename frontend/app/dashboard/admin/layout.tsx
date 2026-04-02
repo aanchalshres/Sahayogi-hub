@@ -4,7 +4,6 @@ import React from "react";
 import { usePathname } from "next/navigation";
 import { Sidebar } from "./Sidebar";
 import { Header } from "./Header";
-import { mockNGOs } from "@/app/data/mockData";
 import { ProtectedRoute } from "@/app/components/ProtectedRoute";
 import { SidebarProvider, useSidebar } from "@/app/providers/SidebarContext";
 import { cn } from "@/app/lib/utils";
@@ -19,16 +18,15 @@ const pageConfig: Record<string, string> = {
 function AdminLayoutContent({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const pageTitle = pageConfig[pathname] || 'Dashboard';
-  const pendingNGOCount = mockNGOs.filter((ngo) => ngo.status === 'pending').length;
   const { isCollapsed, isMobileOpen } = useSidebar();
 
   return (
     <ProtectedRoute allowedRoles={["admin"]}>
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen bg-[#F0F1F3]">
         {/* Content */}
         <div className="flex min-h-screen">
           {/* Sidebar */}
-          <Sidebar pendingCount={pendingNGOCount} />
+          <Sidebar />
 
           {/* Main Content Area */}
           <div className={cn(

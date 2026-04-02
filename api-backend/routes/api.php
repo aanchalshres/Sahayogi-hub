@@ -1,6 +1,7 @@
 <?php
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\NgoController;
+use App\Http\Controllers\Api\NgoProfileController;
 use App\Http\Controllers\Api\VolunteerController;
 use App\Http\Controllers\Admin\AdminController;
 use Illuminate\Support\Facades\Route;
@@ -15,7 +16,13 @@ Route::middleware('auth:sanctum')->post('/logout', [AuthController::class, 'logo
 
 // Admin routes (admin role only)
 Route::middleware(['auth:sanctum', 'role:admin'])->group(function () {
-    // NGO verification routes
+    // NGO profile routes
+    Route::get('/ngo-profiles', [NgoProfileController::class, 'index']);
+    Route::get('/ngo-profiles/{id}', [NgoProfileController::class, 'show']);
+    Route::post('/ngo-profiles/{id}/approve', [NgoProfileController::class, 'approve']);
+    Route::post('/ngo-profiles/{id}/reject', [NgoProfileController::class, 'reject']);
+
+    // Legacy NGO verification routes (kept for backward compatibility)
     Route::get('/admin/ngo-verification', [AdminController::class, 'getNgoVerification']);
     Route::post('/admin/ngo-verify/{id}', [AdminController::class, 'verifyNgo']);
     Route::post('/admin/ngo-reject/{id}', [AdminController::class, 'rejectNgo']);
@@ -26,6 +33,10 @@ Route::middleware(['auth:sanctum', 'role:admin'])->group(function () {
 
     // System stats
     Route::get('/admin/stats', [AdminController::class, 'getSystemStats']);
+
+    // New NGO routes with formatted data
+    Route::get('/ngos', [AdminController::class, 'ngos']);
+    Route::get('/ngos/{id}', [AdminController::class, 'ngoDetails']);
 });
 
 // NGO routes (ngo role only)

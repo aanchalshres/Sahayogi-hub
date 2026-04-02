@@ -76,12 +76,30 @@ const Signup = () => {
           location,
         }),
       })
-        .then((res) => res.json())
+        .then((res) => {
+          if (!res.ok) {
+            return res.text().then(text => {
+              throw new Error(text || `HTTP ${res.status}`);
+            });
+          }
+          return res.json();
+        })
         .then((data) => {
           setLoading(false);
           if (data.access_token || data.token) {
-            localStorage.setItem("authToken", data.access_token || data.token);
-            localStorage.setItem("user", JSON.stringify(data.user));
+            const token = data.access_token || data.token;
+            const user = data.user;
+            
+            // Set in localStorage
+            localStorage.setItem("authToken", token);
+            localStorage.setItem("user", JSON.stringify(user));
+            
+            // IMPORTANT: Also set in cookies so middleware can see it
+            const expiryDate = new Date();
+            expiryDate.setDate(expiryDate.getDate() + 7); // 7 days
+            document.cookie = `authToken=${encodeURIComponent(token)}; path=/; expires=${expiryDate.toUTCString()}`;
+            document.cookie = `user=${encodeURIComponent(JSON.stringify(user))}; path=/; expires=${expiryDate.toUTCString()}`;
+            
             router.push("/dashboard/volunteer");
           } else {
             setError(data.message || "Registration failed");
@@ -125,17 +143,37 @@ const Signup = () => {
         },
         body: formData,
       })
-        .then((res) => res.json())
+        .then((res) => {
+          if (!res.ok) {
+            return res.text().then(text => {
+              throw new Error(text || `HTTP ${res.status}`);
+            });
+          }
+          return res.json();
+        })
         .then((data) => {
           setLoading(false);
           if (data.access_token || data.token) {
-            localStorage.setItem("authToken", data.access_token || data.token);
-            localStorage.setItem("user", JSON.stringify(data.user));
-            if (role === "volunteer") {
-              router.push("/dashboard/volunteer");
-            } else {
-              router.push("/dashboard/ngo");
-            }
+            const token = data.access_token || data.token;
+            const user = data.user;
+            
+            // Set in localStorage
+            localStorage.setItem("authToken", token);
+            localStorage.setItem("user", JSON.stringify(user));
+            
+            // IMPORTANT: Set cookies for middleware
+            document.cookie = `token=${token}; path=/`;
+            document.cookie = `role=${user.role}; path=/`;
+            
+            // Notify AuthProvider of auth change immediately
+            window.dispatchEvent(new CustomEvent("auth-updated"));
+            
+            const redirectPath = role === "volunteer" ? "/dashboard/volunteer" : "/dashboard/ngo";
+            
+            // Add small delay to ensure cookies and localStorage are synced before navigation
+            setTimeout(() => {
+              router.push(redirectPath);
+            }, 100);
           } else {
             setError(data.message || "Registration failed");
           }

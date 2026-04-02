@@ -22,6 +22,7 @@ const Footer = () => {
                 width={100}
                 height={100}
                 className="rounded-lg"
+                style={{ width: 'auto', height: 'auto' }}
               />
 
               <span className="text-lg font-bold text-[#111827]">

@@ -97,4 +97,78 @@ class AdminController extends Controller
 
         return response()->json(['data' => $stats]);
     }
+
+    /**
+     * Get all NGOs with related user data
+     */
+    public function ngos()
+    {
+        $ngos = NgoProfile::with('user')
+            ->latest()
+            ->get()
+            ->map(function ($ngo) {
+                return [
+                    'id' => $ngo->id,
+                    'organization_name' => $ngo->organization_name,
+                    'registration_number' => $ngo->registration_number,
+                    'pan_number' => $ngo->pan_number,
+                    'office_location' => $ngo->office_location,
+                    'is_verified' => $ngo->is_verified,
+                    'status' => $ngo->status ?? 'pending',
+                    'created_at' => $ngo->created_at,
+                    'user' => [
+                        'id' => $ngo->user?->id,
+                        'name' => $ngo->user?->name,
+                        'email' => $ngo->user?->email,
+                        'phone' => $ngo->user?->phone,
+                    ],
+                ];
+            });
+
+        return response()->json($ngos);
+    }
+
+    /**
+     * Get NGO details by ID
+     */
+    public function ngoDetails($id)
+    {
+        $ngo = NgoProfile::with('user')->findOrFail($id);
+
+        // Generate full URLs for document files using storage symlink
+        $registrationUrl = null;
+        $panUrl = null;
+        $letterheadUrl = null;
+
+        // Build URLs: {APP_URL}/storage/{path}
+        if ($ngo->registration_file_path) {
+            $registrationUrl = url('storage/' . $ngo->registration_file_path);
+        }
+        if ($ngo->pan_file_path) {
+            $panUrl = url('storage/' . $ngo->pan_file_path);
+        }
+        if ($ngo->letterhead_file_path) {
+            $letterheadUrl = url('storage/' . $ngo->letterhead_file_path);
+        }
+
+        return response()->json([
+            'id' => $ngo->id,
+            'organization_name' => $ngo->organization_name,
+            'registration_number' => $ngo->registration_number,
+            'pan_number' => $ngo->pan_number,
+            'office_location' => $ngo->office_location,
+            'is_verified' => $ngo->is_verified,
+            'status' => $ngo->status ?? 'pending',
+            'created_at' => $ngo->created_at,
+            'registration_file_path' => $registrationUrl,
+            'pan_file_path' => $panUrl,
+            'letterhead_file_path' => $letterheadUrl,
+            'user' => [
+                'id' => $ngo->user?->id,
+                'name' => $ngo->user?->name,
+                'email' => $ngo->user?->email,
+                'phone' => $ngo->user?->phone,
+            ],
+        ]);
+    }
 }
