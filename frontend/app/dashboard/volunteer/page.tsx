@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import DashboardLayout from "@/app/components/DashboardLayout";
-import { ProtectedRoute } from "@/app/components/ProtectedRoute";
 import { Card, CardContent } from "@/app/components/ui/card";
 import { Button } from "@/app/components/ui/button";
 import { Badge } from "@/app/components/ui/badge";
@@ -37,7 +36,7 @@ export default function VolunteerPage() {
   // 👉 Redirect to apply page
   const handleApply = (task: Task) => {
     localStorage.setItem("selectedTask", JSON.stringify(task));
-    router.push(`/dashboard/volunteer/apply/${task.id}`);
+    router.push(`/dashboard/apply/${task.id}`);
   };
 
   // 🧠 FILTER LOGIC
@@ -55,9 +54,8 @@ export default function VolunteerPage() {
   });
 
   return (
-    <ProtectedRoute allowedRoles={["volunteer"]}>
-      <DashboardLayout role="volunteer">
-        <div className="p-6 space-y-6 bg-[#F0F1F3] min-h-screen">
+    <DashboardLayout role="volunteer">
+      <div className="p-6 space-y-6 bg-[#F0F1F3] min-h-screen">
 
         {/* HEADER */}
         <div>
@@ -70,35 +68,34 @@ export default function VolunteerPage() {
         </div>
 
         {/* 🔍 FILTERS */}
-        <div className="flex gap-2 items-center flex-wrap">
+        <div className="flex gap-2 items-center">
 
           <input
             type="text"
             placeholder="Search by NGO / Task title..."
-            className="p-2 border rounded-md flex-1 min-w-0 sm:min-w-64 bg-white text-sm"
+            className="p-1.25 border rounded-md w-250"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
 
           <select
-            className="p-2 border rounded-md bg-white"
+            className="p-2 border rounded-md w-56"
             value={categoryFilter}
             onChange={(e) => setCategoryFilter(e.target.value)}
           >
             <option value="all">All Categories</option>
             <option value="Health">Health</option>
             <option value="Education">Education</option>
-            <option value="Emergency">Emergency</option>
+            <option value="Disaster">Disaster</option>
             <option value="Environment">Environment</option>
             <option value="Infrastructure">Infrastructure</option>
-            <option value="Community">Community</option>
-            <option value="Disaster Relief">Disaster Relief</option>
-            <option value="Technology">Technology</option>
             <option value="Social Welfare">Social Welfare</option>
+            <option value="Technology">Technology</option>
+            <option value="Community">Community</option>
           </select>
 
           <select
-            className="p-2 border rounded-md bg-white"
+            className="p-2 border rounded-md w-56"
             value={districtFilter}
             onChange={(e) => setDistrictFilter(e.target.value)}
           >
@@ -107,10 +104,10 @@ export default function VolunteerPage() {
             <option value="Lalitpur">Lalitpur</option>
             <option value="Bhaktapur">Bhaktapur</option>
             <option value="Pokhara">Pokhara</option>
-            <option value="Gorkha">Gorkha</option>
             <option value="Chitwan">Chitwan</option>
-            <option value="Morang">Morang</option>
-            <option value="Sunsari">Sunsari</option>
+            <option value="Biratnagar">Biratnagar</option>
+            <option value="Dharan">Dharan</option>
+            <option value="Hetauda">Hetauda</option>
           </select>
         </div>
 
@@ -154,7 +151,7 @@ export default function VolunteerPage() {
 
                   <div className="flex flex-wrap gap-2">
                     {task.skills.map((skill) => (
-                      <Badge key={skill} className="bg-[#F0F1F3] text-[#111827] text-xs">
+                      <Badge key={skill} className="bg-[#F0F1F3] text-[#111827]">
                         {skill}
                       </Badge>
                     ))}
@@ -188,8 +185,7 @@ export default function VolunteerPage() {
             );
           })}
         </div>
-        </div>
-      </DashboardLayout>
-    </ProtectedRoute>
+      </div>
+    </DashboardLayout>
   );
 }

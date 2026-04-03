@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/app/components/ui/button";
 import { Badge } from "@/app/components/ui/badge";
 
@@ -18,87 +18,58 @@ interface Applicant {
 }
 
 export default function ApplicantPage() {
-  const [applicants, setApplicants] = useState<Applicant[]>([
-    {
-      id: 1,
-      name: "Ram Sharma",
-      initials: "RS",
-      task: "Earthquake Relief",
-      location: "Gorkha",
-      time: "2 hours ago",
-      skills: ["First Aid", "Logistics"],
-      match: 92,
-      eligible: true,
-      status: "pending",
-    },
-    {
-      id: 2,
-      name: "Sita Thapa",
-      initials: "ST",
-      task: "Health Camp",
-      location: "Kathmandu",
-      time: "5 hours ago",
-      skills: ["Medical", "Counseling"],
-      match: 88,
-      eligible: true,
-      status: "pending",
-    },
-    {
-      id: 3,
-      name: "Hari Gurung",
-      initials: "HG",
-      task: "School Renovation",
-      location: "Pokhara",
-      time: "1 day ago",
-      skills: ["Construction"],
-      match: 45,
-      eligible: false,
-      status: "pending",
-    },
-    {
-      id: 4,
-      name: "Maya Tamang",
-      initials: "MT",
-      task: "Earthquake Relief",
-      location: "Gorkha",
-      time: "1 day ago",
-      skills: ["First Aid", "Communication"],
-      match: 78,
-      eligible: true,
-      status: "pending",
-    },
-    {
-      id: 5,
-      name: "Anita Rai",
-      initials: "AR",
-      task: "Health Camp",
-      location: "Kathmandu",
-      time: "",
-      skills: [],
-      match: 0,
-      eligible: true,
-      status: "accepted",
-    },
-    {
-      id: 6,
-      name: "Dipak Shrestha",
-      initials: "DS",
-      task: "Earthquake Relief",
-      location: "Gorkha",
-      time: "",
-      skills: [],
-      match: 0,
-      eligible: false,
-      status: "rejected",
-    },
-  ]);
+  const [applicants, setApplicants] = useState<Applicant[]>([]);
+  const [selected, setSelected] = useState<Applicant | null>(null);
 
-  const handleAction = (id: number, status: "accepted" | "rejected") => {
-    setApplicants((prev) =>
-      prev.map((a) =>
+  // LOAD DATA
+  useEffect(() => {
+    const stored = JSON.parse(localStorage.getItem("applications") || "[]");
+
+    const formatted: Applicant[] = stored.map((app: any, index: number) => {
+      const initials = app.name
+        ?.split(" ")
+        .map((n: string) => n[0])
+        .join("")
+        .toUpperCase();
+
+      const match = app.skills?.length
+        ? Math.min(100, app.skills.length * 20)
+        : 40;
+
+      return {
+        id: index + 1,
+        name: app.name,
+        initials,
+        task: app.taskTitle,
+        location: app.location,
+        time: new Date(app.appliedAt).toLocaleString(),
+        skills: app.skills || [],
+        match,
+        eligible: match >= 50,
+        status: "pending",
+      };
+    });
+
+    const saved = JSON.parse(localStorage.getItem("applicantsStatus") || "null");
+
+    setApplicants(saved || formatted);
+  }, []);
+
+  // SAVE STATUS
+  const updateStatus = (id: number, status: "accepted" | "rejected") => {
+    setApplicants((prev) => {
+      const updated = prev.map((a) =>
         a.id === id ? { ...a, status } : a
-      )
-    );
+      );
+
+      localStorage.setItem("applicantsStatus", JSON.stringify(updated));
+      return updated;
+    });
+
+    // close modal if open
+    if (selected?.id === id) {
+      setSelected(null);
+    }
   };
 
   const pending = applicants.filter((a) => a.status === "pending");
@@ -111,19 +82,8 @@ export default function ApplicantPage() {
       <div>
         <h1 className="text-2xl font-bold">Applicant List</h1>
         <p className="text-gray-500">
-          Review volunteer applications, check eligibility, and accept or reject.
+          Review volunteer applications, check eligibility, and take action.
         </p>
-      </div>
-
-      {/* FILTERS */}
-      <div className="flex gap-4">
-        <select className="p-2 border rounded-md bg-white">
-          <option>All Tasks</option>
-        </select>
-
-        <select className="p-2 border rounded-md bg-white">
-          <option>All Status</option>
-        </select>
       </div>
 
       {/* PENDING */}
@@ -139,8 +99,6 @@ export default function ApplicantPage() {
           >
             {/* LEFT */}
             <div className="flex gap-4 items-center">
-
-              {/* Avatar */}
               <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center font-bold">
                 {a.initials}
               </div>
@@ -161,24 +119,17 @@ export default function ApplicantPage() {
                 <p className="text-sm text-gray-500">
                   {a.task} • {a.location} • {a.time}
                 </p>
-
-                <div className="flex gap-2 mt-2">
-                  {a.skills.map((s) => (
-                    <Badge key={s} className="bg-green-100 text-green-700">
-                      {s}
-                    </Badge>
-                  ))}
-                </div>
               </div>
             </div>
 
-            {/* RIGHT */}
+            {/* ACTIONS */}
             <div className="flex gap-2">
-
-              <Button variant="outline">👁 View</Button>
+              <Button onClick={() => setSelected(a)} variant="outline">
+                👁 View
+              </Button>
 
               <Button
-                onClick={() => handleAction(a.id, "accepted")}
+                onClick={() => updateStatus(a.id, "accepted")}
                 disabled={!a.eligible}
                 className="bg-indigo-600 text-white"
               >
@@ -186,12 +137,11 @@ export default function ApplicantPage() {
               </Button>
 
               <Button
-                onClick={() => handleAction(a.id, "rejected")}
+                onClick={() => updateStatus(a.id, "rejected")}
                 className="bg-red-500 text-white"
               >
                 ✖ Reject
               </Button>
-
             </div>
           </div>
         ))}
@@ -209,7 +159,6 @@ export default function ApplicantPage() {
             className="flex justify-between items-center border rounded-xl p-4"
           >
             <div className="flex gap-4 items-center">
-
               <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center font-bold">
                 {a.initials}
               </div>
@@ -229,11 +178,56 @@ export default function ApplicantPage() {
                   : "bg-red-500 text-white"
               }
             >
-              {a.status === "accepted" ? "Accepted" : "Rejected"}
+              {a.status.toUpperCase()}
             </Badge>
           </div>
         ))}
       </div>
+
+      {/* MODAL */}
+      {selected && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+          <div className="bg-white w-125 p-6 rounded-xl space-y-4">
+
+            <h2 className="text-xl font-bold">{selected.name}</h2>
+
+            <p><b>Task:</b> {selected.task}</p>
+            <p><b>Location:</b> {selected.location}</p>
+            <p><b>Applied:</b> {selected.time}</p>
+            <p><b>Match:</b> {selected.match}%</p>
+
+            <div className="flex gap-2 flex-wrap">
+              {selected.skills.map((s) => (
+                <Badge key={s} className="bg-green-100 text-green-700">
+                  {s}
+                </Badge>
+              ))}
+            </div>
+
+            <div className="flex justify-end gap-2 pt-4">
+              <Button variant="outline" onClick={() => setSelected(null)}>
+                Close
+              </Button>
+
+              <Button
+                onClick={() => updateStatus(selected.id, "accepted")}
+                className="bg-indigo-600 text-white"
+                disabled={!selected.eligible}
+              >
+                Accept
+              </Button>
+
+              <Button
+                onClick={() => updateStatus(selected.id, "rejected")}
+                className="bg-red-500 text-white"
+              >
+                Reject
+              </Button>
+            </div>
+
+          </div>
+        </div>
+      )}
 
     </div>
   );
