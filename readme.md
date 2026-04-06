@@ -51,6 +51,7 @@ php artisan serve
 ```bash
 cd ../frontend
 npm install
+cp .env.example .env.local
 ```
 
 Start the frontend dev server:
