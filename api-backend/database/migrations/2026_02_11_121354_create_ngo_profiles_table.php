@@ -12,13 +12,19 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('ngo_profiles', function (Blueprint $table) {
-    $table->id();
-    $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
-    $table->string('organization_name');
-    $table->string('registration_number')->nullable();
-    $table->string('office_location')->nullable();
-    $table->timestamps();
-    });
+            $table->id();
+            $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
+            $table->string('organization_name');
+            $table->string('registration_number')->nullable();
+            $table->string('office_location')->nullable();
+            $table->string('pan_number')->nullable();
+            $table->string('registration_file_path')->nullable();
+            $table->string('pan_file_path')->nullable();
+            $table->string('letterhead_file_path')->nullable();
+            $table->boolean('is_verified')->default(false);
+            $table->enum('status', ['pending', 'verified', 'rejected'])->default('pending');
+            $table->timestamps();
+        });
 
     }
 
