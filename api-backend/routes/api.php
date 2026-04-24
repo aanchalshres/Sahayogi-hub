@@ -44,6 +44,7 @@ Route::middleware(['auth:sanctum', 'role:ngo'])->group(function () {
     // View own tasks (verified or unverified NGOs)
     Route::get('/ngo/tasks', [NgoController::class, 'getTasks']);
     Route::get('/ngo/applications', [NgoController::class, 'getApplications']);
+    Route::get('/ngo/profile', [NgoController::class, 'getProfile']);
 
     // Task creation/management routes (verified NGOs only)
     Route::middleware('verified_ngo')->group(function () {

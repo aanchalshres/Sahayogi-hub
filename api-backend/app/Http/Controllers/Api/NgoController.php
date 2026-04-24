@@ -164,4 +164,61 @@ class NgoController extends Controller
             'data' => $task,
         ]);
     }
+
+    /**
+     * Get current NGO's profile
+     */
+    public function getProfile(Request $request)
+    {
+        $user = $request->user();
+
+        if ($user->role !== 'ngo') {
+            return response()->json([
+                'message' => 'Only NGOs can access this',
+            ], 403);
+        }
+
+        $ngoProfile = $user->ngoProfile;
+
+        if (!$ngoProfile) {
+            return response()->json([
+                'message' => 'NGO profile not found',
+            ], 404);
+        }
+
+        // Generate full URLs for document files
+        $registrationUrl = null;
+        $panUrl = null;
+        $letterheadUrl = null;
+
+        if ($ngoProfile->registration_file_path) {
+            $registrationUrl = url('storage/' . $ngoProfile->registration_file_path);
+        }
+        if ($ngoProfile->pan_file_path) {
+            $panUrl = url('storage/' . $ngoProfile->pan_file_path);
+        }
+        if ($ngoProfile->letterhead_file_path) {
+            $letterheadUrl = url('storage/' . $ngoProfile->letterhead_file_path);
+        }
+
+        return response()->json([
+            'id' => $ngoProfile->id,
+            'organization_name' => $ngoProfile->organization_name,
+            'registration_number' => $ngoProfile->registration_number,
+            'pan_number' => $ngoProfile->pan_number,
+            'office_location' => $ngoProfile->office_location,
+            'is_verified' => $ngoProfile->is_verified,
+            'status' => $ngoProfile->status ?? 'pending',
+            'created_at' => $ngoProfile->created_at,
+            'registration_file_path' => $registrationUrl,
+            'pan_file_path' => $panUrl,
+            'letterhead_file_path' => $letterheadUrl,
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'phone' => $user->phone,
+            ],
+        ]);
+    }
 }
