@@ -169,12 +169,23 @@ const CreateOpportunity: React.FC = () => {
         router.push("/dashboard/ngo/tasks");
       }, 1000);
     } catch (error: any) {
-      console.error("Error creating task:", error);
-      toast({
-        title: "Error",
-        description: error.message || "Failed to create task. Please try again.",
-        variant: "destructive",
-      });
+      const errorMessage = error.message || "Failed to create task. Please try again.";
+      
+      // Check if it's a verification error (not an app error, just a business rule)
+      if (errorMessage.includes("verified")) {
+        toast({
+          title: "Not Eligible",
+          description: errorMessage,
+          variant: "destructive",
+        });
+      } else {
+        console.error("Error creating task:", error);
+        toast({
+          title: "Error",
+          description: errorMessage,
+          variant: "destructive",
+        });
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -321,7 +332,7 @@ const CreateOpportunity: React.FC = () => {
                 <Button
                   type="button"
                   onClick={() => setIsEmergency(false)}
-                  className={!isEmergency ? "bg-[#4F46C8] text-white" : "bg-gray-200"}
+                  className={!isEmergency ? "bg-[#4F46C8] text-white hover:bg-[#3f37a0]" : "bg-gray-200 text-gray-700 hover:bg-gray-300"}
                 >
                   Regular
                 </Button>
@@ -329,7 +340,7 @@ const CreateOpportunity: React.FC = () => {
                 <Button
                   type="button"
                   onClick={() => setIsEmergency(true)}
-                  className={isEmergency ? "bg-red-500 text-white" : "bg-gray-200"}
+                  className={isEmergency ? "bg-red-500 text-white hover:bg-red-600" : "bg-gray-200 text-gray-700 hover:bg-gray-300"}
                 >
                   🚨 Emergency
                 </Button>
@@ -338,7 +349,7 @@ const CreateOpportunity: React.FC = () => {
               {/* Submit */}
               <Button 
                 type="submit" 
-                className="w-full bg-[#4F46C8] text-white"
+                className="w-full bg-[#4F46C8] text-white hover:bg-[#3f37a0] active:bg-[#2d2670] disabled:opacity-60 disabled:cursor-not-allowed font-semibold"
                 disabled={isSubmitting}
               >
                 {isSubmitting ? "Posting..." : "Post Task"}
