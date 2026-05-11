@@ -17,7 +17,7 @@ import {
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/app/hooks/use-toast";
-import { ArrowLeft, CheckCircle } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { createTask } from "@/app/lib/taskService";
 
 const skillOptions = [
@@ -55,9 +55,7 @@ const CreateOpportunity: React.FC = () => {
 
   const toggleSkill = (skill: string) => {
     setSelectedSkills((prev) =>
-      prev.includes(skill)
-        ? prev.filter((s) => s !== skill)
-        : [...prev, skill]
+      prev.includes(skill) ? prev.filter((s) => s !== skill) : [...prev, skill]
     );
   };
 
@@ -65,79 +63,55 @@ const CreateOpportunity: React.FC = () => {
     e.preventDefault();
     setIsSubmitting(true);
 
+    // Validation
     if (!title.trim()) {
-      toast({
-        title: "Validation Error",
-        description: "Title is required.",
-        variant: "destructive",
-      });
+      toast({ title: "Validation Error", description: "Title is required.", variant: "destructive" });
       setIsSubmitting(false);
       return;
     }
-
+    if (!description.trim()) {
+      toast({ title: "Validation Error", description: "Description is required.", variant: "destructive" });
+      setIsSubmitting(false);
+      return;
+    }
     if (!category) {
-      toast({
-        title: "Validation Error",
-        description: "Please select a category.",
-        variant: "destructive",
-      });
+      toast({ title: "Validation Error", description: "Please select a category.", variant: "destructive" });
       setIsSubmitting(false);
       return;
     }
-
     if (!district) {
-      toast({
-        title: "Validation Error",
-        description: "Please select a district.",
-        variant: "destructive",
-      });
+      toast({ title: "Validation Error", description: "Please select a district.", variant: "destructive" });
       setIsSubmitting(false);
       return;
     }
-
     if (!quota || Number(quota) <= 0) {
-      toast({
-        title: "Validation Error",
-        description: "Quota must be a positive number.",
-        variant: "destructive",
-      });
+      toast({ title: "Validation Error", description: "Quota must be a positive number.", variant: "destructive" });
       setIsSubmitting(false);
       return;
     }
-
     if (!startDate) {
-      toast({
-        title: "Validation Error",
-        description: "Please select a start date.",
-        variant: "destructive",
-      });
+      toast({ title: "Validation Error", description: "Please select a start date.", variant: "destructive" });
       setIsSubmitting(false);
       return;
     }
-
     if (!endDate) {
-      toast({
-        title: "Validation Error",
-        description: "Please select an end date.",
-        variant: "destructive",
-      });
+      toast({ title: "Validation Error", description: "Please select an end date.", variant: "destructive" });
       setIsSubmitting(false);
       return;
     }
-
+    if (new Date(endDate) <= new Date(startDate)) {
+      toast({ title: "Validation Error", description: "End date must be after start date.", variant: "destructive" });
+      setIsSubmitting(false);
+      return;
+    }
     if (selectedSkills.length === 0) {
-      toast({
-        title: "Validation Error",
-        description: "Select at least one skill.",
-        variant: "destructive",
-      });
+      toast({ title: "Validation Error", description: "Select at least one skill.", variant: "destructive" });
       setIsSubmitting(false);
       return;
     }
 
     try {
-      // Call API to create task
-      const response = await createTask({
+      await createTask({
         title,
         description,
         category,
@@ -146,12 +120,10 @@ const CreateOpportunity: React.FC = () => {
         start_date: startDate,
         end_date: endDate,
         skills: selectedSkills,
+        is_emergency: isEmergency,
       });
 
-      toast({
-        title: "Task Created!",
-        description: `"${title}" posted successfully.`,
-      });
+      toast({ title: "Task Created!", description: `"${title}" posted successfully.` });
 
       // Reset form
       setTitle("");
@@ -164,10 +136,7 @@ const CreateOpportunity: React.FC = () => {
       setSelectedSkills([]);
       setIsEmergency(false);
 
-      // Navigate back after 1 second
-      setTimeout(() => {
-        router.push("/dashboard/ngo/tasks");
-      }, 1000);
+      setTimeout(() => router.push("/dashboard/ngo/tasks"), 1000);
     } catch (error: any) {
       const errorMessage = error.message || "Failed to create task. Please try again.";
       
@@ -195,22 +164,13 @@ const CreateOpportunity: React.FC = () => {
     <DashboardLayout role="organization">
       <div className="mx-auto max-w-2xl space-y-6 bg-[#F0F1F3] px-4 rounded-xl">
 
-        {/* Header with Back Button */}
+        {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex-1">
-            <h1 className="text-2xl font-bold text-[#111827]">
-              Post New Task
-            </h1>
-            <p className="text-[#6B7280]">
-              Create a volunteer opportunity for your organization.
-            </p>
+            <h1 className="text-2xl font-bold text-[#111827]">Post New Task</h1>
+            <p className="text-[#6B7280]">Create a volunteer opportunity for your organization.</p>
           </div>
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => router.back()}
-            className="gap-2 text-sm"
-          >
+          <Button type="button" variant="outline" onClick={() => router.back()} className="gap-2 text-sm">
             <ArrowLeft className="w-4 h-4" />
             Back
           </Button>
@@ -223,9 +183,7 @@ const CreateOpportunity: React.FC = () => {
 
               {/* Title */}
               <div className="space-y-2">
-                <Label className="text-[#111827]">
-                  Title <span className="text-red-500">*</span>
-                </Label>
+                <Label className="text-[#111827]">Title <span className="text-red-500">*</span></Label>
                 <Input
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
@@ -236,54 +194,52 @@ const CreateOpportunity: React.FC = () => {
 
               {/* Category + District */}
               <div className="grid gap-4 sm:grid-cols-2">
-
                 <div className="space-y-2">
-                  <Label>Category *</Label>
+                  <Label>Category <span className="text-red-500">*</span></Label>
                   <Select value={category} onValueChange={setCategory}>
                     <SelectTrigger className="bg-white border-[#CACDD3]">
                       <SelectValue placeholder="Select category" />
                     </SelectTrigger>
                     <SelectContent className="bg-white text-black">
                       {categoryOptions.map((c) => (
-                        <SelectItem key={c} value={c}>
-                          {c}
-                        </SelectItem>
+                        <SelectItem key={c} value={c}>{c}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
 
                 <div className="space-y-2">
-                  <Label>District *</Label>
+                  <Label>District <span className="text-red-500">*</span></Label>
                   <Select value={district} onValueChange={setDistrict}>
                     <SelectTrigger className="bg-white border-[#CACDD3]">
                       <SelectValue placeholder="Select district" />
                     </SelectTrigger>
                     <SelectContent className="bg-white text-black">
                       {districtOptions.map((d) => (
-                        <SelectItem key={d} value={d}>
-                          {d}
-                        </SelectItem>
+                        <SelectItem key={d} value={d}>{d}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
-
               </div>
 
               {/* Quota */}
-              <Input
-                type="number"
-                placeholder="Volunteer quota"
-                value={quota}
-                onChange={(e) => setQuota(e.target.value)}
-                className="bg-white border-[#CACDD3]"
-              />
+              <div className="space-y-2">
+                <Label>Volunteer Quota <span className="text-red-500">*</span></Label>
+                <Input
+                  type="number"
+                  placeholder="e.g., 10"
+                  value={quota}
+                  onChange={(e) => setQuota(e.target.value)}
+                  className="bg-white border-[#CACDD3]"
+                  min={1}
+                />
+              </div>
 
-              {/* Start Date + End Date */}
+              {/* Start + End Date */}
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
-                  <Label>Start Date *</Label>
+                  <Label>Start Date <span className="text-red-500">*</span></Label>
                   <Input
                     type="date"
                     value={startDate}
@@ -292,7 +248,7 @@ const CreateOpportunity: React.FC = () => {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>End Date *</Label>
+                  <Label>End Date <span className="text-red-500">*</span></Label>
                   <Input
                     type="date"
                     value={endDate}
@@ -303,31 +259,38 @@ const CreateOpportunity: React.FC = () => {
               </div>
 
               {/* Skills */}
-              <div className="flex flex-wrap gap-2">
-                {skillOptions.map((skill) => (
-                  <Badge
-                    key={skill}
-                    onClick={() => toggleSkill(skill)}
-                    className={`cursor-pointer ${
-                      selectedSkills.includes(skill)
-                        ? "bg-[#4F46C8] text-white"
-                        : "bg-white border"
-                    }`}
-                  >
-                    {skill}
-                  </Badge>
-                ))}
+              <div className="space-y-2">
+                <Label>Skills Required <span className="text-red-500">*</span></Label>
+                <div className="flex flex-wrap gap-2">
+                  {skillOptions.map((skill) => (
+                    <Badge
+                      key={skill}
+                      onClick={() => toggleSkill(skill)}
+                      className={`cursor-pointer select-none ${
+                        selectedSkills.includes(skill)
+                          ? "bg-[#4F46C8] text-white hover:bg-[#4338CA]"
+                          : "bg-white border border-[#CACDD3] text-[#111827] hover:bg-gray-50"
+                      }`}
+                    >
+                      {skill}
+                    </Badge>
+                  ))}
+                </div>
               </div>
 
               {/* Description */}
-              <Textarea
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder="Description..."
-                className="bg-white border-[#CACDD3]"
-              />
+              <div className="space-y-2">
+                <Label>Description <span className="text-red-500">*</span></Label>
+                <Textarea
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  placeholder="Describe the task, responsibilities, and requirements..."
+                  className="bg-white border-[#CACDD3] min-h-[100px]"
+                />
+              </div>
 
               {/* Priority */}
+<<<<<<< Updated upstream
               <div className="flex gap-3">
                 <Button
                   type="button"
@@ -350,6 +313,32 @@ const CreateOpportunity: React.FC = () => {
               <Button 
                 type="submit" 
                 className="w-full bg-[#4F46C8] text-white hover:bg-[#3f37a0] active:bg-[#2d2670] disabled:opacity-60 disabled:cursor-not-allowed font-semibold"
+=======
+              <div className="space-y-2">
+                <Label>Priority</Label>
+                <div className="flex gap-3">
+                  <Button
+                    type="button"
+                    onClick={() => setIsEmergency(false)}
+                    className={!isEmergency ? "bg-[#4F46C8] text-white" : "bg-gray-200 text-gray-700"}
+                  >
+                    Regular
+                  </Button>
+                  <Button
+                    type="button"
+                    onClick={() => setIsEmergency(true)}
+                    className={isEmergency ? "bg-red-500 text-white" : "bg-gray-200 text-gray-700"}
+                  >
+                    🚨 Emergency
+                  </Button>
+                </div>
+              </div>
+
+              {/* Submit */}
+              <Button
+                type="submit"
+                className="w-full bg-[#4F46C8] hover:bg-[#4338CA] text-white"
+>>>>>>> Stashed changes
                 disabled={isSubmitting}
               >
                 {isSubmitting ? "Posting..." : "Post Task"}
