@@ -27,13 +27,13 @@ export default function HeroSection() {
 
         {/* Buttons */}
         <div className="flex flex-col sm:flex-row justify-center gap-4">
-          <Link href="/signup">
+          <Link href="/login">
             <Button className="bg-[#4F46C8] hover:bg-[#3c3a9f] text-white px-8 py-4 rounded-xl shadow-lg flex items-center justify-center gap-2 transition-all duration-300 transform hover:-translate-y-1">
               Join as Volunteer
               <ArrowRight className="w-5 h-5" />
             </Button>
           </Link>
-          <Link href="/signup">
+          <Link href="/login">
             <Button className="border border-[#4F46C8] text-[#4F46C8] hover:bg-[#F0F1F3] px-8 py-4 rounded-xl shadow-sm transition-all duration-300">
               Register Organization
             </Button>
