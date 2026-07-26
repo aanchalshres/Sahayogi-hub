@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Ngo;
 
+use App\Events\TrustScore\AbsenceRecorded;
 use App\Http\Controllers\Controller;
 use App\Models\ServiceLog;
 use App\Models\Task;
@@ -69,6 +70,8 @@ class AttendanceController extends Controller
             'participation_status' => 'completed',
         ]);
 
+        \App\Events\TrustScore\AttendanceRecorded::dispatch($log->volunteer_profile_id, 'approved', $log->attendance_confidence_score);
+
         return response()->json([
             'message' => 'Attendance approved',
             'data' => $log->fresh()->load(['volunteer.user', 'task'])
@@ -93,6 +96,8 @@ class AttendanceController extends Controller
             'hours' => 0,
             'participation_status' => 'absent',
         ]);
+
+        AbsenceRecorded::dispatch($log->volunteer_profile_id, $log->id);
 
         return response()->json([
             'message' => 'Marked as absent',

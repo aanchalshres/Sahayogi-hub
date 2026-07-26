@@ -130,7 +130,7 @@ function SelfiePreviewCard({ selfie }: { selfie: IdentitySelfie }) {
       </div>
       <div className="flex-1 min-w-0">
         <p className="text-sm font-medium text-[#111827]">Selfie Photo</p>
-        <p className="text-xs text-[#6B7280] capitalize">{selfie.face_detection_status?.replace(/_/g, ' ') || 'Pending'}</p>
+        <p className="text-xs text-[#6B7280]">Reference photo for manual review</p>
       </div>
       <button
         onClick={() => setShowPreview(!showPreview)}
@@ -188,8 +188,6 @@ function VerificationStatusCard({ verification }: { verification: IdentityVerifi
           </div>
           <div className="space-y-1.5">
             <ScoreBar label="OCR Accuracy" score={verification.ocr_score} />
-            <ScoreBar label="Face Match" score={verification.face_match_score} />
-            <ScoreBar label="Liveness" score={verification.liveness_score} />
             <ScoreBar label="Document Quality" score={verification.document_quality_score} />
             <ScoreBar label="Data Consistency" score={verification.data_consistency_score} />
           </div>

@@ -2,31 +2,37 @@
 
 return [
 
-    'auto_verify_threshold' => (float) env('IDV_AUTO_VERIFY_THRESHOLD', 95),
+    'auto_verify_threshold' => (float) env('IDV_AUTO_VERIFY_THRESHOLD', 90),
 
-    'manual_review_threshold' => (float) env('IDV_MANUAL_REVIEW_THRESHOLD', 80),
+    'manual_review_threshold' => (float) env('IDV_MANUAL_REVIEW_THRESHOLD', 70),
 
     'reject_threshold' => (float) env('IDV_REJECT_THRESHOLD', 0),
 
     'weights' => [
-        'ocr_accuracy' => 0.30,
-        'face_match' => 0.30,
-        'liveness' => 0.20,
-        'document_quality' => 0.10,
-        'data_consistency' => 0.10,
+        'ocr_accuracy' => 0.35,
+        'image_quality' => 0.25,
+        'document_structure' => 0.20,
+        'data_consistency' => 0.20,
+    ],
+
+    'image_quality' => [
+        'min_resolution' => 600,
+        'min_brightness' => 60,
+        'min_contrast' => 15,
+    ],
+
+    'document_structure' => [
+        'required_fields' => [
+            'citizenship' => ['full_name', 'document_number', 'date_of_birth'],
+            'national_id' => ['full_name', 'document_number'],
+            'student_id' => ['full_name', 'document_number'],
+            'volunteer_card' => ['full_name', 'document_number'],
+            'passport' => ['full_name', 'document_number', 'expiry_date'],
+        ],
     ],
 
     'ocr' => [
         'provider' => env('IDV_OCR_PROVIDER', 'tesseract'),
-    ],
-
-    'face_matching' => [
-        'provider' => env('IDV_FACE_MATCHING_PROVIDER', 'dummy'),
-        'min_similarity' => (float) env('IDV_FACE_MIN_SIMILARITY', 70),
-    ],
-
-    'liveness' => [
-        'provider' => env('IDV_LIVENESS_PROVIDER', 'dummy'),
     ],
 
     'document_validation' => [

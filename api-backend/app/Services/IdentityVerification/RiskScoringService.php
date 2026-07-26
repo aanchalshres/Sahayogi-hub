@@ -1,26 +1,22 @@
 <?php
 
-namespace App\Algorithms\IdentityVerification\Scoring;
+namespace App\Services\IdentityVerification;
 
-use App\Algorithms\IdentityVerification\Contracts\ConfidenceScorerInterface;
-
-class ConfidenceScorer implements ConfidenceScorerInterface
+class RiskScoringService
 {
     public function calculate(array $scores): array
     {
         $weights = config('identity-verification.weights', [
-            'ocr_accuracy' => 0.30,
-            'face_match' => 0.30,
-            'liveness' => 0.20,
-            'document_quality' => 0.10,
-            'data_consistency' => 0.10,
+            'ocr_accuracy' => 0.35,
+            'image_quality' => 0.25,
+            'document_structure' => 0.20,
+            'data_consistency' => 0.20,
         ]);
 
         $components = [
             'ocr_accuracy' => $this->normalize($scores['ocr_accuracy'] ?? 0),
-            'face_match' => $this->normalize($scores['face_match'] ?? 0),
-            'liveness' => $this->normalize($scores['liveness'] ?? 0),
-            'document_quality' => $this->normalize($scores['document_quality'] ?? 0),
+            'image_quality' => $this->normalize($scores['image_quality'] ?? 0),
+            'document_structure' => $this->normalize($scores['document_structure'] ?? 0),
             'data_consistency' => $this->normalize($scores['data_consistency'] ?? 0),
         ];
 
@@ -40,8 +36,8 @@ class ConfidenceScorer implements ConfidenceScorerInterface
 
     public function decide(float $confidenceScore): array
     {
-        $autoVerify = (float) config('identity-verification.auto_verify_threshold', 95);
-        $manualReview = (float) config('identity-verification.manual_review_threshold', 80);
+        $autoVerify = (float) config('identity-verification.auto_verify_threshold', 90);
+        $manualReview = (float) config('identity-verification.manual_review_threshold', 70);
 
         if ($confidenceScore >= $autoVerify) {
             return [

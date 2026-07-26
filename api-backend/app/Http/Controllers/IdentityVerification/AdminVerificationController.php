@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\IdentityVerification;
 
+use App\Events\TrustScore\VerificationStatusChanged;
 use App\Http\Controllers\Controller;
 use App\Models\IdentityVerification\IdentityVerification;
 use App\Services\IdentityVerification\VerificationPipelineService;
@@ -88,6 +89,11 @@ class AdminVerificationController extends Controller
             $validated['remarks'] ?? null
         );
 
+        $profile = $result->verifiable;
+        if ($profile) {
+            VerificationStatusChanged::dispatch($profile->id, 'verified');
+        }
+
         return response()->json([
             'message' => 'Verification approved',
             'data' => $this->formatForAdmin($result),
@@ -107,6 +113,11 @@ class AdminVerificationController extends Controller
             $request->user()->id,
             $validated['remarks']
         );
+
+        $profile = $result->verifiable;
+        if ($profile) {
+            VerificationStatusChanged::dispatch($profile->id, 'rejected');
+        }
 
         return response()->json([
             'message' => 'Verification rejected',
@@ -142,8 +153,6 @@ class AdminVerificationController extends Controller
             'status' => $v->status,
             'confidence_score' => $v->confidence_score,
             'ocr_score' => $v->ocr_score,
-            'face_match_score' => $v->face_match_score,
-            'liveness_score' => $v->liveness_score,
             'document_quality_score' => $v->document_quality_score,
             'data_consistency_score' => $v->data_consistency_score,
             'decision' => $v->decision,
@@ -181,12 +190,7 @@ class AdminVerificationController extends Controller
             'selfie' => $v->selfie ? [
                 'id' => $v->selfie->id,
                 'file_url' => url("storage/{$v->selfie->file_path}"),
-                'face_detection_status' => $v->selfie->face_detection_status,
-                'faces_detected' => $v->selfie->faces_detected,
                 'image_quality_score' => $v->selfie->image_quality_score,
-                'is_blurry' => $v->selfie->is_blurry,
-                'liveness_status' => $v->selfie->liveness_status,
-                'liveness_result' => $v->selfie->liveness_result,
             ] : null,
             'logs' => $v->logs->map(fn($log) => [
                 'step' => $log->step,

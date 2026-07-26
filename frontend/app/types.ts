@@ -68,8 +68,7 @@ export type IdentityVerificationDecision = 'auto_verified' | 'manual_review' | '
 export type DocumentType = 'citizenship' | 'national_id' | 'student_id' | 'volunteer_card' | 'passport';
 export type OcrStatus = 'pending' | 'processing' | 'completed' | 'failed';
 export type ValidationStatus = 'pending' | 'passed' | 'failed';
-export type LivenessStatus = 'pending' | 'passed' | 'uncertain' | 'failed';
-export type FaceDetectionStatus = 'no_face' | 'single_face' | 'multiple_faces' | 'blurry';
+
 
 export interface IdentityDocument {
   id: number;
@@ -86,8 +85,6 @@ export interface IdentityDocument {
 export interface IdentitySelfie {
   id: number;
   file_url: string | null;
-  face_detection_status: FaceDetectionStatus | null;
-  liveness_status: LivenessStatus | null;
   image_quality_score: number | null;
 }
 
@@ -96,8 +93,6 @@ export interface IdentityVerification {
   status: IdentityVerificationStatus;
   confidence_score: number | null;
   ocr_score: number | null;
-  face_match_score: number | null;
-  liveness_score: number | null;
   document_quality_score: number | null;
   data_consistency_score: number | null;
   decision: IdentityVerificationDecision;

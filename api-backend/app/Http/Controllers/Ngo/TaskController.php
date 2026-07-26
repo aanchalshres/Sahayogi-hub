@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers\Ngo;
 
+use App\Events\TrustScore\TaskCompleted;
 use App\Http\Controllers\Controller;
+use App\Models\Application;
 use App\Models\Task;
 use App\Services\RecommendationService;
 use Illuminate\Http\Request;
@@ -174,6 +176,13 @@ class TaskController extends Controller
             'status' => 'Completed',
             'updated_by' => $request->user()->id,
         ]);
+
+        $acceptedVolunteers = Application::where('task_id', $task->id)
+            ->where('status', 'Accepted')
+            ->get();
+        foreach ($acceptedVolunteers as $app) {
+            TaskCompleted::dispatch($app->volunteer_profile_id, $task->id);
+        }
 
         return response()->json([
             'message' => 'Task completed',

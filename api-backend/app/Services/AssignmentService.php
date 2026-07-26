@@ -7,6 +7,7 @@ namespace App\Services;
 use App\Algorithms\Contracts\AssignmentSolverInterface;
 use App\Models\Application;
 use App\Models\Task;
+use App\Services\ScheduleConflict\ScheduleConflictService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -15,6 +16,7 @@ class AssignmentService
     public function __construct(
         private MatchingService $matchingService,
         private AssignmentSolverInterface $solver,
+        private ScheduleConflictService $scheduleConflictService,
     ) {}
 
     /**
@@ -47,6 +49,14 @@ class AssignmentService
             foreach ($tasks as $j => $task) {
                 $score = $this->matchingService
                     ->calculateVolunteerTaskScore($volunteer, $task);
+
+                if (config('schedule-conflict.check_on_assign')) {
+                    $conflicts = $this->scheduleConflictService->checkTask($volunteer->id, $task->id);
+                    if ($conflicts['has_conflicts']) {
+                        $penalty = 0.3;
+                        $score = max(0, $score - $penalty);
+                    }
+                }
 
                 $costMatrix[$i][$j] = 1 - $score;
             }

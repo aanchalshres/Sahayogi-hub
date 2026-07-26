@@ -173,8 +173,6 @@ class VerificationController extends Controller
             'status' => $v->status,
             'confidence_score' => $v->confidence_score,
             'ocr_score' => $v->ocr_score,
-            'face_match_score' => $v->face_match_score,
-            'liveness_score' => $v->liveness_score,
             'document_quality_score' => $v->document_quality_score,
             'data_consistency_score' => $v->data_consistency_score,
             'decision' => $v->decision,
@@ -195,8 +193,6 @@ class VerificationController extends Controller
             'selfie' => $v->selfie ? [
                 'id' => $v->selfie->id,
                 'file_url' => url("storage/{$v->selfie->file_path}"),
-                'face_detection_status' => $v->selfie->face_detection_status,
-                'liveness_status' => $v->selfie->liveness_status,
                 'image_quality_score' => $v->selfie->image_quality_score,
             ] : null,
         ];

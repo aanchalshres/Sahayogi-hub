@@ -2,8 +2,6 @@
 
 namespace App\Services\IdentityVerification;
 
-use App\Algorithms\IdentityVerification\Contracts\ConfidenceScorerInterface;
-use App\Algorithms\IdentityVerification\DocumentValidation\DocumentValidator;
 use App\Models\IdentityVerification\IdentityDocument;
 use App\Models\IdentityVerification\IdentitySelfie;
 use App\Models\IdentityVerification\IdentityVerification;
@@ -18,11 +16,10 @@ class VerificationPipelineService
 {
     public function __construct(
         private OcrService $ocrService,
-        private FaceMatchingService $faceMatchingService,
-        private LivenessDetectionService $livenessDetectionService,
-        private DocumentValidator $documentValidator,
+        private ImageQualityAssessmentService $imageQualityService,
+        private DocumentStructureValidationService $documentStructureService,
         private DataConsistencyService $dataConsistencyService,
-        private ConfidenceScorerInterface $confidenceScorer,
+        private RiskScoringService $riskScoringService,
     ) {}
 
     public function startVerification(VolunteerProfile $profile): IdentityVerification
@@ -53,13 +50,6 @@ class VerificationPipelineService
         UploadedFile $file,
         string $documentType
     ): IdentityDocument {
-        $validation = $this->documentValidator->validate($file);
-
-        if (!$validation['valid']) {
-            $this->logStep($verification, 'document_upload', 'failed', implode('; ', $validation['errors']), $validation);
-            abort(422, 'Document validation failed: ' . implode('; ', $validation['errors']));
-        }
-
         $path = $file->store(
             config('identity-verification.storage.documents_path', 'identity-verification/documents'),
             config('identity-verification.storage.documents_disk', 'public')
@@ -89,12 +79,6 @@ class VerificationPipelineService
         IdentityVerification $verification,
         UploadedFile $file
     ): IdentitySelfie {
-        $validation = $this->documentValidator->validate($file);
-
-        if (!$validation['valid']) {
-            abort(422, 'Selfie validation failed: ' . implode('; ', $validation['errors']));
-        }
-
         $path = $file->store(
             config('identity-verification.storage.selfies_path', 'identity-verification/selfies'),
             config('identity-verification.storage.documents_disk', 'public')
@@ -112,8 +96,6 @@ class VerificationPipelineService
             'original_name' => $file->getClientOriginalName(),
             'mime_type' => $file->getMimeType(),
             'file_size' => $file->getSize(),
-            'face_detection_status' => null,
-            'liveness_status' => 'pending',
         ]);
 
         $this->logStep($verification, 'selfie_upload', 'success', 'Selfie uploaded', [
@@ -140,28 +122,28 @@ class VerificationPipelineService
             $profile = $verification->verifiable;
 
             $ocrResult = $this->processOcr($verification, $document);
-            $faceMatchResult = $this->processFaceMatching($verification, $document, $selfie);
-            $livenessResult = $this->processLiveness($verification, $selfie);
-            $qualityResult = $this->processDocumentQuality($verification, $document);
+            $imageQualityResult = $this->processImageQuality($verification, $document);
+            $documentStructureResult = $this->processDocumentStructure($verification, $document, $ocrResult);
             $consistencyResult = $this->processDataConsistency($verification, $ocrResult, $profile);
 
-            $scored = $this->confidenceScorer->calculate([
+            $scored = $this->riskScoringService->calculate([
                 'ocr_accuracy' => $ocrResult['ocr_confidence'] ?? 0,
-                'face_match' => $faceMatchResult['match_score'] ?? 0,
-                'liveness' => $livenessResult['liveness_score'] ?? 0,
-                'document_quality' => $qualityResult['quality_score'] ?? 0,
+                'image_quality' => $imageQualityResult['quality_score'] ?? 0,
+                'document_structure' => $documentStructureResult['structure_score'] ?? 0,
                 'data_consistency' => $consistencyResult['consistency_score'] ?? 0,
             ]);
 
-            $decision = $this->confidenceScorer->decide($scored['confidence_score']);
+            $decision = $this->riskScoringService->decide($scored['confidence_score']);
 
             $verification->update([
                 'status' => $decision['decision'] === 'auto_verified' ? 'verified' : 'pending_review',
                 'confidence_score' => $scored['confidence_score'],
                 'ocr_score' => $scored['components']['ocr_accuracy'],
-                'face_match_score' => $scored['components']['face_match'],
-                'liveness_score' => $scored['components']['liveness'],
-                'document_quality_score' => $scored['components']['document_quality'],
+                'document_quality_score' => round(
+                    $scored['components']['image_quality'] * 0.55 +
+                    $scored['components']['document_structure'] * 0.45,
+                    2
+                ),
                 'data_consistency_score' => $scored['components']['data_consistency'],
                 'decision' => $decision['decision'],
                 'decision_reason' => $decision['reason'],
@@ -195,7 +177,6 @@ class VerificationPipelineService
             'status' => 'verified',
             'reviewed_by' => $reviewedBy,
             'reviewed_at' => now(),
-            'admin_remarks' => $remarks,
             'completed_at' => now(),
             'decision' => 'admin_approved',
             'decision_reason' => $remarks ? "Admin approved: {$remarks}" : 'Admin approved',
@@ -213,7 +194,6 @@ class VerificationPipelineService
             'status' => 'rejected',
             'reviewed_by' => $reviewedBy,
             'reviewed_at' => now(),
-            'admin_remarks' => $remarks,
             'completed_at' => now(),
             'decision' => 'admin_rejected',
             'decision_reason' => $remarks ? "Admin rejected: {$remarks}" : 'Admin rejected',
@@ -244,74 +224,44 @@ class VerificationPipelineService
         return $result;
     }
 
-    private function processFaceMatching(
-        IdentityVerification $verification,
-        IdentityDocument $document,
-        ?IdentitySelfie $selfie
-    ): array {
-        if (!$selfie) {
-            $this->logStep($verification, 'face_matching', 'skipped', 'No selfie provided for face matching');
-            return ['match_score' => 0, 'matched' => false];
-        }
-
-        $this->logStep($verification, 'face_matching', 'processing', 'Starting face matching');
-
-        $result = $this->faceMatchingService->compare($document->file_path, $selfie->file_path);
-
-        $selfie->update([
-            'face_detection_status' => $result['face_detection_status'],
-            'faces_detected' => $result['detection']['faces_detected'] ?? null,
-            'image_quality_score' => $result['detection']['image_quality'] ?? null,
-            'is_blurry' => $result['detection']['is_blurry'] ?? null,
-        ]);
-
-        $this->logStep($verification, 'face_matching', 'success', "Face match score: {$result['match_score']}%", $result);
-
-        return $result;
-    }
-
-    private function processLiveness(
-        IdentityVerification $verification,
-        ?IdentitySelfie $selfie
-    ): array {
-        if (!$selfie) {
-            $this->logStep($verification, 'liveness_detection', 'skipped', 'No selfie provided for liveness check');
-            return ['liveness_score' => 0, 'passed' => false];
-        }
-
-        $this->logStep($verification, 'liveness_detection', 'processing', 'Starting liveness detection');
-
-        $result = $this->livenessDetectionService->analyze($selfie->file_path);
-
-        $selfie->update([
-            'liveness_result' => $result['raw_result'],
-            'liveness_status' => $result['status'],
-        ]);
-
-        $this->logStep($verification, 'liveness_detection', 'success', "Liveness status: {$result['status']}", $result);
-
-        return $result;
-    }
-
-    private function processDocumentQuality(
+    private function processImageQuality(
         IdentityVerification $verification,
         IdentityDocument $document
     ): array {
-        $this->logStep($verification, 'document_quality', 'processing', 'Checking document quality');
+        $this->logStep($verification, 'image_quality', 'processing', 'Assessing image quality');
 
-        $qualityResult = $this->documentValidator->validateImageQuality($document->file_path);
+        $qualityResult = $this->imageQualityService->assess($document->file_path);
 
         $document->update([
             'validation_results' => $qualityResult,
             'validation_status' => $qualityResult['score'] >= 40 ? 'passed' : 'failed',
         ]);
 
-        $this->logStep($verification, 'document_quality', 'success', "Document quality score: {$qualityResult['score']}%", $qualityResult);
+        $this->logStep($verification, 'image_quality', 'success', "Image quality score: {$qualityResult['score']}%", $qualityResult);
 
         return [
             'quality_score' => $qualityResult['score'],
-            'is_blurry' => $qualityResult['is_blurry'],
             'details' => $qualityResult,
+        ];
+    }
+
+    private function processDocumentStructure(
+        IdentityVerification $verification,
+        IdentityDocument $document,
+        array $ocrResult
+    ): array {
+        $this->logStep($verification, 'document_structure', 'processing', 'Validating document structure');
+
+        $structureResult = $this->documentStructureService->validate(
+            $ocrResult['extracted_data'] ?? [],
+            $document->document_type
+        );
+
+        $this->logStep($verification, 'document_structure', 'success', "Document structure score: {$structureResult['score']}%", $structureResult);
+
+        return [
+            'structure_score' => $structureResult['score'],
+            'details' => $structureResult,
         ];
     }
 

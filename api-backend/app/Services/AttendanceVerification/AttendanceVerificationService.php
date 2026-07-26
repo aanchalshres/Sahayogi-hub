@@ -2,6 +2,7 @@
 
 namespace App\Services\AttendanceVerification;
 
+use App\Events\TrustScore\AttendanceRecorded;
 use App\Models\ServiceLog;
 use App\Models\Task;
 use App\Models\VolunteerProfile;
@@ -116,6 +117,7 @@ class AttendanceVerificationService implements AttendanceVerificationServiceInte
             ]);
         });
 
+        AttendanceRecorded::dispatch($volunteer->id, 'check_in', $confidence['score']);
         $this->dispatchBackgroundJobs($log, 'check_in');
 
         return $log;
@@ -187,6 +189,7 @@ class AttendanceVerificationService implements AttendanceVerificationServiceInte
             return $log->fresh();
         });
 
+        AttendanceRecorded::dispatch($log->volunteer_profile_id, 'check_out', $overallConfidence);
         $this->dispatchBackgroundJobs($log, 'check_out');
 
         return $log;

@@ -13,8 +13,6 @@ class IdentityVerification extends Model
         'status',
         'confidence_score',
         'ocr_score',
-        'face_match_score',
-        'liveness_score',
         'document_quality_score',
         'data_consistency_score',
         'decision',
@@ -29,8 +27,6 @@ class IdentityVerification extends Model
     protected $casts = [
         'confidence_score' => 'float',
         'ocr_score' => 'float',
-        'face_match_score' => 'float',
-        'liveness_score' => 'float',
         'document_quality_score' => 'float',
         'data_consistency_score' => 'float',
         'started_at' => 'datetime',
