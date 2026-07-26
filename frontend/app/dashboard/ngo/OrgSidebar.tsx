@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { useAuth } from "@/app/providers/AuthProvider";
 import {
   LayoutDashboard,
@@ -40,7 +40,6 @@ const menuItems = [
 
 export default function OrgSidebar({ isOpen, toggleSidebar }: { isOpen: boolean; toggleSidebar: () => void }) {
   const pathname = usePathname();
-  const router = useRouter();
   const { logout } = useAuth();
 
   const handleLogout = async () => {

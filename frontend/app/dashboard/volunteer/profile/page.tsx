@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { apiGet, apiPut, apiUpload } from "@/app/lib/api";
+import { apiGet, apiPut, apiDelete, apiUpload } from "@/app/lib/api";
 
 interface VolunteerSkill {
   id: number;

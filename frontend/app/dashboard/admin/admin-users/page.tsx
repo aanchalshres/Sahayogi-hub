@@ -65,7 +65,7 @@ export default function AdminUsersPage() {
     setSaving(true);
     setError(null);
     try {
-      const payload = { ...form };
+      const payload = { ...form } as Record<string, any>;
       if (!payload.password) { delete payload.password; delete payload.password_confirmation; }
       if (editing) {
         await apiPut(`/api/admin/admin-users/${editing.id}`, payload);
@@ -83,7 +83,7 @@ export default function AdminUsersPage() {
 
   const handleToggleStatus = async (admin: any) => {
     try {
-      await apiPost(`/api/admin/admin-users/${admin.id}/toggle-status`);
+      await apiPost(`/api/admin/admin-users/${admin.id}/toggle-status`, {});
       fetchData();
     } catch (err: any) {
       setError(err.response?.data?.message || err.message || 'Failed to toggle status');

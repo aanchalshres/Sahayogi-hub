@@ -167,9 +167,9 @@ export default function NgoApplicationsPage() {
                         <div className="flex items-center gap-2">
                           <p className="font-semibold text-gray-900 truncate">{volUser?.name || 'Unknown'}</p>
                           {isVerified ? (
-                            <ShieldCheck size={14} className="text-green-600 shrink-0" title="Verified" />
+                            <ShieldCheck size={14} className="text-green-600 shrink-0" aria-label="Verified" />
                           ) : (
-                            <ShieldAlert size={14} className="text-gray-400 shrink-0" title="Not verified" />
+                            <ShieldAlert size={14} className="text-gray-400 shrink-0" aria-label="Not verified" />
                           )}
                         </div>
                         <p className="text-xs text-[#6B7280] truncate">Applied for: {title}</p>

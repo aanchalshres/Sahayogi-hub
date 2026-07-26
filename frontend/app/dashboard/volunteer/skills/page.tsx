@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState, useCallback, useMemo, useRef } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { apiGet, apiPost, apiDelete, apiUpload, apiCall } from "@/app/lib/api";
+import SkillSelector from "@/app/components/ui-custom/SkillSelector";
 
 // ---------- Design tokens ----------
 const COLORS = {
@@ -39,14 +40,6 @@ function IconSparkles({ className = "h-6 w-6" }: { className?: string }) {
   return (
     <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
       <path strokeLinecap="round" strokeLinejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-    </svg>
-  );
-}
-
-function IconSearch({ className = "h-5 w-5" }: { className?: string }) {
-  return (
-    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
     </svg>
   );
 }
@@ -166,7 +159,6 @@ export default function VolunteerSkillsPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  const [searchTerm, setSearchTerm] = useState("");
 
   // ---------- Documents state ----------
   const [documents, setDocuments] = useState<Document[]>([]);
@@ -225,14 +217,6 @@ export default function VolunteerSkillsPage() {
   }, [fetchSkills, fetchVolunteerSkills, fetchDocuments]);
 
   // ---------- Skills handlers ----------
-  const toggleSkill = useCallback((skillId: number) => {
-    setSelectedSkills((prev) =>
-      prev.includes(skillId) ? prev.filter((id) => id !== skillId) : [...prev, skillId]
-    );
-    setSuccessMessage(null);
-    setError(null);
-  }, []);
-
   const clearSelectedSkills = useCallback(() => {
     setSelectedSkills([]);
   }, []);
@@ -251,16 +235,6 @@ export default function VolunteerSkillsPage() {
       setSaving(false);
     }
   }, [selectedSkills]);
-
-  const filteredSkills = useMemo(
-    () => skills.filter((s) => s.name.toLowerCase().includes(searchTerm.toLowerCase())),
-    [skills, searchTerm]
-  );
-
-  const selectedSkillObjects = useMemo(
-    () => skills.filter((s) => selectedSkills.includes(s.id)),
-    [skills, selectedSkills]
-  );
 
   // ---------- Document handlers ----------
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -428,27 +402,6 @@ export default function VolunteerSkillsPage() {
             </div>
           </div>
 
-          {/* Search */}
-          <div className="relative mb-6">
-            <input
-              type="text"
-              placeholder="Search skills..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full md:w-72 px-4 py-2.5 pl-10 rounded-full border focus:outline-none focus:ring-2 transition-shadow"
-              style={{
-                backgroundColor: COLORS.background,
-                borderColor: COLORS.border,
-                color: COLORS.textPrimary,
-              }}
-              onFocus={(e) => (e.currentTarget.style.boxShadow = `0 0 0 2px ${COLORS.primary}40`)}
-              onBlur={(e) => (e.currentTarget.style.boxShadow = "none")}
-            />
-            <div style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: COLORS.textSecondary }}>
-              <IconSearch className="h-5 w-5" />
-            </div>
-          </div>
-
           {/* Messages */}
           {error && (
             <div
@@ -469,95 +422,13 @@ export default function VolunteerSkillsPage() {
             </div>
           )}
 
-          {/* Skills grid */}
-          <div className="flex flex-wrap gap-3 mb-8" role="group" aria-label="Available skills">
-            {filteredSkills.length === 0 ? (
-              <p className="w-full text-center py-8" style={{ color: COLORS.textSecondary }}>
-                No skills match your search.
-              </p>
-            ) : (
-              filteredSkills.map((skill) => {
-                const selected = selectedSkills.includes(skill.id);
-                return (
-                  <button
-                    key={skill.id}
-                    onClick={() => toggleSkill(skill.id)}
-                    aria-pressed={selected}
-                    className="px-5 py-2.5 rounded-full border-2 text-sm font-medium transition-all duration-200 flex items-center gap-2 transform hover:-translate-y-0.5"
-                    style={
-                      selected
-                        ? {
-                            backgroundColor: COLORS.primary,
-                            color: "#FFFFFF",
-                            borderColor: COLORS.primary,
-                            boxShadow: "0 4px 10px rgba(79,70,200,0.25)",
-                          }
-                        : {
-                            backgroundColor: "#FFFFFF",
-                            color: COLORS.textPrimary,
-                            borderColor: COLORS.border,
-                          }
-                    }
-                    onMouseEnter={(e) => {
-                      if (!selected) {
-                        e.currentTarget.style.borderColor = COLORS.secondary;
-                        e.currentTarget.style.backgroundColor = `${COLORS.secondary}0D`;
-                      }
-                    }}
-                    onMouseLeave={(e) => {
-                      if (!selected) {
-                        e.currentTarget.style.borderColor = COLORS.border;
-                        e.currentTarget.style.backgroundColor = "#FFFFFF";
-                      }
-                    }}
-                  >
-                    {selected && <IconCheck className="h-4 w-4" />}
-                    {skill.name}
-                  </button>
-                );
-              })
-            )}
-          </div>
-
-          {/* Selected summary */}
-          <div
-            className="rounded-2xl p-5 border"
-            style={{ backgroundColor: `${COLORS.soft}26`, borderColor: COLORS.border }}
-          >
-            <h2 className="font-semibold flex items-center gap-2" style={{ color: COLORS.textPrimary }}>
-              Your Selected Skills
-              <span
-                className="inline-flex items-center justify-center text-white text-xs px-2.5 py-0.5 rounded-full min-w-[1.5rem]"
-                style={{ backgroundColor: COLORS.primary }}
-              >
-                {selectedSkills.length}
-              </span>
-            </h2>
-            <div className="flex flex-wrap gap-2 mt-3">
-              {selectedSkillObjects.length === 0 ? (
-                <p className="italic" style={{ color: COLORS.textSecondary }}>
-                  No skills selected yet.
-                </p>
-              ) : (
-                selectedSkillObjects.map((skill) => (
-                  <span
-                    key={skill.id}
-                    className="group flex items-center gap-1.5 px-4 py-1.5 rounded-full text-white text-sm font-medium shadow-sm"
-                    style={{ backgroundColor: COLORS.primary }}
-                  >
-                    {skill.name}
-                    <button
-                      onClick={() => toggleSkill(skill.id)}
-                      className="ml-1 hover:bg-white/20 rounded-full p-0.5 transition-colors"
-                      aria-label={`Remove ${skill.name}`}
-                    >
-                      <IconX className="h-3.5 w-3.5" />
-                    </button>
-                  </span>
-                ))
-              )}
-            </div>
-          </div>
+          <SkillSelector
+            skills={skills}
+            selectedIds={selectedSkills}
+            onChange={setSelectedSkills}
+            loading={loading && skills.length === 0}
+            placeholder="Search skills..."
+          />
 
           {/* Save button */}
           <div className="mt-8 flex justify-end">

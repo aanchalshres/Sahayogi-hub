@@ -7,7 +7,6 @@ import { Button } from "@/app/components/ui/button";
 import { Input } from "@/app/components/ui/input";
 import { Label } from "@/app/components/ui/label";
 import { Textarea } from "@/app/components/ui/textarea";
-import { Badge } from "@/app/components/ui/badge";
 import {
   Select,
   SelectContent,
@@ -23,11 +22,14 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/app/components/ui/dialog";
+import SkillSelector from "@/app/components/ui-custom/SkillSelector";
 
 const skillOptions = [
-  "First Aid", "Medical", "Logistics", "Construction", "Teaching",
-  "IT", "Translation", "Driving", "Swimming", "Communication",
-  "Cooking", "Counseling", "Photography", "Gardening", "Painting",
+  { id: 1, name: "First Aid" }, { id: 2, name: "Medical" }, { id: 3, name: "Logistics" },
+  { id: 4, name: "Construction" }, { id: 5, name: "Teaching" }, { id: 6, name: "IT" },
+  { id: 7, name: "Translation" }, { id: 8, name: "Driving" }, { id: 9, name: "Swimming" },
+  { id: 10, name: "Communication" }, { id: 11, name: "Cooking" }, { id: 12, name: "Counseling" },
+  { id: 13, name: "Photography" }, { id: 14, name: "Gardening" }, { id: 15, name: "Painting" },
 ];
 
 const categoryOptions = [
@@ -65,17 +67,12 @@ export default function EditTaskModal({
   const [status, setStatus] = useState(task.status);
   const [startDate, setStartDate] = useState(task.start_date.split("T")[0]);
   const [endDate, setEndDate] = useState(task.end_date.split("T")[0]);
-  const [selectedSkills, setSelectedSkills] = useState<string[]>(
-    task.skills?.map(s => s.skill_name) || []
+  const [selectedSkillIds, setSelectedSkillIds] = useState<number[]>(
+    () => task.skills?.map((s: any) => {
+      const found = skillOptions.find((opt) => opt.name === (s.skill_name || s));
+      return found ? found.id : -1;
+    }).filter((id: number) => id > 0) || []
   );
-
-  const toggleSkill = (skill: string) => {
-    setSelectedSkills((prev) =>
-      prev.includes(skill)
-        ? prev.filter((s) => s !== skill)
-        : [...prev, skill]
-    );
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -141,7 +138,7 @@ export default function EditTaskModal({
       return;
     }
 
-    if (selectedSkills.length === 0) {
+    if (selectedSkillIds.length === 0) {
       toast({
         title: "Validation Error",
         description: "Select at least one skill.",
@@ -150,6 +147,10 @@ export default function EditTaskModal({
       setIsSubmitting(false);
       return;
     }
+
+    const selectedSkillNames = selectedSkillIds
+      .map((id) => skillOptions.find((s) => s.id === id)?.name)
+      .filter(Boolean) as string[];
 
     try {
       await updateTask(task.id, {
@@ -161,7 +162,7 @@ export default function EditTaskModal({
         start_date: startDate,
         end_date: endDate,
         status,
-        skills: selectedSkills,
+        skills: selectedSkillNames,
       });
 
       toast({
@@ -257,7 +258,7 @@ export default function EditTaskModal({
 
             <div className="space-y-2">
               <Label>Status *</Label>
-              <Select value={status} onValueChange={setStatus}>
+              <Select value={status} onValueChange={(value: string) => setStatus(value as Task["status"])}>
                 <SelectTrigger className="bg-white border-[#CACDD3]">
                   <SelectValue placeholder="Select status" />
                 </SelectTrigger>
@@ -294,24 +295,13 @@ export default function EditTaskModal({
           </div>
 
           {/* Skills */}
-          <div className="space-y-2">
-            <Label>Skills *</Label>
-            <div className="flex flex-wrap gap-2">
-              {skillOptions.map((skill) => (
-                <Badge
-                  key={skill}
-                  onClick={() => toggleSkill(skill)}
-                  className={`cursor-pointer ${
-                    selectedSkills.includes(skill)
-                      ? "bg-[#4F46C8] text-white"
-                      : "bg-white border"
-                  }`}
-                >
-                  {skill}
-                </Badge>
-              ))}
-            </div>
-          </div>
+          <SkillSelector
+            skills={skillOptions}
+            selectedIds={selectedSkillIds}
+            onChange={setSelectedSkillIds}
+            label="Skills *"
+            placeholder="Search skills..."
+          />
 
           {/* Description */}
           <div className="space-y-2">

@@ -643,7 +643,7 @@ export default function VerifyIdentityPage() {
                   <CheckCircle2 size={16} /> Document already uploaded
                 </p>
                 {verification.documents.map((doc, i) => (
-                  <DocumentPreviewCard key={doc.id} doc={doc} index={i} />
+                  <DocumentPreviewCard key={doc.id} doc={doc} />
                 ))}
                 <button
                   onClick={() => { setStep('selfie'); }}
@@ -768,7 +768,7 @@ export default function VerifyIdentityPage() {
                 <p className="text-sm font-medium text-green-700 flex items-center gap-2">
                   <CheckCircle2 size={16} /> Selfie already uploaded
                 </p>
-                <SelfiePreviewCard selfie={verification.selfie} />
+                {verification.selfie && <SelfiePreviewCard selfie={verification.selfie} />}
                 <button
                   onClick={() => setStep('submit')}
                   className="w-full bg-[#4F46C8] hover:bg-[#3f39a8] text-white py-3 rounded-xl font-medium transition flex items-center justify-center gap-2"
@@ -875,7 +875,7 @@ export default function VerifyIdentityPage() {
                 <p className="text-xs font-medium text-[#6B7280] mb-2">Uploaded Documents</p>
                 <div className="space-y-2">
                   {verification.documents.map((doc, i) => (
-                    <DocumentPreviewCard key={doc.id} doc={doc} index={i} />
+                    <DocumentPreviewCard key={doc.id} doc={doc} />
                   ))}
                 </div>
               </div>

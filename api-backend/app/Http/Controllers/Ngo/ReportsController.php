@@ -43,14 +43,14 @@ class ReportsController extends Controller
 
         $monthlyStats = Application::whereIn('task_id', $taskIds)
             ->select(
-                DB::raw("DATE_FORMAT(created_at, '%Y-%m') as month"),
+                DB::raw("TO_CHAR(created_at, 'YYYY-MM') as month"),
                 DB::raw('COUNT(*) as total'),
                 DB::raw("SUM(CASE WHEN status = 'Accepted' THEN 1 ELSE 0 END) as accepted"),
                 DB::raw("SUM(CASE WHEN status = 'Rejected' THEN 1 ELSE 0 END) as rejected"),
                 DB::raw("SUM(CASE WHEN status = 'Pending' THEN 1 ELSE 0 END) as pending")
             )
-            ->groupBy('month')
-            ->orderBy('month', 'desc')
+            ->groupBy(DB::raw("TO_CHAR(created_at, 'YYYY-MM')"))
+            ->orderBy(DB::raw("TO_CHAR(created_at, 'YYYY-MM')"), 'desc')
             ->take(12)
             ->get();
 

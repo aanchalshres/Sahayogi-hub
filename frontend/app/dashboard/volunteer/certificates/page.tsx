@@ -155,8 +155,8 @@ export default function VolunteerCertificatesPage() {
                         {content.organization_name || cert.ngo?.organization_name || 'NGO'}
                       </p>
                       <p className="text-xs text-[#6B7280] mt-0.5">
-                        {content.hours_contributed > 0 && `${content.hours_contributed} hrs contributed`}
-                        {content.hours_contributed > 0 && ' · '}
+                        {(content.hours_contributed ?? 0) > 0 && `${content.hours_contributed} hrs contributed`}
+                        {(content.hours_contributed ?? 0) > 0 && ' · '}
                         Issued: {new Date(cert.issued_at || cert.created_at).toLocaleDateString()}
                       </p>
                       <p className="text-xs text-[#4F46C8] mt-1 font-mono">

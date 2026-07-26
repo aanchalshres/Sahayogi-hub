@@ -282,7 +282,7 @@ export default function VolunteerTasksPage() {
                     </div>
                   )}
 
-                  {(task.recommendation_score || task.match_score) && (
+                  {!!(task.recommendation_score ?? task.match_score) && (
                     <div className="mt-3 pt-3 border-t border-[#E5E7EB]">
                       <div className="flex items-center justify-between mb-2">
                         <span className="text-xs font-medium text-[#6B7280]">Match Score</span>
@@ -299,7 +299,7 @@ export default function VolunteerTasksPage() {
                           { label: 'Trust', value: task.trust_score },
                         ].map((s) => (
                           <div key={s.label} className="text-[10px] text-[#6B7280]">
-                            <div className="font-semibold text-[#111827]">{formatScore(s.value)}%</div>
+                            <div className="font-semibold text-[#111827]">{formatScore(s.value as number | null | undefined)}%</div>
                             <div>{s.label}</div>
                           </div>
                         ))}

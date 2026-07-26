@@ -1,6 +1,6 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { apiGet, apiPost, apiDelete } from '@/app/lib/api'
+import { apiGet, apiUpload, apiDelete } from '@/app/lib/api'
 import { ShieldCheck, Upload, FileText, Trash2, Download, AlertTriangle } from 'lucide-react'
 
 interface Document {
@@ -92,7 +92,7 @@ export default function NGOVerificationPage() {
       const fd = new FormData()
       fd.append('document', file)
       fd.append('document_type', selectedType)
-      await apiPost('/api/ngo/documents', fd as any)
+      await apiUpload('/api/ngo/documents', fd)
       setSuccess('Document uploaded')
       load()
     } catch (err: any) {

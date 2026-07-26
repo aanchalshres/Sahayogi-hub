@@ -42,14 +42,14 @@ export default function NotificationsPage() {
 
   const handleMarkRead = async (id: number) => {
     try {
-      await apiPost(`/api/admin/notifications/${id}/read`);
+      await apiPost(`/api/admin/notifications/${id}/read`, {});
       setNotifications((prev) => prev.map((n) => n.id === id ? { ...n, is_read: true, read_at: new Date().toISOString() } : n));
     } catch { }
   };
 
   const handleMarkAllRead = async () => {
     try {
-      await apiPost('/api/admin/notifications/read-all');
+      await apiPost('/api/admin/notifications/read-all', {});
       setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true, read_at: new Date().toISOString() })));
     } catch { }
   };

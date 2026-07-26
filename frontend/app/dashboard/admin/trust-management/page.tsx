@@ -18,6 +18,7 @@ interface TrustHistoryItem {
   new_score: number;
   score_change: number;
   change_reason: string | null;
+  triggered_by?: string;
   created_at: string;
 }
 
@@ -106,7 +107,7 @@ export default function AdminTrustManagementPage() {
     if (!confirm("Recalculate trust scores for ALL volunteers? This may take a moment.")) return;
     setRecalculateAllLoading(true);
     try {
-      const res = await apiPost("/admin/trust/recalculate-all", {});
+      const res = await apiPost<any>("/admin/trust/recalculate-all", {});
       await fetchVolunteers();
       alert(res.message || "Recalculation complete");
     } catch (err: any) {

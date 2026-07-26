@@ -5,6 +5,8 @@ import { apiGet, apiPut } from '@/app/lib/api'
 import {
   ArrowLeft, Save, AlertTriangle, CheckCircle2, ChevronDown
 } from 'lucide-react'
+import SkillSelector from '@/app/components/ui-custom/SkillSelector'
+import LocationPicker from '@/app/components/ui-custom/LocationPicker'
 
 interface Skill {
   id: number
@@ -45,6 +47,7 @@ export default function EditTaskPage() {
   const [skills, setSkills] = useState<Skill[]>([])
   const [categories, setCategories] = useState<Category[]>([])
   const [selectedSkills, setSelectedSkills] = useState<number[]>([])
+  const [selectedLocation, setSelectedLocation] = useState<{ lat: number; lng: number; address: string } | null>(null)
   const [notFound, setNotFound] = useState(false)
   const [saved, setSaved] = useState(false)
   const [submitting, setSubmitting] = useState(false)
@@ -62,6 +65,9 @@ export default function EditTaskPage() {
         const task = taskRes.data
         setForm(task)
         setSelectedSkills(task.skills?.map((s) => s.id) || [])
+        if (task.latitude && task.longitude) {
+          setSelectedLocation({ lat: task.latitude, lng: task.longitude, address: '' })
+        }
         setSkills(skillsRes.data || [])
         setCategories(categoriesRes.data || [])
       } catch {
@@ -79,10 +85,8 @@ export default function EditTaskPage() {
     setErrors((prev) => ({ ...prev, [key]: '' }))
   }
 
-  const toggleSkill = (skillId: number) => {
-    setSelectedSkills((prev) =>
-      prev.includes(skillId) ? prev.filter((id) => id !== skillId) : [...prev, skillId]
-    )
+  const handleSkillsChange = (skillIds: number[]) => {
+    setSelectedSkills(skillIds)
   }
 
   const validate = () => {
@@ -90,6 +94,7 @@ export default function EditTaskPage() {
     if (!form.title.trim()) next.title = 'Title is required'
     if (!form.description.trim()) next.description = 'Description is required'
     if (!form.start_date) next.start_date = 'Start date is required'
+    if (!selectedLocation) next.location = 'Please select a location on the map'
     return next
   }
 
@@ -104,8 +109,10 @@ export default function EditTaskPage() {
         ...form,
         category_id: form.category_id ? Number(form.category_id) : null,
         required_volunteers: Number(form.required_volunteers),
-        latitude: form.latitude ? Number(form.latitude) : null,
-        longitude: form.longitude ? Number(form.longitude) : null,
+        location: selectedLocation?.address || '',
+        city: '',
+        latitude: selectedLocation ? selectedLocation.lat : null,
+        longitude: selectedLocation ? selectedLocation.lng : null,
         skills: selectedSkills,
         start_date: form.start_date?.slice(0, 10) || form.start_date,
         end_date: form.end_date?.slice(0, 10) || form.end_date || null,
@@ -201,16 +208,12 @@ export default function EditTaskPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="text-sm font-medium text-gray-700 mb-1 block">Location</label>
-                <input type="text" className={inputClass('location')} value={form.location || ''} onChange={(e) => updateField('location', e.target.value)} />
-              </div>
-              <div>
-                <label className="text-sm font-medium text-gray-700 mb-1 block">City</label>
-                <input type="text" className={inputClass('city')} value={form.city || ''} onChange={(e) => updateField('city', e.target.value)} />
-              </div>
-            </div>
+            <LocationPicker
+              latitude={form.latitude ?? null}
+              longitude={form.longitude ?? null}
+              onChange={setSelectedLocation}
+              error={errors.location}
+            />
 
             <div className="grid grid-cols-2 gap-4">
               <div>
@@ -264,14 +267,12 @@ export default function EditTaskPage() {
             </div>
 
             <div>
-              <label className="text-sm font-medium text-gray-700 mb-2 block">Required Skills</label>
-              <div className="flex flex-wrap gap-2">
-                {skills.map((s) => (
-                  <button key={s.id} type="button" onClick={() => toggleSkill(s.id)} className={`text-xs px-3 py-1.5 rounded-full border transition ${selectedSkills.includes(s.id) ? 'bg-[#4F46C8] text-white border-[#4F46C8]' : 'bg-white text-gray-600 border-gray-200 hover:border-[#4F46C8]'}`}>
-                    {s.name}
-                  </button>
-                ))}
-              </div>
+              <SkillSelector
+                skills={skills}
+                selectedIds={selectedSkills}
+                onChange={handleSkillsChange}
+                loading={skills.length === 0}
+              />
             </div>
           </div>
 
