@@ -23,6 +23,7 @@ class VolunteerProfile extends Model
         'emergency_contact_name',
         'emergency_contact_phone',
         'availability',
+        'is_profile_complete',
         'tfidf_vector',
         'trust_score',
         'trust_updated_at',

@@ -17,7 +17,7 @@ class AdminVerificationController extends Controller
 
     public function index(Request $request): JsonResponse
     {
-        $query = IdentityVerification::with(['verifiable', 'documents', 'selfie'])
+        $query = IdentityVerification::with(['verifiable', 'documents'])
             ->orderBy('created_at', 'desc');
 
         if ($request->filled('status')) {
@@ -50,7 +50,7 @@ class AdminVerificationController extends Controller
     {
         $verifications = IdentityVerification::where('status', 'pending_review')
             ->orWhere('status', 'pending')
-            ->with(['verifiable', 'documents', 'selfie', 'logs'])
+            ->with(['verifiable', 'documents', 'logs'])
             ->orderBy('created_at', 'asc')
             ->get();
 
@@ -65,7 +65,6 @@ class AdminVerificationController extends Controller
             'verifiable',
             'verifiable.user',
             'documents',
-            'selfie',
             'logs',
             'reviewer',
         ])->findOrFail($id);
@@ -187,11 +186,6 @@ class AdminVerificationController extends Controller
                 'validation_status' => $d->validation_status,
                 'validation_results' => $d->validation_results,
             ]),
-            'selfie' => $v->selfie ? [
-                'id' => $v->selfie->id,
-                'file_url' => url("storage/{$v->selfie->file_path}"),
-                'image_quality_score' => $v->selfie->image_quality_score,
-            ] : null,
             'logs' => $v->logs->map(fn($log) => [
                 'step' => $log->step,
                 'status' => $log->status,

@@ -44,11 +44,6 @@ class IdentityVerification extends Model
         return $this->hasMany(IdentityDocument::class);
     }
 
-    public function selfie()
-    {
-        return $this->hasOne(IdentitySelfie::class);
-    }
-
     public function logs()
     {
         return $this->hasMany(IdentityVerificationLog::class);

@@ -2,14 +2,13 @@
 
 import { useEffect, useState, useCallback, useRef } from "react";
 import {
-  ShieldCheck, Upload, Camera, Send, Clock, CheckCircle2,
+  ShieldCheck, Upload, Send, Clock, CheckCircle2,
   AlertTriangle, XCircle, Loader2, FileText, ChevronRight,
-  ArrowLeft, Eye, ScanLine, History, Image,
+  ArrowLeft, Eye, ScanLine, History,
 } from "lucide-react";
 import {
   startVerification,
   uploadDocument,
-  uploadSelfie,
   submitVerification,
   getVerificationStatus,
   getVerificationHistory,
@@ -21,11 +20,10 @@ import {
 import type {
   IdentityVerification,
   IdentityDocument,
-  IdentitySelfie,
   DocumentType,
 } from "@/app/types";
 
-type Step = 'list' | 'document' | 'selfie' | 'submit' | 'status';
+type Step = 'list' | 'document' | 'submit' | 'status';
 
 interface Toast {
   type: 'success' | 'error';
@@ -121,38 +119,6 @@ function DocumentPreviewCard({ doc }: { doc: IdentityDocument }) {
   );
 }
 
-function SelfiePreviewCard({ selfie }: { selfie: IdentitySelfie }) {
-  const [showPreview, setShowPreview] = useState(false);
-  return (
-    <div className="flex items-center gap-3 p-3 rounded-lg bg-[#F0F1F3] border border-[#CACDD3]">
-      <div className="w-10 h-10 rounded-lg bg-[#4F46C8]/10 flex items-center justify-center shrink-0">
-        <Image size={18} className="text-[#4F46C8]" />
-      </div>
-      <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium text-[#111827]">Selfie Photo</p>
-        <p className="text-xs text-[#6B7280]">Reference photo for manual review</p>
-      </div>
-      <button
-        onClick={() => setShowPreview(!showPreview)}
-        className="p-1.5 rounded-lg hover:bg-white transition"
-        title="Preview"
-      >
-        <Eye size={16} className="text-[#6B7280]" />
-      </button>
-      {showPreview && selfie.file_url && (
-        <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-6" onClick={() => setShowPreview(false)}>
-          <div className="max-w-md bg-white rounded-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
-            <img src={selfie.file_url} alt="Selfie" className="w-full h-auto max-h-[70vh] object-contain" />
-            <div className="p-3 text-center text-sm text-[#6B7280] border-t border-[#CACDD3]">
-              Selfie Photo
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
 function VerificationStatusCard({ verification }: { verification: IdentityVerification }) {
   const statusColor = VERIFICATION_STATUS_COLORS[verification.status] || 'bg-gray-100 text-gray-600';
   return (
@@ -211,13 +177,6 @@ function VerificationStatusCard({ verification }: { verification: IdentityVerifi
               <DocumentPreviewCard key={doc.id} doc={doc} />
             ))}
           </div>
-        </div>
-      )}
-
-      {verification.selfie && (
-        <div>
-          <p className="text-xs font-medium text-[#6B7280] mb-2">Selfie</p>
-          <SelfiePreviewCard selfie={verification.selfie} />
         </div>
       )}
     </div>
@@ -284,10 +243,9 @@ export default function VerifyIdentityPage() {
 
   const [selectedDocType, setSelectedDocType] = useState<DocumentType>('citizenship');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [selectedSelfie, setSelectedSelfie] = useState<File | null>(null);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [validationError, setValidationError] = useState<string | null>(null);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [, setPreviewUrl] = useState<string | null>(null);
 
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -384,24 +342,17 @@ export default function VerifyIdentityPage() {
     }
   };
 
-  const validateFile = (file: File, isSelfie: boolean): string | null => {
-    const maxSize = isSelfie ? 5 * 1024 * 1024 : 10 * 1024 * 1024;
+  const validateFile = (file: File): string | null => {
+    const maxSize = 10 * 1024 * 1024;
     if (file.size > maxSize) {
-      return `File too large. Maximum size is ${isSelfie ? '5MB' : '10MB'}.`;
+      return 'File too large. Maximum size is 10MB.';
     }
     if (file.size === 0) {
       return 'File is empty.';
     }
-    if (isSelfie) {
-      const validTypes = ['image/jpeg', 'image/png', 'image/webp'];
-      if (!validTypes.includes(file.type)) {
-        return 'Invalid file type. Only JPG, PNG, and WebP images are allowed for selfies.';
-      }
-    } else {
-      const validTypes = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
-      if (!validTypes.includes(file.type)) {
-        return 'Invalid file type. Only JPG, PNG, WebP, and PDF files are allowed for documents.';
-      }
+    const validTypes = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
+    if (!validTypes.includes(file.type)) {
+      return 'Invalid file type. Only JPG, PNG, WebP, and PDF files are allowed.';
     }
     return null;
   };
@@ -410,27 +361,13 @@ export default function VerifyIdentityPage() {
     const file = e.target.files?.[0];
     if (!file) return;
     setValidationError(null);
-    const err = validateFile(file, false);
+    const err = validateFile(file);
     if (err) {
       setValidationError(err);
       setSelectedFile(null);
       return;
     }
     setSelectedFile(file);
-    setPreviewUrl(URL.createObjectURL(file));
-  };
-
-  const handleSelfieFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setValidationError(null);
-    const err = validateFile(file, true);
-    if (err) {
-      setValidationError(err);
-      setSelectedSelfie(null);
-      return;
-    }
-    setSelectedSelfie(file);
     setPreviewUrl(URL.createObjectURL(file));
   };
 
@@ -448,36 +385,9 @@ export default function VerifyIdentityPage() {
       setPreviewUrl(null);
       const v = await loadVerification(verification.id);
       if (v) setVerification(v);
-      if (v && v.selfie) {
-        setStep('submit');
-      } else {
-        setStep('selfie');
-      }
-    } catch (err: any) {
-      setError(err.message || 'Failed to upload document');
-    } finally {
-      setSubmitting(false);
-      setUploadProgress(0);
-    }
-  };
-
-  const handleUploadSelfie = async () => {
-    if (!selectedSelfie || !verification) return;
-    setSubmitting(true);
-    setError(null);
-    setUploadProgress(0);
-    try {
-      await uploadSelfie(verification.id, selectedSelfie, (pct) => {
-        setUploadProgress(pct);
-      });
-      showToast('success', 'Selfie uploaded successfully');
-      setSelectedSelfie(null);
-      setPreviewUrl(null);
-      const v = await loadVerification(verification.id);
-      if (v) setVerification(v);
       setStep('submit');
     } catch (err: any) {
-      setError(err.message || 'Failed to upload selfie');
+      setError(err.message || 'Failed to upload document');
     } finally {
       setSubmitting(false);
       setUploadProgress(0);
@@ -511,11 +421,8 @@ export default function VerifyIdentityPage() {
       setStep('status');
     } else if (v.status === 'pending') {
       const hasDoc = v.documents && v.documents.length > 0;
-      const hasSelfie = !!v.selfie;
-      if (hasDoc && hasSelfie) {
+      if (hasDoc) {
         setStep('submit');
-      } else if (hasDoc) {
-        setStep('selfie');
       } else {
         setStep('document');
       }
@@ -546,7 +453,7 @@ export default function VerifyIdentityPage() {
             <h1 className="text-xl font-bold text-[#111827]">Identity Verification</h1>
           </div>
           <p className="text-sm text-[#6B7280] mb-6">
-            Verify your identity by uploading a valid identity document and a selfie photo.
+            Verify your identity by uploading a valid identity document. The system will automatically assess document quality, extract text, and validate the information.
           </p>
 
           {activeVerification && (
@@ -635,7 +542,7 @@ export default function VerifyIdentityPage() {
               <h2 className="text-lg font-bold text-[#111827]">Upload Identity Document</h2>
             </div>
             <p className="text-sm text-[#6B7280] mb-4">Upload a clear photo or scan of your identity document.</p>
-            <StepIndicator current={hasDoc ? 2 : 1} total={4} />
+            <StepIndicator current={hasDoc ? 2 : 1} total={3} />
 
             {hasDoc ? (
               <div className="space-y-3">
@@ -646,10 +553,10 @@ export default function VerifyIdentityPage() {
                   <DocumentPreviewCard key={doc.id} doc={doc} />
                 ))}
                 <button
-                  onClick={() => { setStep('selfie'); }}
+                  onClick={() => { setStep('submit'); }}
                   className="w-full bg-[#4F46C8] hover:bg-[#3f39a8] text-white py-3 rounded-xl font-medium transition flex items-center justify-center gap-2"
                 >
-                  Continue to Selfie <ChevronRight size={18} />
+                  Continue to Submit <ChevronRight size={18} />
                 </button>
               </div>
             ) : (
@@ -737,124 +644,13 @@ export default function VerifyIdentityPage() {
     );
   }
 
-  if (step === 'selfie' && verification) {
-    const hasSelfie = !!verification.selfie;
-    return (
-      <div className="min-h-screen bg-[#F0F1F3] p-6">
-        <VerificationToast toast={toast} />
-        <div className="max-w-lg mx-auto">
-          <button
-            onClick={() => {
-              if (verification.documents?.length > 0) setStep('document');
-              else setStep('list');
-            }}
-            className="flex items-center gap-2 text-sm text-[#6B7280] mb-4 hover:text-[#111827] transition"
-          >
-            <ArrowLeft size={16} /> Back
-          </button>
-
-          <div className="bg-white rounded-2xl border border-[#CACDD3] p-6">
-            <div className="flex items-center gap-2.5 mb-1">
-              <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#4F46C8]/10">
-                <Camera className="h-4 w-4 text-[#4F46C8]" />
-              </span>
-              <h2 className="text-lg font-bold text-[#111827]">Upload Selfie</h2>
-            </div>
-            <p className="text-sm text-[#6B7280] mb-4">Take a clear selfie for face verification.</p>
-            <StepIndicator current={hasSelfie ? 3 : 2} total={4} />
-
-            {hasSelfie ? (
-              <div className="space-y-3">
-                <p className="text-sm font-medium text-green-700 flex items-center gap-2">
-                  <CheckCircle2 size={16} /> Selfie already uploaded
-                </p>
-                {verification.selfie && <SelfiePreviewCard selfie={verification.selfie} />}
-                <button
-                  onClick={() => setStep('submit')}
-                  className="w-full bg-[#4F46C8] hover:bg-[#3f39a8] text-white py-3 rounded-xl font-medium transition flex items-center justify-center gap-2"
-                >
-                  Continue to Submit <ChevronRight size={18} />
-                </button>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                <div
-                  className="border-2 border-dashed border-[#CACDD3] rounded-xl p-6 text-center hover:border-[#4F46C8]/50 transition cursor-pointer"
-                  onClick={() => document.getElementById('selfie-upload')?.click()}
-                >
-                  {selectedSelfie ? (
-                    <div className="space-y-2">
-                      <div className="w-24 h-24 mx-auto rounded-full overflow-hidden border-2 border-[#4F46C8]">
-                        <img src={previewUrl || ''} alt="Selfie preview" className="w-full h-full object-cover" />
-                      </div>
-                      <p className="text-sm font-medium text-[#111827]">{selectedSelfie.name}</p>
-                      <p className="text-xs text-[#6B7280]">{(selectedSelfie.size / 1024 / 1024).toFixed(2)} MB</p>
-                    </div>
-                  ) : (
-                    <div className="space-y-2">
-                      <Camera size={40} className="mx-auto text-[#B9C0D4]" />
-                      <p className="text-sm text-[#6B7280]">Click to upload your selfie</p>
-                      <p className="text-xs text-[#B9C0D4]">JPG, PNG, or WebP (max 5MB)</p>
-                    </div>
-                  )}
-                  <input
-                    id="selfie-upload"
-                    type="file"
-                    accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
-                    className="hidden"
-                    onChange={handleSelfieFileSelect}
-                  />
-                </div>
-
-                {validationError && (
-                  <div className="flex items-start gap-2 p-3 rounded-lg bg-red-50 border border-red-200 text-sm text-red-700">
-                    <AlertTriangle size={16} className="mt-0.5 shrink-0" />
-                    {validationError}
-                  </div>
-                )}
-
-                {error && (
-                  <div className="flex items-start gap-2 p-3 rounded-lg bg-red-50 border border-red-200 text-sm text-red-700">
-                    <AlertTriangle size={16} className="mt-0.5 shrink-0" />
-                    {error}
-                  </div>
-                )}
-
-                {uploadProgress > 0 && (
-                  <div>
-                    <div className="h-2 rounded-full bg-[#B9C0D4]/40 overflow-hidden">
-                      <div className="h-full bg-[#4F46C8] transition-all" style={{ width: `${uploadProgress}%` }} />
-                    </div>
-                    <p className="text-xs text-[#6B7280] mt-1 text-center">Uploading... {uploadProgress}%</p>
-                  </div>
-                )}
-
-                <button
-                  onClick={handleUploadSelfie}
-                  disabled={!selectedSelfie || submitting}
-                  className="w-full bg-[#4F46C8] hover:bg-[#3f39a8] disabled:bg-[#4F46C8]/50 text-white py-3 rounded-xl font-medium transition flex items-center justify-center gap-2"
-                >
-                  {submitting ? (
-                    <><Loader2 size={18} className="animate-spin" /> Uploading...</>
-                  ) : (
-                    <><Camera size={18} /> Upload Selfie</>
-                  )}
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   if (step === 'submit' && verification) {
     return (
       <div className="min-h-screen bg-[#F0F1F3] p-6">
         <VerificationToast toast={toast} />
         <div className="max-w-lg mx-auto">
           <button
-            onClick={() => setStep(verification.selfie ? 'selfie' : 'document')}
+            onClick={() => setStep('document')}
             className="flex items-center gap-2 text-sm text-[#6B7280] mb-4 hover:text-[#111827] transition"
           >
             <ArrowLeft size={16} /> Back
@@ -868,7 +664,7 @@ export default function VerifyIdentityPage() {
               <h2 className="text-lg font-bold text-[#111827]">Submit Verification</h2>
             </div>
             <p className="text-sm text-[#6B7280] mb-4">Review your submission before sending.</p>
-            <StepIndicator current={4} total={4} />
+            <StepIndicator current={3} total={3} />
 
             <div className="space-y-4">
               <div>
@@ -879,13 +675,6 @@ export default function VerifyIdentityPage() {
                   ))}
                 </div>
               </div>
-
-              {verification.selfie && (
-                <div>
-                  <p className="text-xs font-medium text-[#6B7280] mb-2">Selfie</p>
-                  <SelfiePreviewCard selfie={verification.selfie} />
-                </div>
-              )}
 
               {error && (
                 <div className="flex items-start gap-2 p-3 rounded-lg bg-red-50 border border-red-200 text-sm text-red-700">
@@ -907,7 +696,7 @@ export default function VerifyIdentityPage() {
               </button>
 
               <p className="text-xs text-center text-[#6B7280]">
-                Once submitted, the system will process your documents. This may take a moment.
+                Once submitted, the system will automatically assess document quality, extract text, and verify your identity.
               </p>
             </div>
           </div>

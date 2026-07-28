@@ -12,10 +12,14 @@ class IdentitySelfie extends Model
         'original_name',
         'mime_type',
         'file_size',
+        'image_quality_score',
+        'is_blurry',
     ];
 
     protected $casts = [
         'file_size' => 'integer',
+        'image_quality_score' => 'float',
+        'is_blurry' => 'boolean',
     ];
 
     public function verification()
@@ -23,3 +27,4 @@ class IdentitySelfie extends Model
         return $this->belongsTo(IdentityVerification::class);
     }
 }
+

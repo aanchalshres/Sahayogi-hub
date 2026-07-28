@@ -37,26 +37,6 @@ export async function uploadDocument(
   return result;
 }
 
-export async function uploadSelfie(
-  verificationId: number,
-  file: File,
-  onProgress?: (pct: number) => void
-) {
-  const formData = new FormData();
-  formData.append('verification_id', String(verificationId));
-  formData.append('selfie', file);
-
-  if (onProgress) onProgress(50);
-
-  const result = await apiUpload<IdentityVerificationUploadResponse>(
-    '/volunteer/identity-verification/upload-selfie',
-    formData
-  );
-
-  if (onProgress) onProgress(100);
-  return result;
-}
-
 export async function submitVerification(verificationId: number) {
   return apiPost<IdentityVerificationSubmitResponse>(
     '/volunteer/identity-verification/submit',

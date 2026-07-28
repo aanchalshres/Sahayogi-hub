@@ -83,6 +83,7 @@ class ProfileController extends Controller
                 'has_documents' => $hasDocuments,
             ],
             'document_status' => $documentStatus,
+            'is_profile_complete' => $profile?->is_profile_complete ?? false,
         ]);
     }
 
@@ -180,6 +181,8 @@ class ProfileController extends Controller
                 'emergency_contact_phone' => $validated['emergency_contact_phone'] ?? $profile->emergency_contact_phone,
 
                 'availability' => $validated['availability'] ?? $profile->availability,
+
+                'is_profile_complete' => $this->isProfileComplete($profile, $validated),
 
             ]);
 
@@ -314,5 +317,22 @@ class ProfileController extends Controller
             'success' => true,
             'message' => 'Password changed successfully.',
         ]);
+    }
+
+    private function isProfileComplete($profile, array $validated): bool
+    {
+        $required = [
+            'gender', 'date_of_birth', 'bio', 'primary_location',
+            'city', 'country', 'emergency_contact_name', 'emergency_contact_phone',
+        ];
+
+        foreach ($required as $field) {
+            $value = $validated[$field] ?? $profile->$field ?? null;
+            if (empty($value)) {
+                return false;
+            }
+        }
+
+        return true;
     }
 }

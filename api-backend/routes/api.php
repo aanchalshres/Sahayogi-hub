@@ -1423,7 +1423,6 @@ Route::middleware([
 Route::middleware(['auth:sanctum', 'role:volunteer'])->prefix('volunteer/identity-verification')->group(function () {
     Route::post('/start', [IdentityVerificationController::class, 'start']);
     Route::post('/upload-document', [IdentityVerificationController::class, 'uploadDocument']);
-    Route::post('/upload-selfie', [IdentityVerificationController::class, 'uploadSelfie']);
     Route::post('/submit', [IdentityVerificationController::class, 'submit']);
     Route::get('/status/{id}', [IdentityVerificationController::class, 'status']);
     Route::get('/history', [IdentityVerificationController::class, 'history']);

@@ -82,12 +82,6 @@ export interface IdentityDocument {
   validation_status: ValidationStatus;
 }
 
-export interface IdentitySelfie {
-  id: number;
-  file_url: string | null;
-  image_quality_score: number | null;
-}
-
 export interface IdentityVerification {
   id: number;
   status: IdentityVerificationStatus;
@@ -100,7 +94,6 @@ export interface IdentityVerification {
   started_at: string | null;
   completed_at: string | null;
   documents: IdentityDocument[];
-  selfie: IdentitySelfie | null;
 }
 
 export interface IdentityVerificationStartResponse {

@@ -57,6 +57,7 @@ class AuthController extends Controller
                     'bio' => null,
                     'primary_location' => $validated['location'] ?? null,
                     'availability' => 'Available',
+                    'is_profile_complete' => false,
                     'trust_score' => 0.5,
                     'total_service_hours' => 0,
                     'average_rating' => 0,
@@ -128,6 +129,9 @@ class AuthController extends Controller
                 'phone' => $user->phone,
                 'ngoProfile' => $user->ngoProfile,
                 'volunteerProfile' => $user->volunteerProfile,
+                'is_profile_complete' => $user->role === 'volunteer'
+                    ? ($user->volunteerProfile->is_profile_complete ?? false)
+                    : null,
             ],
         ], 201);
     }
@@ -164,6 +168,9 @@ class AuthController extends Controller
                 'phone' => $user->phone,
                 'ngoProfile' => $user->ngoProfile,
                 'volunteerProfile' => $user->volunteerProfile,
+                'is_profile_complete' => $user->role === 'volunteer'
+                    ? ($user->volunteerProfile->is_profile_complete ?? false)
+                    : null,
             ],
         ]);
     }
@@ -183,6 +190,9 @@ class AuthController extends Controller
                 'phone' => $user->phone,
                 'ngoProfile' => $user->ngoProfile,
                 'volunteerProfile' => $user->volunteerProfile,
+                'is_profile_complete' => $user->role === 'volunteer'
+                    ? ($user->volunteerProfile->is_profile_complete ?? false)
+                    : null,
             ],
         ]);
     }

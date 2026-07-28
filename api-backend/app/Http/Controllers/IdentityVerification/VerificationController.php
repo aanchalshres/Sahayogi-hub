@@ -67,31 +67,6 @@ class VerificationController extends Controller
         ]);
     }
 
-    public function uploadSelfie(Request $request): JsonResponse
-    {
-        $user = $request->user();
-
-        $validated = $request->validate([
-            'verification_id' => 'required|exists:identity_verifications,id',
-            'selfie' => 'required|image|mimes:jpg,jpeg,png,webp|max:5120',
-        ]);
-
-        $verification = IdentityVerification::findOrFail($validated['verification_id']);
-
-        $this->authorizeAccess($verification, $user);
-
-        if ($verification->status !== 'pending') {
-            return response()->json(['message' => 'Verification session is not in pending state'], 422);
-        }
-
-        $selfie = $this->pipeline->uploadSelfie($verification, $request->file('selfie'));
-
-        return response()->json([
-            'message' => 'Selfie uploaded',
-            'data' => $selfie->toArray(),
-        ]);
-    }
-
     public function submit(Request $request): JsonResponse
     {
         $user = $request->user();
@@ -127,7 +102,7 @@ class VerificationController extends Controller
     {
         $user = $request->user();
 
-        $verification = IdentityVerification::with(['documents', 'selfie', 'logs'])
+        $verification = IdentityVerification::with(['documents', 'logs'])
             ->findOrFail($id);
 
         $this->authorizeAccess($verification, $user);
@@ -143,7 +118,7 @@ class VerificationController extends Controller
 
         $verifications = IdentityVerification::where('verifiable_id', $user->volunteerProfile?->id)
             ->where('verifiable_type', get_class($user->volunteerProfile))
-            ->with(['documents', 'selfie'])
+            ->with(['documents'])
             ->orderBy('created_at', 'desc')
             ->get();
 
@@ -190,11 +165,6 @@ class VerificationController extends Controller
                 'ocr_extracted_data' => $d->ocr_extracted_data,
                 'validation_status' => $d->validation_status,
             ]),
-            'selfie' => $v->selfie ? [
-                'id' => $v->selfie->id,
-                'file_url' => url("storage/{$v->selfie->file_path}"),
-                'image_quality_score' => $v->selfie->image_quality_score,
-            ] : null,
         ];
     }
 }

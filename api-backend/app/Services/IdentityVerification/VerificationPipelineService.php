@@ -3,14 +3,11 @@
 namespace App\Services\IdentityVerification;
 
 use App\Models\IdentityVerification\IdentityDocument;
-use App\Models\IdentityVerification\IdentitySelfie;
 use App\Models\IdentityVerification\IdentityVerification;
 use App\Models\IdentityVerification\IdentityVerificationLog;
 use App\Models\VolunteerProfile;
 use Illuminate\Http\UploadedFile;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Storage;
 
 class VerificationPipelineService
 {
@@ -75,36 +72,6 @@ class VerificationPipelineService
         return $document;
     }
 
-    public function uploadSelfie(
-        IdentityVerification $verification,
-        UploadedFile $file
-    ): IdentitySelfie {
-        $path = $file->store(
-            config('identity-verification.storage.selfies_path', 'identity-verification/selfies'),
-            config('identity-verification.storage.documents_disk', 'public')
-        );
-
-        $existingSelfie = IdentitySelfie::where('identity_verification_id', $verification->id)->first();
-        if ($existingSelfie) {
-            Storage::disk('public')->delete($existingSelfie->file_path);
-            $existingSelfie->delete();
-        }
-
-        $selfie = IdentitySelfie::create([
-            'identity_verification_id' => $verification->id,
-            'file_path' => $path,
-            'original_name' => $file->getClientOriginalName(),
-            'mime_type' => $file->getMimeType(),
-            'file_size' => $file->getSize(),
-        ]);
-
-        $this->logStep($verification, 'selfie_upload', 'success', 'Selfie uploaded', [
-            'selfie_id' => $selfie->id,
-        ]);
-
-        return $selfie;
-    }
-
     public function process(IdentityVerification $verification): IdentityVerification
     {
         $verification->update(['status' => 'processing']);
@@ -112,7 +79,6 @@ class VerificationPipelineService
 
         try {
             $documents = $verification->documents;
-            $selfie = $verification->selfie;
 
             if ($documents->isEmpty()) {
                 throw new \RuntimeException('No documents uploaded for verification');
