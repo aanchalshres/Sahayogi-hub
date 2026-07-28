@@ -21,6 +21,25 @@ class DatabaseSeeder extends Seeder
             WorkflowTransitionSeeder::class,
             SystemSettingSeeder::class,
             AdminSeeder::class,
+            OrganizationSeeder::class,
+
+            // Core domain seeders
+            VolunteerProfileSeeder::class,
+            TaskSeeder::class,
+
+            // Algorithm test seeders
+            MatchingTestSeeder::class,
+            RankingValidationSeeder::class,
+
+            // Lifecycle seeders
+            ApplicationSeeder::class,
+            ServiceLogSeeder::class,
+            ReviewSeeder::class,
+            CertificateSeeder::class,
+            NotificationSeeder::class,
+
+            // End-to-end scenarios
+            WorkflowScenarioSeeder::class,
         ]);
     }
 }
