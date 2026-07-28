@@ -53,7 +53,7 @@ export default function SettingsPage() {
     setError(null);
     setSuccess(null);
     try {
-      const res = await apiPut('/api/admin/settings/profile', profileForm);
+      const res = await apiPut<any>('/api/admin/settings/profile', profileForm);
       setProfile(res.data);
       setSuccess('Profile updated successfully');
     } catch (err: any) {

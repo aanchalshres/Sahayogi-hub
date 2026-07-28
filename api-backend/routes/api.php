@@ -37,6 +37,7 @@ use App\Http\Controllers\Ngo\AttendanceController as NgoAttendanceController;
 use App\Http\Controllers\Ngo\ReportsController as NgoReportsController;
 use App\Http\Controllers\Ngo\RatingController as NgoRatingController;
 use App\Http\Controllers\Ngo\CertificateController as NgoCertificateController;
+use App\Http\Controllers\Ngo\WorkflowController as NgoWorkflowController;
 
 use App\Http\Controllers\Volunteer\TaskController as VolunteerTaskController;
 use App\Http\Controllers\Volunteer\ApplicationController as VolunteerApplicationController;
@@ -48,6 +49,15 @@ use App\Http\Controllers\Volunteer\NotificationController as VolunteerNotificati
 use App\Http\Controllers\Volunteer\AttendanceController as VolunteerAttendanceController;
 use App\Http\Controllers\Volunteer\RatingController as VolunteerRatingController;
 use App\Http\Controllers\Volunteer\CertificateController as VolunteerCertificateController;
+use App\Http\Controllers\Volunteer\WorkflowController as VolunteerWorkflowController;
+
+use App\Http\Controllers\Attendance\VolunteerAttendanceController as SecureAttendanceController;
+use App\Http\Controllers\Attendance\NgoAttendanceController as SecureNgoAttendanceController;
+
+use App\Http\Controllers\TrustScoreController;
+
+use App\Http\Controllers\IdentityVerification\VerificationController as IdentityVerificationController;
+use App\Http\Controllers\IdentityVerification\AdminVerificationController;
 
 
 /*
@@ -671,6 +681,32 @@ Route::middleware([
 
     /*
     |--------------------------------------------------------------------------
+    | Trust Score Management
+    |--------------------------------------------------------------------------
+    */
+
+    Route::get(
+        '/admin/trust/volunteer/{id}',
+        [TrustScoreController::class, 'show']
+    );
+
+    Route::post(
+        '/admin/trust/volunteer/{id}/recalculate',
+        [TrustScoreController::class, 'adminRecalculate']
+    );
+
+    Route::post(
+        '/admin/trust/recalculate-all',
+        [TrustScoreController::class, 'adminRecalculateAll']
+    );
+
+    Route::get(
+        '/admin/trust/volunteer/{profileId}/history',
+        [TrustScoreController::class, 'adminHistory']
+    );
+
+    /*
+    |--------------------------------------------------------------------------
     | Activity Log
     |--------------------------------------------------------------------------
     */
@@ -729,6 +765,11 @@ Route::middleware([
     Route::post(
         '/ngo/tasks/{id}/complete',
         [NgoTaskController::class, 'complete']
+    );
+
+    Route::get(
+        '/ngo/tasks/{id}/recommended-volunteers',
+        [NgoTaskController::class, 'recommendedVolunteers']
     );
 
     Route::put(
@@ -898,6 +939,26 @@ Route::get(
     [NgoAttendanceController::class, 'summary']
 );
 
+Route::post(
+    '/ngo/attendance/generate-qr',
+    [SecureNgoAttendanceController::class, 'generateQr']
+);
+
+Route::get(
+    '/ngo/attendance/qr-codes',
+    [SecureNgoAttendanceController::class, 'listQrCodes']
+);
+
+Route::delete(
+    '/ngo/attendance/qr-codes/{id}',
+    [SecureNgoAttendanceController::class, 'revokeQr']
+);
+
+Route::get(
+    '/ngo/attendance/analytics',
+    [SecureNgoAttendanceController::class, 'analytics']
+);
+
 
 /*
 |--------------------------------------------------------------------------
@@ -947,6 +1008,33 @@ Route::get(
 Route::get(
     '/ngo/certificates',
     [NgoCertificateController::class, 'index']
+);
+
+
+/*
+|--------------------------------------------------------------------------
+| Workflow Automation
+|--------------------------------------------------------------------------
+*/
+
+Route::get(
+    '/ngo/tasks/{id}/shortlist',
+    [NgoWorkflowController::class, 'shortlist']
+);
+
+Route::post(
+    '/ngo/tasks/{id}/generate-shortlist',
+    [NgoWorkflowController::class, 'generateShortlist']
+);
+
+Route::get(
+    '/ngo/tasks/{id}/prioritized-applications',
+    [NgoWorkflowController::class, 'prioritizedApplications']
+);
+
+Route::get(
+    '/ngo/strategies',
+    [NgoWorkflowController::class, 'strategies']
 );
 
 Route::get(
@@ -1180,6 +1268,43 @@ Route::middleware([
 
     /*
     |--------------------------------------------------------------------------
+    | Secure Attendance Verification (QR + GPS)
+    |--------------------------------------------------------------------------
+    */
+
+    Route::post(
+        '/volunteer/attendance/validate-qr',
+        [SecureAttendanceController::class, 'validateQr']
+    );
+
+    Route::post(
+        '/volunteer/attendance/secure-check-in',
+        [SecureAttendanceController::class, 'checkIn']
+    );
+
+    Route::post(
+        '/volunteer/attendance/secure-check-out',
+        [SecureAttendanceController::class, 'checkOut']
+    );
+
+    Route::get(
+        '/volunteer/attendance/status',
+        [SecureAttendanceController::class, 'status']
+    );
+
+    Route::get(
+        '/volunteer/attendance/secure-history',
+        [SecureAttendanceController::class, 'history']
+    );
+
+    Route::get(
+        '/volunteer/attendance/analytics',
+        [SecureAttendanceController::class, 'analytics']
+    );
+
+
+    /*
+    |--------------------------------------------------------------------------
     | Ratings & Feedback
     |--------------------------------------------------------------------------
     */
@@ -1243,8 +1368,80 @@ Route::middleware([
         [VolunteerProfileController::class, 'changePassword']
     );
 
+
+    /*
+    |--------------------------------------------------------------------------
+    | Trust Score
+    |--------------------------------------------------------------------------
+    */
+
+    Route::get(
+        '/volunteer/trust/score',
+        [TrustScoreController::class, 'myScore']
+    );
+
+    Route::get(
+        '/volunteer/trust/breakdown',
+        [TrustScoreController::class, 'breakdown']
+    );
+
+    Route::get(
+        '/volunteer/trust/history',
+        [TrustScoreController::class, 'myHistory']
+    );
+
+    Route::post(
+        '/volunteer/trust/recalculate',
+        [TrustScoreController::class, 'recalculate']
+    );
+
+    /*
+    |--------------------------------------------------------------------------
+    | Workflow Automation
+    |--------------------------------------------------------------------------
+    */
+
+    Route::get(
+        '/volunteer/recommended-ngos',
+        [VolunteerWorkflowController::class, 'recommendedNgos']
+    );
+
+    Route::get(
+        '/volunteer/strategies',
+        [VolunteerWorkflowController::class, 'strategies']
+    );
+
 });
 
+
+/*
+|--------------------------------------------------------------------------
+| Identity Verification Routes (Volunteer)
+|--------------------------------------------------------------------------
+*/
+
+Route::middleware(['auth:sanctum', 'role:volunteer'])->prefix('volunteer/identity-verification')->group(function () {
+    Route::post('/start', [IdentityVerificationController::class, 'start']);
+    Route::post('/upload-document', [IdentityVerificationController::class, 'uploadDocument']);
+    Route::post('/submit', [IdentityVerificationController::class, 'submit']);
+    Route::get('/status/{id}', [IdentityVerificationController::class, 'status']);
+    Route::get('/history', [IdentityVerificationController::class, 'history']);
+});
+
+/*
+|--------------------------------------------------------------------------
+| Identity Verification Routes (Admin)
+|--------------------------------------------------------------------------
+*/
+
+Route::middleware(['auth:sanctum', 'role:admin'])->prefix('admin/identity-verification')->group(function () {
+    Route::get('/', [AdminVerificationController::class, 'index']);
+    Route::get('/pending', [AdminVerificationController::class, 'pending']);
+    Route::get('/stats', [AdminVerificationController::class, 'stats']);
+    Route::get('/{id}', [AdminVerificationController::class, 'show']);
+    Route::post('/{id}/approve', [AdminVerificationController::class, 'approve']);
+    Route::post('/{id}/reject', [AdminVerificationController::class, 'reject']);
+});
 
 /*
 |--------------------------------------------------------------------------
@@ -1261,3 +1458,75 @@ Route::get(
     '/tasks/{id}/tfidf',
     [TfIdfController::class, 'showTask']
 );
+
+/*
+|--------------------------------------------------------------------------
+| Certificate Authentication Routes
+|--------------------------------------------------------------------------
+*/
+
+use App\Http\Controllers\CertificateAuthController;
+
+// Public verification (no auth required)
+Route::get('/verify-certificate', [CertificateAuthController::class, 'publicVerify']);
+
+// Volunteer certificate auth
+Route::middleware(['auth:sanctum', 'role:volunteer'])->prefix('volunteer')->group(function () {
+    Route::get('/certificates/{id}/verify', [CertificateAuthController::class, 'verifyById']);
+    Route::get('/certificates/{id}/status', [CertificateAuthController::class, 'status']);
+    Route::get('/certificates/{id}/qr', [CertificateAuthController::class, 'qrCode']);
+    Route::get('/certificates/{id}/auth-status', [CertificateAuthController::class, 'history']);
+});
+
+// NGO certificate auth
+Route::middleware(['auth:sanctum', 'role:ngo'])->prefix('ngo')->group(function () {
+    Route::post('/certificates/{id}/setup-auth', [CertificateAuthController::class, 'setupAuthentication']);
+    Route::get('/certificates/{id}/verify', [CertificateAuthController::class, 'verifyById']);
+    Route::get('/certificates/{id}/qr', [CertificateAuthController::class, 'qrCode']);
+    Route::get('/certificates/{id}/auth-status', [CertificateAuthController::class, 'history']);
+});
+
+// Admin certificate auth
+Route::middleware(['auth:sanctum', 'role:admin'])->prefix('admin')->group(function () {
+    Route::get('/certificates/{id}/verify', [CertificateAuthController::class, 'verifyById']);
+    Route::get('/certificates/{id}/status', [CertificateAuthController::class, 'status']);
+    Route::post('/certificates/{id}/revoke', [CertificateAuthController::class, 'revoke']);
+    Route::post('/certificates/{id}/restore', [CertificateAuthController::class, 'restore']);
+    Route::get('/certificates/{id}/verification-history', [CertificateAuthController::class, 'history']);
+    Route::get('/certificates/{id}/qr', [CertificateAuthController::class, 'qrCode']);
+    Route::post('/certificates/{id}/setup-auth', [CertificateAuthController::class, 'setupAuthentication']);
+    Route::get('/certificates/auth-analytics', [CertificateAuthController::class, 'analytics']);
+});
+
+/*
+|--------------------------------------------------------------------------
+| Schedule Conflict Detection Routes
+|--------------------------------------------------------------------------
+*/
+
+use App\Http\Controllers\ScheduleConflictController;
+
+// Volunteer schedule and conflict check
+Route::middleware(['auth:sanctum', 'role:volunteer'])->prefix('volunteer')->group(function () {
+    Route::get('/schedule', [ScheduleConflictController::class, 'mySchedule']);
+    Route::get('/schedule/commitments', [ScheduleConflictController::class, 'myCommitments']);
+    Route::post('/schedule/check-before-apply', [ScheduleConflictController::class, 'checkBeforeApply']);
+    Route::get('/schedule/conflicts', [ScheduleConflictController::class, 'mySchedule']);
+});
+
+// NGO schedule and conflict check
+Route::middleware(['auth:sanctum', 'role:ngo'])->prefix('ngo')->group(function () {
+    Route::post('/schedule/check-conflict', [ScheduleConflictController::class, 'ngoCheckConflict']);
+    Route::get('/schedule/volunteer/{profileId}', [ScheduleConflictController::class, 'ngoVolunteerSchedule']);
+});
+
+// Admin schedule conflict management
+Route::middleware(['auth:sanctum', 'role:admin'])->prefix('admin')->group(function () {
+    Route::get('/schedule/conflicts', [ScheduleConflictController::class, 'adminAllConflicts']);
+    Route::post('/schedule/conflicts/{id}/resolve', [ScheduleConflictController::class, 'adminResolveConflict']);
+    Route::get('/schedule/analytics', [ScheduleConflictController::class, 'adminAnalytics']);
+    Route::post('/schedule/validate-assignment', [ScheduleConflictController::class, 'adminValidateAssignment']);
+});
+
+// Public Schedule Check (minimal info, no auth needed for basic task check)
+Route::get('/schedule/check/{volunteerProfileId}/task/{taskId}', [ScheduleConflictController::class, 'checkTaskConflict']);

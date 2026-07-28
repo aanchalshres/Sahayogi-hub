@@ -27,6 +27,8 @@ import {
   BarChart3,
   Tags,
   BookOpen,
+  Shield,
+  CalendarX,
 } from 'lucide-react';
 
 const menuItems = [
@@ -41,10 +43,12 @@ const menuItems = [
   { id: 'reviews', label: 'Reviews', icon: Star, href: '/dashboard/admin/reviews' },
   { id: 'notifications', label: 'Notifications', icon: Bell, href: '/dashboard/admin/notifications' },
   { id: 'admin-users', label: 'Admin Users', icon: UserCog, href: '/dashboard/admin/admin-users' },
+  { id: 'schedule-conflicts', label: 'Schedule Conflicts', icon: CalendarX, href: '/dashboard/admin/schedule-conflicts' },
   { id: 'analytics', label: 'Analytics', icon: BarChart3, href: '/dashboard/admin/analytics' },
   { id: 'categories', label: 'Categories', icon: Tags, href: '/dashboard/admin/categories' },
   { id: 'skills', label: 'Skills', icon: BookOpen, href: '/dashboard/admin/skills' },
   { id: 'activity-log', label: 'Activity Log', icon: Activity, href: '/dashboard/admin/activity-log' },
+  { id: 'trust-management', label: 'Trust Management', icon: Shield, href: '/dashboard/admin/trust-management' },
   { id: 'reports', label: 'Reports', icon: FileText, href: '/dashboard/admin/reports' },
   { id: 'settings', label: 'Settings', icon: Settings, href: '/dashboard/admin/settings' },
 ];

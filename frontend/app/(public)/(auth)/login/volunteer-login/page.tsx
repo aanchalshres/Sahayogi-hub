@@ -66,7 +66,10 @@ export default function VolunteerLogin() {
       }
 
       const token = data.token || data.access_token
-      const user = data.user
+      const user = {
+        ...data.user,
+        is_profile_complete: data.user?.is_profile_complete ?? false,
+      }
 
       localStorage.setItem('authToken', token)
       localStorage.setItem('user', JSON.stringify(user))

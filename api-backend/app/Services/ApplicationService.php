@@ -5,10 +5,16 @@ namespace App\Services;
 use App\Models\Application;
 use App\Models\Task;
 use App\Models\VolunteerProfile;
+use App\Services\ScheduleConflict\ScheduleConflictService;
 use Illuminate\Database\Eloquent\Collection;
 
 class ApplicationService
 {
+    public function __construct(
+        private RecommendationService $recommendationService,
+        private ScheduleConflictService $scheduleConflictService,
+    ) {}
+
     public function apply(int $taskId, VolunteerProfile $profile, ?string $message = null): Application
     {
         $task = Task::with('ngo')->findOrFail($taskId);
@@ -38,9 +44,22 @@ class ApplicationService
             abort(400, 'This task has reached its volunteer limit');
         }
 
+        if (config('schedule-conflict.check_on_apply')) {
+            $conflicts = $this->scheduleConflictService->checkTask($profile->id, $taskId);
+            if ($conflicts['has_conflicts']) {
+                $resolution = config('schedule-conflict.default_resolution', 'warn_ngo');
+                if ($resolution === 'reject') {
+                    abort(409, 'Cannot apply: this task conflicts with your existing commitments');
+                }
+            }
+        }
+
+        $recommendationScore = $this->recommendationService->computeVolunteerTaskMatchScore($profile, $task);
+
         $application = Application::create([
             'task_id' => (int) $taskId,
             'volunteer_profile_id' => $profile->id,
+            'recommendation_score' => $recommendationScore,
             'status' => 'Pending',
             'applied_at' => now(),
             'remarks' => $message,

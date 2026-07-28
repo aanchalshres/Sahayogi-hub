@@ -16,6 +16,9 @@ import {
   Award,
   Settings,
   Upload,
+  ShieldCheck,
+  TrendingUp,
+  Calendar,
 } from "lucide-react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
@@ -25,7 +28,10 @@ const menuItems = [
   { name: "My Applications", href: "/dashboard/volunteer/applications", icon: FileText },
   { name: "My Skills", href: "/dashboard/volunteer/skills", icon: CheckSquare },
   { name: "Profile", href: "/dashboard/volunteer/profile", icon: User },
+  { name: "Trust Score", href: "/dashboard/volunteer/trust-history", icon: TrendingUp },
+  { name: "My Schedule", href: "/dashboard/volunteer/schedule", icon: Calendar },
   { name: "Documents", href: "/dashboard/volunteer/documents", icon: Upload },
+  { name: "Identity Verification", href: "/dashboard/volunteer/verify", icon: ShieldCheck },
   { name: "Participations", href: "/dashboard/volunteer/participations", icon: Users },
   { name: "Ratings", href: "/dashboard/volunteer/ratings", icon: Star },
   { name: "Certificates", href: "/dashboard/volunteer/certificates", icon: Award },

@@ -2,10 +2,12 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\Pivot;
 
-class VolunteerSkill extends Model
+class VolunteerSkill extends Pivot
 {
+    protected $touches = ['volunteerProfile'];
+
     protected $fillable = [
     'volunteer_profile_id',
     'skill_id',

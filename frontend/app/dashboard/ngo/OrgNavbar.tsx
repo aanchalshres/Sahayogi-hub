@@ -1,33 +1,44 @@
 'use client'
 import { Bell } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { useAuth } from '@/app/providers/AuthProvider'
 import { useRouter } from 'next/navigation'
 import { apiGet } from '@/app/lib/api'
 
-const OrgNavbar = ({ sidebarOpen }: { sidebarOpen?: boolean }) => {
+const OrgNavbar = () => {
   const { user } = useAuth()
   const router = useRouter()
   const [unreadCount, setUnreadCount] = useState(0)
+  const unreadRef = useRef(unreadCount)
+  unreadRef.current = unreadCount
 
   const getInitials = (name?: string) => {
     if (!name) return '?'
     return name.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2)
   }
 
-  const loadUnreadCount = async () => {
-    try {
-      const res = await apiGet<{ data: { unread_count: number } }>('/api/ngo/notifications/unread-count')
-      setUnreadCount(res.data.unread_count)
-    } catch {
-      setUnreadCount(0)
-    }
-  }
-
   useEffect(() => {
-    loadUnreadCount()
-    const interval = setInterval(loadUnreadCount, 30000)
-    return () => clearInterval(interval)
+    let active = true
+
+    const load = async () => {
+      try {
+        const res = await apiGet<{ data: { unread_count: number } }>('/api/ngo/notifications/unread-count')
+        if (active && res.data.unread_count !== unreadRef.current) {
+          setUnreadCount(res.data.unread_count)
+        }
+      } catch {
+        if (active && unreadRef.current !== 0) {
+          setUnreadCount(0)
+        }
+      }
+    }
+
+    load()
+    const interval = setInterval(load, 30000)
+    return () => {
+      active = false
+      clearInterval(interval)
+    }
   }, [])
 
   return (

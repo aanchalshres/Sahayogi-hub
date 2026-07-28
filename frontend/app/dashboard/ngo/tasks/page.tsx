@@ -1,6 +1,6 @@
 'use client'
-import { useEffect, useState, useCallback } from 'react'
-import { useRouter } from 'next/link'
+import { useEffect, useState, useCallback, useMemo } from 'react'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { apiGet, apiDelete } from '@/app/lib/api'
 import {
@@ -39,6 +39,15 @@ export default function TasksPage() {
   const [statusFilter, setStatusFilter] = useState('all')
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<number | null>(null)
   const [deleting, setDeleting] = useState(false)
+  const [successBanner, setSuccessBanner] = useState<string | null>(null)
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    if (params.get('created') === 'true') {
+      setSuccessBanner('Task created successfully!')
+      router.replace(window.location.pathname, { scroll: false })
+    }
+  }, [router])
 
   const loadTasks = useCallback(async () => {
     try {
@@ -67,14 +76,14 @@ export default function TasksPage() {
     }
   }
 
-  const filtered = tasks.filter((t) => {
+  const filtered = useMemo(() => tasks.filter((t) => {
     const q = searchQuery.toLowerCase()
     const matchesSearch = !q || t.title.toLowerCase().includes(q) || (t.location || '').toLowerCase().includes(q) || (t.city || '').toLowerCase().includes(q)
     const matchesStatus = statusFilter === 'all' || t.status === statusFilter
     return matchesSearch && matchesStatus
-  })
+  }), [tasks, searchQuery, statusFilter])
 
-  const statusCounts = tasks.reduce((acc, t) => { acc[t.status] = (acc[t.status] || 0) + 1; return acc }, {} as Record<string, number>)
+  const statusCounts = useMemo(() => tasks.reduce((acc, t) => { acc[t.status] = (acc[t.status] || 0) + 1; return acc }, {} as Record<string, number>), [tasks])
 
   const statusColors: Record<string, string> = {
     draft: 'bg-gray-100 text-gray-700',
@@ -148,6 +157,13 @@ export default function TasksPage() {
             <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
           </div>
         </div>
+
+        {successBanner && (
+          <div className="flex items-center gap-2 bg-green-50 border-l-4 border-green-400 text-green-700 text-sm rounded p-3 mb-6">
+            <span>{successBanner}</span>
+            <button onClick={() => setSuccessBanner(null)} className="ml-auto text-green-500 hover:text-green-700 font-bold">&times;</button>
+          </div>
+        )}
 
         <div className="space-y-3">
           {filtered.length === 0 && (

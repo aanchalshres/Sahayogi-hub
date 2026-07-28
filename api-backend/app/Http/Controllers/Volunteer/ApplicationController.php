@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Volunteer;
 
+use App\Events\TrustScore\ApplicationStatusChanged;
 use App\Http\Controllers\Controller;
 use App\Services\ApplicationService;
 use Illuminate\Http\Request;
@@ -119,6 +120,8 @@ class ApplicationController extends Controller
                 (int) $id,
                 $profile
             );
+
+            ApplicationStatusChanged::dispatch($profile->id, (int) $id, 'Withdrawn');
 
             return response()->json([
                 'success' => true,

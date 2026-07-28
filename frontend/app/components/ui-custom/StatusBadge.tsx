@@ -1,7 +1,7 @@
 import { cn } from '@/app/lib/utils';
 
 interface StatusBadgeProps {
-  status: 'pending' | 'verified' | 'rejected' | 'active' | 'completed' | 'removed';
+  status: 'pending' | 'verified' | 'rejected' | 'active' | 'completed' | 'removed' | 'revoked';
   className?: string;
 }
 
@@ -48,6 +48,13 @@ const statusConfig = {
     borderColor: 'border-gray-200',
     glowClass: '',
   },
+  revoked: {
+    label: 'Revoked',
+    bgColor: 'bg-rose-50',
+    textColor: 'text-rose-700',
+    borderColor: 'border-rose-200',
+    glowClass: '',
+  },
 };
 
 export function StatusBadge({ status, className }: StatusBadgeProps) {
@@ -72,7 +79,8 @@ export function StatusBadge({ status, className }: StatusBadgeProps) {
           status === 'rejected' && 'bg-red-500',
           status === 'active' && 'bg-emerald-500',
           status === 'completed' && 'bg-blue-500',
-          status === 'removed' && 'bg-gray-400'
+          status === 'removed' && 'bg-gray-400',
+          status === 'revoked' && 'bg-rose-500'
         )}
       />
       {config.label}

@@ -23,10 +23,11 @@ class VolunteerProfile extends Model
         'emergency_contact_name',
         'emergency_contact_phone',
         'availability',
+        'is_profile_complete',
         'tfidf_vector',
         'trust_score',
         'trust_updated_at',
-        'reliability_score',
+        'trust_score_components',
         'total_service_hours',
         'average_rating',
     ];
@@ -35,8 +36,8 @@ class VolunteerProfile extends Model
         'date_of_birth' => 'date',
         'tfidf_vector' => 'array',
         'trust_updated_at' => 'datetime',
+        'trust_score_components' => 'array',
         'trust_score' => 'float',
-        'reliability_score' => 'decimal:2',
         'total_service_hours' => 'decimal:2',
         'average_rating' => 'decimal:2',
     ];
@@ -51,7 +52,8 @@ class VolunteerProfile extends Model
         return $this->belongsToMany(
             Skill::class,
             'volunteer_skills'
-        )->withPivot('proficiency_level');
+        )->using(VolunteerSkill::class)
+         ->withPivot('proficiency_level');
     }
 
     public function applications()

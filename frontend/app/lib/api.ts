@@ -45,7 +45,6 @@ export async function apiCall(
     const response = await fetch(`${API_URL}${resolvedEndpoint}`, {
       ...options,
       headers,
-      credentials: 'include',
     });
 
     console.debug(`[API] Response status: ${response.status}`);
@@ -116,18 +115,6 @@ export async function parseResponse<T>(response: Response): Promise<T> {
  */
 export async function apiGet<T>(endpoint: string) {
   const response = await apiCall(endpoint);
-
-  if (!response.ok && response.status === 404) {
-    const alternateEndpoint = endpoint.startsWith("/api/")
-      ? endpoint.replace(/^\/api/, "")
-      : `/api${endpoint.startsWith("/") ? endpoint : `/${endpoint}`}`;
-
-    if (alternateEndpoint !== endpoint) {
-      const fallbackResponse = await apiCall(alternateEndpoint);
-      return parseResponse<T>(fallbackResponse);
-    }
-  }
-
   return parseResponse<T>(response);
 }
 

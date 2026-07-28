@@ -3,7 +3,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -21,9 +21,15 @@ function getCookie(name: string): string | null {
 
 export function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) {
   const router = useRouter();
+  const routerRef = useRef(router);
   const [mounted, setMounted] = useState(false);
   const [token, setToken] = useState<string | null>(null);
   const [role, setRole] = useState<string | null>(null);
+
+  // Keep routerRef current without triggering re-renders
+  useEffect(() => {
+    routerRef.current = router;
+  });
 
   useEffect(() => {
     // Read the same cookies proxy.ts checks, so client and server agree.
@@ -41,15 +47,15 @@ export function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) 
     if (!mounted) return;
 
     if (!isAuthenticated) {
-      router.push("/login");
+      routerRef.current.push("/login");
       return;
     }
 
     if (!roleAllowed) {
-      router.push("/unauthorized");
+      routerRef.current.push("/unauthorized");
       return;
     }
-  }, [mounted, isAuthenticated, roleAllowed, router]);
+  }, [mounted, isAuthenticated, roleAllowed]);
 
   // Wait for cookies to be read on the client
   if (!mounted) {

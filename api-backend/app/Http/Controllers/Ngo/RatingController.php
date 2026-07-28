@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Ngo;
 
+use App\Events\TrustScore\RatingSubmitted;
 use App\Http\Controllers\Controller;
 use App\Models\Review;
 use App\Models\Application;
@@ -70,6 +71,11 @@ class RatingController extends Controller
         ]);
 
         $review->load(['reviewee.volunteerProfile', 'task']);
+
+        $volunteerProfile = $review->reviewee?->volunteerProfile;
+        if ($volunteerProfile) {
+            RatingSubmitted::dispatch($volunteerProfile->id, $review->id, $review->rating);
+        }
 
         return response()->json([
             'message' => 'Rating submitted',

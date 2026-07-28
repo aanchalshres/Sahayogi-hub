@@ -3,9 +3,11 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { apiGet, apiPost } from '@/app/lib/api'
 import {
-  ArrowLeft, PlusCircle, MapPin, Calendar,
+  ArrowLeft, PlusCircle, Calendar,
   Users, Clock, AlertTriangle, ChevronDown
 } from 'lucide-react'
+import SkillSelector from '@/app/components/ui-custom/SkillSelector'
+import LocationPicker from '@/app/components/ui-custom/LocationPicker'
 
 interface Skill {
   id: number
@@ -25,15 +27,13 @@ export default function PostTaskPage() {
   const [error, setError] = useState<string | null>(null)
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
 
+  const [selectedLocation, setSelectedLocation] = useState<{ lat: number; lng: number; address: string } | null>(null)
+
   const [form, setForm] = useState({
     title: '',
     description: '',
     category_id: '',
     task_type: 'one_time',
-    location: '',
-    city: '',
-    latitude: '',
-    longitude: '',
     required_volunteers: '1',
     start_date: '',
     end_date: '',
@@ -65,13 +65,9 @@ export default function PostTaskPage() {
     setFieldErrors((prev) => ({ ...prev, [key]: '' }))
   }
 
-  const toggleSkill = (skillId: number) => {
-    setForm((prev) => ({
-      ...prev,
-      skills: prev.skills.includes(skillId)
-        ? prev.skills.filter((id) => id !== skillId)
-        : [...prev.skills, skillId],
-    }))
+  const handleSkillsChange = (skillIds: number[]) => {
+    setForm((prev) => ({ ...prev, skills: skillIds }))
+    setFieldErrors((prev) => ({ ...prev, skills: '' }))
   }
 
   const validate = (): boolean => {
@@ -80,20 +76,30 @@ export default function PostTaskPage() {
     if (!form.description.trim()) errors.description = 'Description is required'
     if (!form.category_id) errors.category_id = 'Category is required'
     if (!form.start_date) errors.start_date = 'Start date is required'
-    if (form.latitude && isNaN(Number(form.latitude))) errors.latitude = 'Must be a number'
-    if (form.longitude && isNaN(Number(form.longitude))) errors.longitude = 'Must be a number'
+    if (!selectedLocation) errors.location = 'Please select a location on the map'
     setFieldErrors(errors)
     return Object.keys(errors).length === 0
   }
 
   const handleSubmit = async (status: string) => {
-    const payload = { ...form, status, required_volunteers: Number(form.required_volunteers), latitude: form.latitude ? Number(form.latitude) : null, longitude: form.longitude ? Number(form.longitude) : null, category_id: form.category_id ? Number(form.category_id) : null }
     if (!validate()) return
     setSubmitting(true)
     setError(null)
+    const payload = {
+      ...form,
+      status,
+      location: selectedLocation?.address || '',
+      city: '',
+      required_volunteers: Number(form.required_volunteers),
+      latitude: selectedLocation ? selectedLocation.lat : null,
+      longitude: selectedLocation ? selectedLocation.lng : null,
+      category_id: form.category_id ? Number(form.category_id) : null,
+      end_date: form.end_date || null,
+      application_deadline: form.application_deadline || null,
+    }
     try {
       await apiPost('/api/ngo/tasks', payload)
-      router.push('/dashboard/ngo/tasks')
+      router.push('/dashboard/ngo/tasks?created=true')
     } catch (err: any) {
       setError(err.message || 'Failed to create task')
     } finally {
@@ -154,23 +160,13 @@ export default function PostTaskPage() {
                 <option value="flexible">Flexible</option>
               </select>
             </div>
-            <div>
-              <label className="text-sm font-medium text-gray-700 mb-1 block">Location</label>
-              <input type="text" className={inputClass('location')} placeholder="e.g., Main Street Park" value={form.location} onChange={(e) => updateField('location', e.target.value)} />
-            </div>
-            <div>
-              <label className="text-sm font-medium text-gray-700 mb-1 block">City</label>
-              <input type="text" className={inputClass('city')} placeholder="e.g., Kathmandu" value={form.city} onChange={(e) => updateField('city', e.target.value)} />
-            </div>
-            <div>
-              <label className="text-sm font-medium text-gray-700 mb-1 block">Latitude</label>
-              <input type="text" className={inputClass('latitude')} placeholder="e.g., 27.7172" value={form.latitude} onChange={(e) => updateField('latitude', e.target.value)} />
-              {fieldErrors.latitude && <p className="text-xs text-red-500 mt-1">{fieldErrors.latitude}</p>}
-            </div>
-            <div>
-              <label className="text-sm font-medium text-gray-700 mb-1 block">Longitude</label>
-              <input type="text" className={inputClass('longitude')} placeholder="e.g., 85.3240" value={form.longitude} onChange={(e) => updateField('longitude', e.target.value)} />
-              {fieldErrors.longitude && <p className="text-xs text-red-500 mt-1">{fieldErrors.longitude}</p>}
+            <div className="md:col-span-2">
+              <LocationPicker
+                latitude={null}
+                longitude={null}
+                onChange={setSelectedLocation}
+                error={fieldErrors.location}
+              />
             </div>
             <div>
               <label className="text-sm font-medium text-gray-700 mb-1 block">Required Volunteers <span className="text-red-500">*</span></label>
@@ -207,15 +203,12 @@ export default function PostTaskPage() {
           </div>
 
           <div className="mt-6">
-            <label className="text-sm font-medium text-gray-700 mb-2 block">Required Skills</label>
-            <div className="flex flex-wrap gap-2">
-              {skills.map((s) => (
-                <button key={s.id} type="button" onClick={() => toggleSkill(s.id)} className={`text-xs px-3 py-1.5 rounded-full border transition ${form.skills.includes(s.id) ? 'bg-[#4F46C8] text-white border-[#4F46C8]' : 'bg-white text-gray-600 border-gray-200 hover:border-[#4F46C8]'}`}>
-                  {s.name}
-                </button>
-              ))}
-              {skills.length === 0 && <p className="text-xs text-gray-400">Loading skills...</p>}
-            </div>
+            <SkillSelector
+              skills={skills}
+              selectedIds={form.skills}
+              onChange={handleSkillsChange}
+              loading={skills.length === 0}
+            />
           </div>
 
           <div className="flex flex-col sm:flex-row gap-3 mt-8 pt-6 border-t border-gray-100">

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import OrgSidebar from "@/app/dashboard/ngo/OrgSidebar";
 import OrgNavbar from "@/app/dashboard/ngo/OrgNavbar";
 import { ProtectedRoute } from "@/app/components/ProtectedRoute";
@@ -11,6 +11,7 @@ export default function NGOLayout({
   children: React.ReactNode;
 }) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const toggleSidebar = useCallback(() => setSidebarOpen((prev) => !prev), []);
 
   return (
     <ProtectedRoute allowedRoles={["ngo"]}>
@@ -18,13 +19,13 @@ export default function NGOLayout({
         {/* SIDEBAR */}
         <OrgSidebar
           isOpen={sidebarOpen}
-          toggleSidebar={() => setSidebarOpen(!sidebarOpen)}
+          toggleSidebar={toggleSidebar}
         />
 
         {/* MAIN */}
         <div className="flex-1 flex flex-col min-h-0 w-full">
           {/* NAVBAR */}
-          <OrgNavbar sidebarOpen={sidebarOpen} />
+          <OrgNavbar />
 
           {/* CONTENT */}
           <div className="flex-1 overflow-y-auto p-6 w-full">

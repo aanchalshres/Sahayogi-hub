@@ -121,6 +121,7 @@ class DashboardController extends Controller
                     'total_reviews' => $profile->average_rating ? 23 : 0,
                 ],
                 'profile_completion' => $completionPercent,
+                'is_profile_complete' => $profile->is_profile_complete ?? false,
                 'document_status' => $documentStatus,
                 'upcoming_tasks' => $upcomingTasks,
                 'recent_activity' => $recentActivity,

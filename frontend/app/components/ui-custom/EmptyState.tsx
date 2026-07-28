@@ -2,7 +2,7 @@ import { Button } from '@/app/components/ui/button';
 import { FileText, Inbox, Search, CheckCircle2, AlertCircle } from 'lucide-react';
 
 interface EmptyStateProps {
-  type: 'ngos' | 'tasks' | 'flagged' | 'search' | 'documents' | 'notifications';
+  type: 'ngos' | 'tasks' | 'flagged' | 'search' | 'documents' | 'notifications' | 'generic';
   title?: string;
   message?: string;
   actionLabel?: string;
@@ -51,6 +51,13 @@ const emptyStateConfig = {
     defaultMessage: 'You have no new notifications at the moment.',
     iconColor: 'text-emerald-500',
     bgColor: 'bg-emerald-50',
+  },
+  generic: {
+    icon: Inbox,
+    defaultTitle: 'No Data',
+    defaultMessage: 'There is nothing to display here yet.',
+    iconColor: 'text-gray-400',
+    bgColor: 'bg-gray-100',
   },
 };
 

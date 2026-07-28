@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { useAuth } from "@/app/providers/AuthProvider";
 import {
   LayoutDashboard,
@@ -18,6 +18,7 @@ import {
   BarChart3,
   Star,
   Award,
+  Calendar,
 } from "lucide-react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
@@ -32,13 +33,13 @@ const menuItems = [
   { name: "Reports", href: "/dashboard/ngo/reports", icon: BarChart3 },
   { name: "Ratings", href: "/dashboard/ngo/ratings", icon: Star },
   { name: "Certificates", href: "/dashboard/ngo/certificates", icon: Award },
+  { name: "Schedule", href: "/dashboard/ngo/schedule", icon: Calendar },
   { name: "Notifications", href: "/dashboard/ngo/notifications", icon: Bell },
   { name: "Profile", href: "/dashboard/ngo/profile", icon: User },
 ];
 
 export default function OrgSidebar({ isOpen, toggleSidebar }: { isOpen: boolean; toggleSidebar: () => void }) {
   const pathname = usePathname();
-  const router = useRouter();
   const { logout } = useAuth();
 
   const handleLogout = async () => {

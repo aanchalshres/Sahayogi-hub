@@ -5,7 +5,7 @@ import { useAuth } from "@/app/providers/AuthProvider";
 import { useRouter } from "next/navigation";
 import { apiGet } from "@/app/lib/api";
 
-const OrgNavbar = ({ sidebarOpen }: { sidebarOpen?: boolean }) => {
+const OrgNavbar = () => {
   const { user } = useAuth();
   const router = useRouter();
   const [unreadCount, setUnreadCount] = useState(0);

@@ -116,9 +116,9 @@ export default function NgoAssignmentsPage() {
                         <div className="flex items-center gap-2">
                           <p className="font-semibold text-gray-900">{volUser?.name || 'Unknown'}</p>
                           {verified ? (
-                            <ShieldCheck size={14} className="text-green-600" title="Verified" />
+                            <ShieldCheck size={14} className="text-green-600" aria-label="Verified" />
                           ) : (
-                            <ShieldAlert size={14} className="text-gray-400" title="Not verified" />
+                            <ShieldAlert size={14} className="text-gray-400" aria-label="Not verified" />
                           )}
                         </div>
                         <p className="text-xs text-[#6B7280]">{a.task?.title || `Task #${a.task_id}`}</p>

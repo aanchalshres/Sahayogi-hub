@@ -60,3 +60,85 @@ export interface AdminUser {
   role: 'admin' | 'super_admin';
   createdAt: string;
 }
+
+// ─── Identity Verification Types ───
+
+export type IdentityVerificationStatus = 'pending' | 'processing' | 'pending_review' | 'verified' | 'rejected' | 'failed';
+export type IdentityVerificationDecision = 'auto_verified' | 'manual_review' | 'rejected' | 'admin_approved' | 'admin_rejected' | null;
+export type DocumentType = 'citizenship' | 'national_id' | 'student_id' | 'volunteer_card' | 'passport';
+export type OcrStatus = 'pending' | 'processing' | 'completed' | 'failed';
+export type ValidationStatus = 'pending' | 'passed' | 'failed';
+
+
+export interface IdentityDocument {
+  id: number;
+  document_type: DocumentType;
+  original_name: string;
+  mime_type: string;
+  file_url: string | null;
+  ocr_status: OcrStatus;
+  ocr_confidence: number | null;
+  ocr_extracted_data: Record<string, any> | null;
+  validation_status: ValidationStatus;
+}
+
+export interface IdentityVerification {
+  id: number;
+  status: IdentityVerificationStatus;
+  confidence_score: number | null;
+  ocr_score: number | null;
+  document_quality_score: number | null;
+  data_consistency_score: number | null;
+  decision: IdentityVerificationDecision;
+  decision_reason: string | null;
+  started_at: string | null;
+  completed_at: string | null;
+  documents: IdentityDocument[];
+}
+
+export interface IdentityVerificationStartResponse {
+  message: string;
+  data: IdentityVerification;
+}
+
+export interface IdentityVerificationUploadResponse {
+  message: string;
+  data: IdentityVerification | any;
+}
+
+export interface IdentityVerificationSubmitResponse {
+  message: string;
+  data: {
+    id: number;
+    status: 'processing';
+  };
+}
+
+export interface IdentityVerificationStatusResponse {
+  data: IdentityVerification;
+}
+
+export interface IdentityVerificationHistoryResponse {
+  data: IdentityVerification[];
+}
+
+// ─── Attendance Verification Types ───
+
+export type ConfidenceLevel = 'high' | 'medium' | 'low' | 'manual_review';
+
+export interface AttendanceLog {
+  id: number;
+  task_id: number;
+  task_title: string;
+  task_ngo: string;
+  status: string;
+  check_in_time: string | null;
+  check_out_time: string | null;
+  hours: number | null;
+  verification_method: string | null;
+  confidence_score: number | null;
+  confidence_level: ConfidenceLevel | null;
+  check_in_distance: number | null;
+  check_out_distance: number | null;
+  created_at: string;
+}

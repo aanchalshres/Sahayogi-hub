@@ -6,7 +6,7 @@ import {
   User, Calendar, CheckCircle, Clock, Star,
   FileText, TrendingUp, Activity, ArrowRight,
   AlertCircle, PlusCircle, UserCheck,
-  MapPin, Upload, Link as LinkIcon
+  MapPin, Upload, Link as LinkIcon, ShieldCheck
 } from 'lucide-react'
 
 interface DashboardData {
@@ -29,6 +29,7 @@ interface DashboardData {
     total_reviews: number
   }
   profile_completion: number
+  is_profile_complete: boolean
   document_status: string
   upcoming_tasks: {
     id: number
@@ -201,6 +202,25 @@ export default function VolunteerDashboard() {
             <PlusCircle size={16} /> Find Opportunities
           </button>
         </div>
+
+        {/* ── PROFILE INCOMPLETE BANNER ── */}
+        {!data.is_profile_complete && (
+          <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <AlertCircle size={20} className="text-amber-600 shrink-0" />
+              <div>
+                <p className="text-sm font-semibold text-amber-800">Profile Incomplete</p>
+                <p className="text-xs text-amber-700">Complete your profile to unlock all features and start applying to opportunities.</p>
+              </div>
+            </div>
+            <button
+              onClick={() => router.push('/dashboard/volunteer/profile')}
+              className="shrink-0 bg-amber-600 hover:bg-amber-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition"
+            >
+              Complete Profile
+            </button>
+          </div>
+        )}
 
         {/* ── STATS CARDS ── */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">

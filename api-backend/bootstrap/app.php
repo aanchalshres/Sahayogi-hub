@@ -15,7 +15,7 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        // $middleware->append(\Illuminate\Http\Middleware\HandleCors::class);
+        $middleware->append(\Illuminate\Http\Middleware\HandleCors::class);
         // Register route middleware
         $middleware->alias([
             'auth' => \App\Http\Middleware\Authenticate::class,

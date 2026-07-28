@@ -2,13 +2,19 @@
 
 namespace App\Http\Controllers\Ngo;
 
+use App\Events\TrustScore\ApplicationStatusChanged;
 use App\Http\Controllers\Controller;
 use App\Models\Application;
 use App\Services\NotificationService;
+use App\Services\ScheduleConflict\ScheduleConflictService;
 use Illuminate\Http\Request;
 
 class ApplicationController extends Controller
 {
+    public function __construct(
+        private ScheduleConflictService $scheduleConflictService
+    ) {}
+
     public function index(Request $request)
     {
         $ngo = $request->user()->ngoProfile;
@@ -60,11 +66,27 @@ class ApplicationController extends Controller
             ], 422);
         }
 
+        if (config('schedule-conflict.check_on_accept')) {
+            $conflicts = $this->scheduleConflictService->checkTask(
+                $application->volunteer_profile_id,
+                $application->task_id
+            );
+            $resolution = config('schedule-conflict.default_resolution', 'warn_ngo');
+            if ($resolution === 'reject' && $conflicts['has_conflicts']) {
+                return response()->json([
+                    'message' => 'Cannot accept: schedule conflict detected',
+                    'conflicts' => $conflicts['conflicts'],
+                ], 409);
+            }
+        }
+
         $application->update([
             'status' => 'Accepted',
             'reviewed_by' => $request->user()->id,
             'reviewed_at' => now(),
         ]);
+
+        ApplicationStatusChanged::dispatch($application->volunteer_profile_id, $application->id, 'Accepted');
 
         $volunteerUser = $application->volunteer->user ?? null;
         if ($volunteerUser) {
@@ -101,6 +123,8 @@ class ApplicationController extends Controller
             'reviewed_at' => now(),
         ]);
 
+        ApplicationStatusChanged::dispatch($application->volunteer_profile_id, $application->id, 'Rejected');
+
         $volunteerUser = $application->volunteer->user ?? null;
         if ($volunteerUser) {
             app(NotificationService::class)->volunteerRejected(
@@ -135,6 +159,8 @@ class ApplicationController extends Controller
             'reviewed_by' => $request->user()->id,
             'reviewed_at' => now(),
         ]);
+
+        ApplicationStatusChanged::dispatch($application->volunteer_profile_id, $application->id, 'Cancelled');
 
         return response()->json([
             'message' => 'Assignment cancelled',
