@@ -56,6 +56,125 @@ class RecommendationService
         ];
     }
 
+    /**
+     * Compute all scores PLUS rich metadata:
+     * matched_skills, missing_skills, distance_km, recommendation_reason
+     * Does NOT change any score values — only enriches the payload.
+     */
+    public function computeDetailedScores(
+        VolunteerProfile $volunteer,
+        Task $task
+    ): array {
+        $volunteer->loadMissing('skills');
+        $task->loadMissing('skills');
+
+        $base = $this->computeAllScores($volunteer, $task);
+
+        // ── Skill breakdown ──────────────────────────────────────────────
+        $volunteerSkillIds = $volunteer->skills->pluck('id')->toArray();
+        $taskSkills        = $task->skills;
+
+        $matched = $taskSkills->filter(fn ($s) => in_array($s->id, $volunteerSkillIds))
+                              ->values()
+                              ->map(fn ($s) => ['id' => $s->id, 'name' => $s->name]);
+
+        $missing = $taskSkills->filter(fn ($s) => !in_array($s->id, $volunteerSkillIds))
+                              ->values()
+                              ->map(fn ($s) => ['id' => $s->id, 'name' => $s->name]);
+
+        // ── Distance in km ───────────────────────────────────────────────
+        $distanceKm = null;
+        if ($volunteer->latitude && $volunteer->longitude && $task->latitude && $task->longitude) {
+            $distanceKm = round($this->distance->calculate(
+                $volunteer->latitude,
+                $volunteer->longitude,
+                $task->latitude,
+                $task->longitude
+            ), 1);
+        }
+
+        // ── Human-readable recommendation reason ─────────────────────────
+        $reason = $this->buildRecommendationReason($base, $distanceKm);
+
+        return array_merge($base, [
+            'matched_skills'         => $matched->toArray(),
+            'missing_skills'         => $missing->toArray(),
+            'distance_km'            => $distanceKm,
+            'recommendation_reason'  => $reason,
+        ]);
+    }
+
+    /**
+     * Build a concise, human-readable explanation from score outputs.
+     */
+    public function buildRecommendationReason(array $scores, ?float $distanceKm = null): string
+    {
+        $parts = [];
+
+        $overall    = $scores['recommendation_score'] ?? 0;
+        $semantic   = $scores['semantic_match_score'] ?? 0;
+        $skill      = $scores['skill_overlap_score'] ?? 0;
+        $distance   = $scores['distance_score'] ?? 0;
+        $avail      = $scores['availability_score'] ?? 0;
+        $trust      = $scores['trust_score'] ?? 0;
+
+        // Overall label
+        if ($overall >= 80) {
+            $parts[] = 'Excellent overall fit.';
+        } elseif ($overall >= 60) {
+            $parts[] = 'Good overall fit.';
+        } elseif ($overall >= 40) {
+            $parts[] = 'Moderate fit.';
+        }
+
+        // Semantic
+        if ($semantic >= 0.75) {
+            $parts[] = 'Very high semantic similarity.';
+        } elseif ($semantic >= 0.5) {
+            $parts[] = 'Good semantic match.';
+        } elseif ($semantic >= 0.25) {
+            $parts[] = 'Partial semantic similarity.';
+        }
+
+        // Skill
+        if ($skill >= 0.75) {
+            $parts[] = 'Excellent skill overlap.';
+        } elseif ($skill >= 0.5) {
+            $parts[] = 'Strong skill match.';
+        } elseif ($skill >= 0.25) {
+            $parts[] = 'Partial skill match.';
+        }
+
+        // Distance
+        if ($distanceKm !== null) {
+            if ($distanceKm < 10) {
+                $parts[] = "Only {$distanceKm} km away.";
+            } elseif ($distanceKm < 50) {
+                $parts[] = "{$distanceKm} km away — nearby.";
+            } elseif ($distance >= 0.4) {
+                $parts[] = "{$distanceKm} km away — reasonable distance.";
+            }
+        } elseif ($distance >= 0.7) {
+            $parts[] = 'Nearby location.';
+        }
+
+        // Availability
+        if ($avail >= 0.9) {
+            $parts[] = 'Volunteer is currently available.';
+        } elseif ($avail >= 0.7) {
+            $parts[] = 'Good availability overlap.';
+        }
+
+        // Trust
+        if ($trust >= 0.8) {
+            $parts[] = 'High trust score from previous service.';
+        } elseif ($trust >= 0.6) {
+            $parts[] = 'Established volunteer record.';
+        }
+
+        return empty($parts) ? 'General recommendation based on profile match.' : implode(' ', $parts);
+    }
+
     public function computeVolunteerTaskScore(
         VolunteerProfile $volunteer,
         Task $task
@@ -93,12 +212,14 @@ class RecommendationService
     {
         $task->loadMissing('skills');
 
-        $volunteers = VolunteerProfile::with(['user', 'skills'])
+        $volunteers = VolunteerProfile::with(['user', 'skills', 'documents' => function ($q) {
+                $q->where('status', 'verified');
+            }])
             ->whereHas('user', function ($q) {
                 $q->where('is_active', true);
             })
             ->whereNotNull('tfidf_vector')
-            ->where('tfidf_vector', '!=', '[]')
+            ->whereRaw("tfidf_vector::text != '[]'")
             ->whereDoesntHave('applications', function ($q) use ($task) {
                 $q->where('task_id', $task->id)
                   ->whereIn('status', ['Pending', 'Shortlisted', 'Accepted']);
@@ -106,16 +227,26 @@ class RecommendationService
             ->get();
 
         $volunteers->each(function ($volunteer) use ($task) {
-            $scores = $this->computeAllScores($volunteer, $task);
-            $volunteer->recommendation_score = $scores['recommendation_score'];
-            $volunteer->semantic_match_score = $scores['semantic_match_score'];
-            $volunteer->distance_score = $scores['distance_score'];
-            $volunteer->skill_overlap_score = $scores['skill_overlap_score'];
-            $volunteer->availability_score = $scores['availability_score'];
-            $volunteer->trust_score = $scores['trust_score'];
+            $detailed = $this->computeDetailedScores($volunteer, $task);
+            $volunteer->recommendation_score  = $detailed['recommendation_score'];
+            $volunteer->semantic_match_score  = $detailed['semantic_match_score'];
+            $volunteer->distance_score        = $detailed['distance_score'];
+            $volunteer->skill_overlap_score   = $detailed['skill_overlap_score'];
+            $volunteer->availability_score    = $detailed['availability_score'];
+            $volunteer->trust_score           = $detailed['trust_score'];
+            $volunteer->matched_skills        = $detailed['matched_skills'];
+            $volunteer->missing_skills        = $detailed['missing_skills'];
+            $volunteer->distance_km           = $detailed['distance_km'];
+            $volunteer->recommendation_reason = $detailed['recommendation_reason'];
         });
 
-        return $volunteers->sortByDesc('recommendation_score')->values();
+        $sorted = $volunteers->sortByDesc('recommendation_score')->values();
+
+        $sorted->each(function ($v, $index) {
+            $v->rank = $index + 1;
+        });
+
+        return $sorted;
     }
 
     public function rankTasksForVolunteer(
@@ -129,7 +260,7 @@ class RecommendationService
                 $q->where('verification_status', 'verified');
             })
             ->whereNotNull('tfidf_vector')
-            ->where('tfidf_vector', '!=', '[]')
+            ->whereRaw("tfidf_vector::text != '[]'")
             ->with(['ngo.user', 'skills']);
 
         if (!empty($filters['search'])) {
@@ -178,17 +309,27 @@ class RecommendationService
         $tasks = $query->get();
 
         $tasks->each(function ($task) use ($volunteer) {
-            $scores = $this->computeAllScores($volunteer, $task);
-            $task->recommendation_score = $scores['recommendation_score'];
-            $task->match_score = $scores['recommendation_score'];
-            $task->semantic_match_score = $scores['semantic_match_score'];
-            $task->distance_score = $scores['distance_score'];
-            $task->skill_overlap_score = $scores['skill_overlap_score'];
-            $task->availability_score = $scores['availability_score'];
-            $task->trust_score = $scores['trust_score'];
+            $detailed = $this->computeDetailedScores($volunteer, $task);
+            $task->recommendation_score  = $detailed['recommendation_score'];
+            $task->match_score           = $detailed['recommendation_score'];
+            $task->semantic_match_score  = $detailed['semantic_match_score'];
+            $task->distance_score        = $detailed['distance_score'];
+            $task->skill_overlap_score   = $detailed['skill_overlap_score'];
+            $task->availability_score    = $detailed['availability_score'];
+            $task->trust_score           = $detailed['trust_score'];
+            $task->matched_skills        = $detailed['matched_skills'];
+            $task->missing_skills        = $detailed['missing_skills'];
+            $task->distance_km           = $detailed['distance_km'];
+            $task->recommendation_reason = $detailed['recommendation_reason'];
         });
 
-        return $tasks->sortByDesc('recommendation_score')->values();
+        $sorted = $tasks->sortByDesc('recommendation_score')->values();
+
+        $sorted->each(function ($t, $index) {
+            $t->rank = $index + 1;
+        });
+
+        return $sorted;
     }
 
     private function semanticMatchScore(

@@ -4,10 +4,15 @@ namespace App\Http\Controllers\Volunteer;
 
 use App\Http\Controllers\Controller;
 use App\Models\Application;
+use App\Services\MatchingService;
 use Illuminate\Http\Request;
 
 class DashboardController extends Controller
 {
+    public function __construct(
+        private MatchingService $matchingService
+    ) {}
+
     public function index(Request $request)
     {
         $user = $request->user();
@@ -100,6 +105,16 @@ class DashboardController extends Controller
             $documentStatus = $latestDoc->status;
         }
 
+        // ── Recommended Opportunities (top 5 using existing algorithm) ──
+        $recommended = collect();
+        try {
+            $recommended = $this->matchingService
+                ->rankTasksForVolunteer($profile)
+                ->take(5);
+        } catch (\Throwable $e) {
+            // Silently skip if ranking fails
+        }
+
         return response()->json([
             'data' => [
                 'profile' => [
@@ -134,6 +149,42 @@ class DashboardController extends Controller
                         'title' => $app->task?->title ?? 'Unknown',
                         'days' => $app->created_at->diffInDays(now()),
                     ]),
+                'recommended_opportunities' => $recommended->map(fn ($task) => [
+                    'id'                     => $task->id,
+                    'title'                  => $task->title,
+                    'description'            => $task->description,
+                    'category'               => $task->relationLoaded('category') && $task->category
+                                                   ? ['id' => $task->category->id, 'name' => $task->category->name]
+                                                   : null,
+                    'urgency_level'          => $task->urgency_level,
+                    'start_date'             => $task->start_date?->toISOString(),
+                    'end_date'               => $task->end_date?->toISOString(),
+                    'city'                   => $task->city,
+                    'location'               => $task->location,
+                    'task_type'              => $task->task_type,
+                    'required_volunteers'    => $task->required_volunteers,
+                    'ngo'                    => $task->relationLoaded('ngo') && $task->ngo
+                                                   ? [
+                                                       'id' => $task->ngo->id,
+                                                       'organization_name' => $task->ngo->organization_name,
+                                                   ]
+                                                   : null,
+                    'skills'                 => $task->relationLoaded('skills')
+                                                   ? $task->skills->map(fn ($s) => ['id' => $s->id, 'name' => $s->name])
+                                                   : [],
+                    'rank'                   => $task->rank ?? null,
+                    'recommendation_score'   => $task->recommendation_score ?? 0,
+                    'match_score'            => $task->match_score ?? 0,
+                    'semantic_match_score'   => $task->semantic_match_score ?? 0,
+                    'skill_overlap_score'    => $task->skill_overlap_score ?? 0,
+                    'distance_score'         => $task->distance_score ?? 0,
+                    'availability_score'     => $task->availability_score ?? 0,
+                    'trust_score'            => $task->trust_score ?? 0,
+                    'matched_skills'         => $task->matched_skills ?? [],
+                    'missing_skills'         => $task->missing_skills ?? [],
+                    'distance_km'            => $task->distance_km ?? null,
+                    'recommendation_reason'  => $task->recommendation_reason ?? '',
+                ]),
             ],
         ]);
     }

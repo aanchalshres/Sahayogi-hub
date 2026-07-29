@@ -6,13 +6,15 @@ use App\Events\TrustScore\ApplicationStatusChanged;
 use App\Http\Controllers\Controller;
 use App\Models\Application;
 use App\Services\NotificationService;
+use App\Services\RecommendationService;
 use App\Services\ScheduleConflict\ScheduleConflictService;
 use Illuminate\Http\Request;
 
 class ApplicationController extends Controller
 {
     public function __construct(
-        private ScheduleConflictService $scheduleConflictService
+        private ScheduleConflictService $scheduleConflictService,
+        private RecommendationService $recommendationService
     ) {}
 
     public function index(Request $request)
@@ -27,7 +29,7 @@ class ApplicationController extends Controller
             'volunteer.documents' => function ($q) {
                 $q->where('status', 'verified');
             },
-            'task',
+            'task.skills',
         ]);
 
         if ($request->filled('status')) {
@@ -39,15 +41,114 @@ class ApplicationController extends Controller
         }
 
         $perPage = min((int) $request->input('per_page', 20), 50);
+        $sortBy  = $request->input('sort_by', 'recommendation_score');
+        $allowedSorts = ['recommendation_score', 'trust_score', 'distance_score', 'skill_overlap_score', 'created_at'];
+
+        if (!in_array($sortBy, $allowedSorts)) {
+            $sortBy = 'recommendation_score';
+        }
+
+        // If sorting by a computed score, fetch all matching records, compute scores, sort, then paginate collection
+        if (in_array($sortBy, ['recommendation_score', 'trust_score', 'distance_score', 'skill_overlap_score'])) {
+            $allApplications = $query->get();
+
+            $items = $allApplications->map(function ($app) {
+                $volunteer = $app->volunteer;
+                $task      = $app->task;
+
+                $scores = [];
+                if ($volunteer && $task && $volunteer->tfidf_vector && $volunteer->tfidf_vector !== '[]') {
+                    try {
+                        $volunteer->loadMissing('skills');
+                        $task->loadMissing('skills');
+                        $scores = $this->recommendationService->computeDetailedScores($volunteer, $task);
+                    } catch (\Throwable $e) {
+                        // Silently skip
+                    }
+                }
+
+                $isVerified = ($volunteer?->documents?->filter(fn ($d) => $d->status === 'verified')->count() ?? 0) > 0;
+
+                return array_merge($app->toArray(), [
+                    'is_verified'            => $isVerified,
+                    'recommendation_score'   => $scores['recommendation_score'] ?? null,
+                    'semantic_match_score'   => $scores['semantic_match_score'] ?? null,
+                    'skill_overlap_score'    => $scores['skill_overlap_score'] ?? null,
+                    'distance_score'         => $scores['distance_score'] ?? null,
+                    'availability_score'     => $scores['availability_score'] ?? null,
+                    'trust_score'            => $scores['trust_score'] ?? null,
+                    'matched_skills'         => $scores['matched_skills'] ?? [],
+                    'missing_skills'         => $scores['missing_skills'] ?? [],
+                    'distance_km'            => $scores['distance_km'] ?? null,
+                    'recommendation_reason'  => $scores['recommendation_reason'] ?? null,
+                ]);
+            });
+
+            // Sort globally by the chosen score (nulls last)
+            $items = $items->sortByDesc(fn ($item) => $item[$sortBy] ?? -1)->values();
+
+            $total = $items->count();
+            $page  = (int) $request->input('page', 1);
+            $offset = ($page - 1) * $perPage;
+
+            $paginated = $items->slice($offset, $perPage)->values();
+
+            return response()->json([
+                'data' => $paginated,
+                'meta' => [
+                    'current_page' => $page,
+                    'last_page'    => (int) ceil($total / $perPage),
+                    'per_page'     => $perPage,
+                    'total'        => $total,
+                ],
+            ]);
+        }
+
+        // Default: sort by created_at (database pagination is safe)
         $applications = $query->orderBy('created_at', 'desc')->paginate($perPage);
 
+        $items = collect($applications->items())->map(function ($app) {
+            $volunteer = $app->volunteer;
+            $task      = $app->task;
+
+            $scores = [];
+            if ($volunteer && $task && $volunteer->tfidf_vector && $volunteer->tfidf_vector !== '[]') {
+                try {
+                    $volunteer->loadMissing('skills');
+                    $task->loadMissing('skills');
+                    $scores = $this->recommendationService->computeDetailedScores($volunteer, $task);
+                } catch (\Throwable $e) {
+                    // Silently skip
+                }
+            }
+
+            $isVerified = ($volunteer?->documents?->filter(fn ($d) => $d->status === 'verified')->count() ?? 0) > 0;
+
+            return array_merge($app->toArray(), [
+                'is_verified'            => $isVerified,
+                'recommendation_score'   => $scores['recommendation_score'] ?? null,
+                'semantic_match_score'   => $scores['semantic_match_score'] ?? null,
+                'skill_overlap_score'    => $scores['skill_overlap_score'] ?? null,
+                'distance_score'         => $scores['distance_score'] ?? null,
+                'availability_score'     => $scores['availability_score'] ?? null,
+                'trust_score'            => $scores['trust_score'] ?? null,
+                'matched_skills'         => $scores['matched_skills'] ?? [],
+                'missing_skills'         => $scores['missing_skills'] ?? [],
+                'distance_km'            => $scores['distance_km'] ?? null,
+                'recommendation_reason'  => $scores['recommendation_reason'] ?? null,
+            ]);
+        });
+
+        // Sort by recommendation_score descending (nulls last) — within-page only
+        $items = $items->sortByDesc(fn ($item) => $item['recommendation_score'] ?? -1)->values();
+
         return response()->json([
-            'data' => $applications->items(),
+            'data' => $items,
             'meta' => [
                 'current_page' => $applications->currentPage(),
-                'last_page' => $applications->lastPage(),
-                'per_page' => $applications->perPage(),
-                'total' => $applications->total(),
+                'last_page'    => $applications->lastPage(),
+                'per_page'     => $applications->perPage(),
+                'total'        => $applications->total(),
             ],
         ]);
     }

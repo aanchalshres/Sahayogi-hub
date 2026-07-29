@@ -1,13 +1,15 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { apiGet } from '@/app/lib/api'
+import { apiGet, apiPost } from '@/app/lib/api'
 import {
   User, Calendar, CheckCircle, Clock, Star,
   FileText, TrendingUp, Activity, ArrowRight,
   AlertCircle, PlusCircle, UserCheck,
-  MapPin, Upload, Link as LinkIcon, ShieldCheck
+  MapPin, Upload, Sparkles, Send, ShieldCheck, Zap,
+  Layers, Briefcase
 } from 'lucide-react'
+import { getOverallScore, getMatchColor, generateExplanation, getScoreBarColor, formatScore, type MatchAnalysis } from '@/app/lib/scoring'
 
 interface DashboardData {
   profile: {
@@ -49,6 +51,7 @@ interface DashboardData {
     title: string
     days: number
   }[]
+  recommended_opportunities: (MatchAnalysis & Record<string, any>)[]
 }
 
 export default function VolunteerDashboard() {
@@ -62,6 +65,9 @@ export default function VolunteerDashboard() {
     hours: 0,
     rating: 0,
   })
+  const [recommendations, setRecommendations] = useState<(MatchAnalysis & Record<string, any>)[]>([])
+  const [recsLoading, setRecsLoading] = useState(true)
+  const [applying, setApplying] = useState<number | null>(null)
 
   useEffect(() => {
     async function load() {
@@ -69,10 +75,12 @@ export default function VolunteerDashboard() {
         setLoading(true)
         const res = await apiGet<{ data: DashboardData }>('/volunteer/dashboard')
         setData(res.data)
+        setRecommendations((res.data.recommended_opportunities ?? []).slice(0, 5))
       } catch (err: any) {
         setError(err.message || 'Failed to load dashboard data.')
       } finally {
         setLoading(false)
+        setRecsLoading(false)
       }
     }
     load()
@@ -263,6 +271,174 @@ export default function VolunteerDashboard() {
           {/* LEFT: Main content (2 cols) */}
           <div className="lg:col-span-2 space-y-8">
 
+            {/* ── RECOMMENDED OPPORTUNITIES ── */}
+            <section>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                  <Sparkles size={20} className="text-[#4F46C8]" /> Recommended Opportunities
+                </h2>
+                <button
+                  onClick={() => router.push('/dashboard/volunteer/tasks')}
+                  className="text-sm font-semibold text-[#4F46C8] hover:underline flex items-center gap-1"
+                >
+                  See all <ArrowRight size={14} />
+                </button>
+              </div>
+
+              {recsLoading ? (
+                <div className="flex items-center justify-center py-10 bg-white rounded-xl border border-black/5 shadow-sm">
+                  <div className="w-7 h-7 border-3 border-[#4F46C8]/30 border-t-[#4F46C8] rounded-full animate-spin" />
+                </div>
+              ) : recommendations.length === 0 ? (
+                <div className="bg-white border border-black/5 rounded-xl p-6 text-center shadow-sm">
+                  <Sparkles size={24} className="mx-auto text-[#4F46C8]/30 mb-2" />
+                  <p className="text-sm text-[#6B7280]">Complete your profile to get personalised recommendations.</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {recommendations.map((task: any, idx) => {
+                    const overallScore = getOverallScore(task)
+                    const reasons = task.recommendation_reason
+                      ? [task.recommendation_reason]
+                      : generateExplanation(task)
+                    const matchedSkills: any[] = task.matched_skills ?? []
+                    const missingSkills: any[] = task.missing_skills ?? []
+                    const allSkills: any[] = task.skills ?? []
+                    const hasTrustReq = task.trust_score != null && task.trust_score > 0
+                    const urgencyKey = (task.urgency_level || 'low').toLowerCase()
+                    const urgencyColors: Record<string, string> = {
+                      high: 'bg-red-50 text-red-600 border border-red-200',
+                      medium: 'bg-amber-50 text-amber-600 border border-amber-200',
+                      low: 'bg-blue-50 text-blue-600 border border-blue-200',
+                    }
+
+                    return (
+                      <div
+                        key={task.id}
+                        className="bg-white border border-black/5 rounded-xl p-5 shadow-sm hover:shadow-md hover:border-[#7683D6]/40 transition-all"
+                      >
+                        <div className="flex items-start justify-between gap-3 mb-3">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="text-xs font-bold text-[#6B7280]">#{idx + 1}</span>
+                              <h3 className="font-semibold text-gray-900 text-sm leading-tight">{task.title}</h3>
+                              {task.urgency_level && (
+                                <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full capitalize ${urgencyColors[urgencyKey] || urgencyColors.low}`}>
+                                  {urgencyKey}
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-xs text-[#6B7280] mt-1 flex items-center gap-1.5 flex-wrap">
+                              {task.ngo?.organization_name && (
+                                <span className="font-medium text-gray-700">{task.ngo.organization_name}</span>
+                              )}
+                              {task.category?.name && (
+                                <><span>·</span><Layers size={11} className="inline" />{task.category.name}</>
+                              )}
+                              {(task.city || task.location) && (
+                                <><span>·</span><MapPin size={11} className="inline" />{task.city || task.location}</>
+                              )}
+                              {task.start_date && (
+                                <><span>·</span><Calendar size={11} className="inline" />{new Date(task.start_date).toLocaleDateString()}</>
+                              )}
+                              {task.distance_km != null && (
+                                <><span>·</span>{task.distance_km} km</>
+                              )}
+                              {hasTrustReq && (
+                                <><span>·</span><ShieldCheck size={11} className="inline text-green-600" /> Trust: {formatScore(task.trust_score)}%</>
+                              )}
+                            </p>
+                          </div>
+
+                          {/* Match Score Badge */}
+                          <div className="shrink-0 text-center">
+                            <div className={`text-base font-black px-3 py-1.5 rounded-xl border ${getMatchColor(overallScore)}`}>
+                              {Math.round(overallScore)}%
+                            </div>
+                            <div className="text-[9px] text-gray-400 mt-0.5 font-medium">match</div>
+                          </div>
+                        </div>
+
+                        {/* Score breakdown bars */}
+                        <div className="grid grid-cols-5 gap-1 mb-3">
+                          {[
+                            { label: 'Semantic', value: task.semantic_match_score },
+                            { label: 'Skills', value: task.skill_overlap_score },
+                            { label: 'Distance', value: task.distance_score },
+                            { label: 'Avail.', value: task.availability_score },
+                            { label: 'Trust', value: task.trust_score },
+                          ].map((s) => (
+                            <div key={s.label} className="text-center">
+                              <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden mb-1">
+                                <div
+                                  className={`h-full rounded-full transition-all ${getScoreBarColor(s.value ?? 0)}`}
+                                  style={{ width: `${Math.round((s.value ?? 0) * 100)}%` }}
+                                />
+                              </div>
+                              <div className="text-[9px] text-gray-400">{s.label}</div>
+                              <div className="text-[10px] font-semibold text-gray-700">{formatScore(s.value)}%</div>
+                            </div>
+                          ))}
+                        </div>
+
+                        {/* Explanation */}
+                        <p className="text-[11px] text-[#6B7280] italic mb-3 leading-relaxed">
+                          {reasons[0]}
+                        </p>
+
+                        {/* Skills */}
+                        <div className="flex flex-wrap gap-1.5 mb-3">
+                          {matchedSkills.length > 0 && matchedSkills.map((s: any) => (
+                            <span key={`m-${s.id}`} className="inline-flex items-center gap-1 text-[10px] font-medium bg-green-50 text-green-700 border border-green-200 px-2 py-0.5 rounded-full">
+                              <CheckCircle size={9} /> {s.name}
+                            </span>
+                          ))}
+                          {missingSkills.length > 0 && missingSkills.map((s: any) => (
+                            <span key={`ms-${s.id}`} className="inline-flex items-center gap-1 text-[10px] font-medium bg-gray-50 text-gray-500 border border-gray-200 px-2 py-0.5 rounded-full">
+                              · {s.name}
+                            </span>
+                          ))}
+                          {allSkills.length > 0 && matchedSkills.length === 0 && missingSkills.length === 0 && (
+                            <span className="text-[10px] text-gray-400 font-medium">Required: {allSkills.map((s: any) => s.name).join(', ')}</span>
+                          )}
+                        </div>
+
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => router.push(`/dashboard/volunteer/apply/${task.id}`)}
+                            className="flex-1 text-xs font-medium border border-[#CACDD3] text-gray-700 py-2 rounded-lg hover:bg-gray-50 transition"
+                          >
+                            Details
+                          </button>
+                          <button
+                            onClick={async () => {
+                              setApplying(task.id)
+                              try {
+                                await apiPost(`/volunteer/tasks/${task.id}/apply`, {})
+                                router.push('/dashboard/volunteer/applications')
+                              } catch {
+                                alert('Failed to apply. You may have already applied.')
+                              } finally {
+                                setApplying(null)
+                              }
+                            }}
+                            disabled={applying === task.id}
+                            className="flex-1 text-xs font-semibold bg-[#4F46C8] text-white py-2 rounded-lg hover:bg-[#4338CA] transition disabled:opacity-60 flex items-center justify-center gap-1"
+                          >
+                            {applying === task.id ? (
+                              <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                            ) : (
+                              <><Send size={11} /> Apply</>
+                            )}
+                          </button>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+            </section>
+
             {/* Upcoming Opportunities */}
             <section>
               <div className="flex items-center justify-between mb-4">
@@ -305,6 +481,7 @@ export default function VolunteerDashboard() {
                 </div>
               )}
             </section>
+
 
             {/* Recent Activity */}
             <section>

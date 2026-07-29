@@ -5,12 +5,14 @@ namespace App\Http\Controllers\Volunteer;
 use App\Http\Controllers\Controller;
 use App\Models\Application;
 use App\Services\MatchingService;
+use App\Services\RecommendationService;
 use Illuminate\Http\Request;
 
 class TaskController extends Controller
 {
     public function __construct(
-        private MatchingService $matchingService
+        private MatchingService $matchingService,
+        private RecommendationService $recommendationService
     ) {}
 
     public function getTasks(Request $request)
@@ -23,6 +25,14 @@ class TaskController extends Controller
             ], 403);
         }
 
+        $profile = $user->volunteerProfile;
+
+        if (!$profile) {
+            return response()->json([
+                'message' => 'Volunteer profile not found.'
+            ], 404);
+        }
+
         $filters = array_filter($request->only([
             'search', 'category_id', 'urgency_level', 'task_type',
             'location', 'skill', 'date_from', 'date_to',
@@ -30,7 +40,7 @@ class TaskController extends Controller
 
         return response()->json([
             'data' => $this->matchingService
-                ->rankTasksForVolunteer($user->volunteerProfile, $filters)
+                ->rankTasksForVolunteer($profile, $filters)
         ]);
     }
 
@@ -64,8 +74,24 @@ class TaskController extends Controller
             ->where('status', 'Accepted')
             ->count();
 
-        $task->filled_slots = $acceptedCount;
-        $task->remaining_slots = max(0, ($task->required_volunteers ?? 0) - $acceptedCount);
+        $task->filled_slots     = $acceptedCount;
+        $task->remaining_slots  = max(0, ($task->required_volunteers ?? 0) - $acceptedCount);
+
+        // ── Attach match analysis (existing algorithm, no formula changes) ──
+        $detailed = $this->recommendationService->computeDetailedScores($profile, $task);
+
+        $task->match_analysis = [
+            'recommendation_score'  => $detailed['recommendation_score'],
+            'semantic_match_score'  => $detailed['semantic_match_score'],
+            'skill_overlap_score'   => $detailed['skill_overlap_score'],
+            'distance_score'        => $detailed['distance_score'],
+            'availability_score'    => $detailed['availability_score'],
+            'trust_score'           => $detailed['trust_score'],
+            'matched_skills'        => $detailed['matched_skills'],
+            'missing_skills'        => $detailed['missing_skills'],
+            'distance_km'           => $detailed['distance_km'],
+            'recommendation_reason' => $detailed['recommendation_reason'],
+        ];
 
         return response()->json([
             'data' => $task,
