@@ -18,6 +18,10 @@ class CertificateController extends Controller
 
         $profile = $user->volunteerProfile;
 
+        if (!$profile) {
+            return response()->json(['message' => 'Volunteer profile not found.'], 404);
+        }
+
         $certificates = Certificate::where('volunteer_profile_id', $profile->id)
             ->with(['ngo', 'task'])
             ->orderBy('created_at', 'desc')
@@ -36,6 +40,10 @@ class CertificateController extends Controller
 
         $profile = $user->volunteerProfile;
 
+        if (!$profile) {
+            return response()->json(['message' => 'Volunteer profile not found.'], 404);
+        }
+
         $certificate = Certificate::where('id', $id)
             ->where('volunteer_profile_id', $profile->id)
             ->with(['ngo', 'task'])
@@ -53,6 +61,10 @@ class CertificateController extends Controller
         }
 
         $profile = $user->volunteerProfile;
+
+        if (!$profile) {
+            return response()->json(['message' => 'Volunteer profile not found.'], 404);
+        }
 
         $certificate = Certificate::where('id', $id)
             ->where('volunteer_profile_id', $profile->id)

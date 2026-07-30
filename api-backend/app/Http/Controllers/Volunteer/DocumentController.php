@@ -20,6 +20,12 @@ class DocumentController extends Controller
 
         $profile = $user->volunteerProfile;
 
+        if (!$profile) {
+            return response()->json([
+                'message' => 'Volunteer profile not found.'
+            ], 404);
+        }
+
         return response()->json([
             'data' => $profile->documents()->orderBy('created_at', 'desc')->get()
         ]);
