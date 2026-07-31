@@ -1,38 +1,50 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import React from "react";
 import OrgSidebar from "@/app/dashboard/ngo/OrgSidebar";
 import OrgNavbar from "@/app/dashboard/ngo/OrgNavbar";
 import { ProtectedRoute } from "@/app/components/ProtectedRoute";
+import { SidebarProvider, useSidebar } from "@/app/providers/SidebarContext";
+import { cn } from "@/app/lib/utils";
+
+function NGOLayoutContent({ children }: { children: React.ReactNode }) {
+  const { isCollapsed, isMobileOpen } = useSidebar();
+
+  return (
+    <ProtectedRoute allowedRoles={["ngo"]}>
+      <div className="min-h-screen bg-[#F0F1F3]">
+        <div className="flex min-h-screen">
+          {/* SIDEBAR */}
+          <OrgSidebar />
+
+          {/* MAIN */}
+          <div className={cn(
+            "flex-1 min-h-screen flex flex-col transition-all duration-200 ease-in-out",
+            isMobileOpen ? "hidden" : "",
+            isCollapsed ? "lg:ml-20" : "lg:ml-64"
+          )}>
+            {/* NAVBAR */}
+            <OrgNavbar />
+
+            {/* CONTENT */}
+            <div className="flex-1 overflow-y-auto p-6 w-full">
+              <div className="max-w-6xl mx-auto w-full">{children}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </ProtectedRoute>
+  );
+}
 
 export default function NGOLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const [sidebarOpen, setSidebarOpen] = useState(true);
-  const toggleSidebar = useCallback(() => setSidebarOpen((prev) => !prev), []);
-
   return (
-    <ProtectedRoute allowedRoles={["ngo"]}>
-      <div className="h-screen flex overflow-hidden bg-[#F0F1F3]">
-        {/* SIDEBAR */}
-        <OrgSidebar
-          isOpen={sidebarOpen}
-          toggleSidebar={toggleSidebar}
-        />
-
-        {/* MAIN */}
-        <div className="flex-1 flex flex-col min-h-0 w-full">
-          {/* NAVBAR */}
-          <OrgNavbar />
-
-          {/* CONTENT */}
-          <div className="flex-1 overflow-y-auto p-6 w-full">
-            <div className="max-w-6xl mx-auto w-full">{children}</div>
-          </div>
-        </div>
-      </div>
-    </ProtectedRoute>
+    <SidebarProvider>
+      <NGOLayoutContent>{children}</NGOLayoutContent>
+    </SidebarProvider>
   );
 }
