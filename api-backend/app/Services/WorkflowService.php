@@ -107,7 +107,7 @@ class WorkflowService
         return $volunteers;
     }
 
-    public function getPrioritizedApplications(Task $task, ?string $strategy = null): Collection
+    public function getPrioritizedApplications(Task $task, ?string $strategy = null): \Illuminate\Support\Collection
     {
         $strategy = $strategy ?? config('workflow.default_strategy', 'recommendation');
 
@@ -122,21 +122,25 @@ class WorkflowService
                 return;
             }
 
-            $scoresFromApp = $this->recommendation->computeAllScores($profile, $application->task);
-            $application->recommendation_score = $scoresFromApp['recommendation_score'];
-            $application->semantic_match_score = $scoresFromApp['semantic_match_score'];
-            $application->distance_score = $scoresFromApp['distance_score'];
-            $application->skill_overlap_score = $scoresFromApp['skill_overlap_score'];
-            $application->availability_score = $scoresFromApp['availability_score'];
-            $application->trust_score = $scoresFromApp['trust_score'];
-            $application->priority_score = round($this->ranker->score($scoresFromApp, $strategy) * 100, 1);
+            $detailed = $this->recommendation->computeDetailedScores($profile, $application->task);
+            $application->recommendation_score = $detailed['recommendation_score'];
+            $application->semantic_match_score = $detailed['semantic_match_score'];
+            $application->distance_score = $detailed['distance_score'];
+            $application->skill_overlap_score = $detailed['skill_overlap_score'];
+            $application->availability_score = $detailed['availability_score'];
+            $application->trust_score = $detailed['trust_score'];
+            $application->matched_skills = $detailed['matched_skills'];
+            $application->missing_skills = $detailed['missing_skills'];
+            $application->distance_km = $detailed['distance_km'];
+            $application->recommendation_reason = $detailed['recommendation_reason'];
+            $application->priority_score = round($this->ranker->score($detailed, $strategy) * 100, 1);
             $application->strategy_used = $strategy;
         });
 
         return $applications->sortByDesc('priority_score')->values();
     }
 
-    public function getRecommendedNgos(VolunteerProfile $volunteer, ?int $limit = null, ?string $strategy = null): Collection
+    public function getRecommendedNgos(VolunteerProfile $volunteer, ?int $limit = null, ?string $strategy = null): \Illuminate\Support\Collection
     {
         $limit = $limit ?? config('workflow.ngo_recommendation_limit', 10);
         $strategy = $strategy ?? config('workflow.default_strategy', 'recommendation');

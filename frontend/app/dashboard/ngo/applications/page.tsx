@@ -3,8 +3,11 @@ import { useEffect, useState, useCallback } from 'react'
 import { apiGet, apiPost } from '@/app/lib/api'
 import {
   User, Clock, CheckCircle2, XCircle, Hourglass,
-  Inbox, ChevronDown, ChevronUp, Search, Filter, X, ShieldCheck, ShieldAlert
+  Inbox, ChevronDown, ChevronUp, Filter, X,
+  ShieldCheck, ShieldAlert, Sparkles, ArrowUpDown,
+  CheckCircle, Brain, Target, Navigation, Zap, Shield,
 } from 'lucide-react'
+import { getMatchColor, getScoreBarColor, formatScore, getScoreLabel } from '@/app/lib/scoring'
 
 interface Application {
   id: number
@@ -14,6 +17,18 @@ interface Application {
   applied_at: string
   reviewed_at: string | null
   remarks: string | null
+  // Recommendation scores (populated by backend)
+  recommendation_score: number | null
+  semantic_match_score: number | null
+  skill_overlap_score: number | null
+  distance_score: number | null
+  availability_score: number | null
+  trust_score: number | null
+  matched_skills: { id: number; name: string }[]
+  missing_skills: { id: number; name: string }[]
+  distance_km: number | null
+  recommendation_reason: string | null
+  is_verified: boolean
   task: { id: number; title: string; status: string }
   volunteer: {
     id: number
@@ -35,11 +50,21 @@ interface Meta {
   total: number
 }
 
+type SortBy = 'recommendation_score' | 'trust_score' | 'distance_score' | 'skill_overlap_score' | 'created_at'
+
 const STATUS_STYLES: Record<string, { bg: string; text: string; icon: any; label: string }> = {
   Pending: { bg: 'bg-amber-50', text: 'text-amber-700', icon: Hourglass, label: 'Pending' },
   Accepted: { bg: 'bg-green-50', text: 'text-green-700', icon: CheckCircle2, label: 'Accepted' },
   Rejected: { bg: 'bg-red-50', text: 'text-red-700', icon: XCircle, label: 'Rejected' },
   Cancelled: { bg: 'bg-gray-100', text: 'text-gray-600', icon: XCircle, label: 'Cancelled' },
+}
+
+const SORT_LABELS: Record<SortBy, string> = {
+  recommendation_score: 'Overall Score',
+  trust_score: 'Trust',
+  distance_score: 'Distance',
+  skill_overlap_score: 'Skill Match',
+  created_at: 'Apply Date',
 }
 
 export default function NgoApplicationsPage() {
@@ -50,6 +75,7 @@ export default function NgoApplicationsPage() {
   const [expandedId, setExpandedId] = useState<number | null>(null)
   const [statusFilter, setStatusFilter] = useState('')
   const [taskFilter, setTaskFilter] = useState('')
+  const [sortBy, setSortBy] = useState<SortBy>('recommendation_score')
   const [page, setPage] = useState(1)
 
   const load = useCallback(async () => {
@@ -60,6 +86,7 @@ export default function NgoApplicationsPage() {
       if (taskFilter) params.set('task_id', taskFilter)
       params.set('page', String(page))
       params.set('per_page', '20')
+      params.set('sort_by', sortBy)
 
       const res = await apiGet<{ data: Application[]; meta: Meta }>(`/api/ngo/applications?${params}`)
       setApplications(res.data)
@@ -69,7 +96,7 @@ export default function NgoApplicationsPage() {
     } finally {
       setLoading(false)
     }
-  }, [statusFilter, taskFilter, page])
+  }, [statusFilter, taskFilter, page, sortBy])
 
   useEffect(() => { load() }, [load])
 
@@ -102,34 +129,51 @@ export default function NgoApplicationsPage() {
     }
   }
 
-  const getVerificationStatus = (app: Application) => {
-    const verifiedDocs = app.volunteer?.documents?.filter((d) => d.status === 'verified') || []
-    return verifiedDocs.length > 0
-  }
-
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-gray-900">Applications</h1>
-        <p className="text-sm text-[#6B7280]">Review and manage volunteer applications ({meta.total} total)</p>
+        <p className="text-sm text-[#6B7280]">
+          Sorted by recommendation score — algorithm assists decision-making only.
+          <span className="text-xs font-medium ml-2 text-[#4F46C8]">({meta.total} total)</span>
+        </p>
       </div>
 
-      <div className="flex flex-col sm:flex-row gap-3">
-        <div className="relative flex-1">
-          <Filter size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-          <select className="pl-9 pr-8 py-2.5 bg-white border border-gray-200 rounded-lg text-sm outline-none focus:border-[#4F46C8] appearance-none cursor-pointer w-full" value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setPage(1) }}>
-            <option value="">All Statuses</option>
-            <option value="Pending">Pending</option>
-            <option value="Accepted">Accepted</option>
-            <option value="Rejected">Rejected</option>
-            <option value="Cancelled">Cancelled</option>
-          </select>
-        </div>
-        <div className="relative flex-1">
-          <Filter size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-          <select className="pl-9 pr-8 py-2.5 bg-white border border-gray-200 rounded-lg text-sm outline-none focus:border-[#4F46C8] appearance-none cursor-pointer w-full" value={taskFilter} onChange={(e) => { setTaskFilter(e.target.value); setPage(1) }}>
-            <option value="">All Opportunities</option>
-            {tasks.map((t) => <option key={t.id} value={t.id}>{t.title}</option>)}
+      {/* Filters + Sort */}
+      <div className="flex flex-col sm:flex-row gap-3 flex-wrap">
+        <select
+          className="px-3 py-2.5 bg-white border border-gray-200 rounded-lg text-sm outline-none focus:border-[#4F46C8] flex-1 min-w-[140px]"
+          value={statusFilter}
+          onChange={(e) => { setStatusFilter(e.target.value); setPage(1) }}
+        >
+          <option value="">All Statuses</option>
+          <option value="Pending">Pending</option>
+          <option value="Accepted">Accepted</option>
+          <option value="Rejected">Rejected</option>
+          <option value="Cancelled">Cancelled</option>
+        </select>
+
+        <select
+          className="px-3 py-2.5 bg-white border border-gray-200 rounded-lg text-sm outline-none focus:border-[#4F46C8] flex-1 min-w-[140px]"
+          value={taskFilter}
+          onChange={(e) => { setTaskFilter(e.target.value); setPage(1) }}
+        >
+          <option value="">All Opportunities</option>
+          {tasks.map((t) => <option key={t.id} value={t.id}>{t.title}</option>)}
+        </select>
+
+        {/* Sort */}
+        <div className="flex items-center gap-1.5 bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm">
+          <ArrowUpDown size={14} className="text-gray-400" />
+          <span className="text-gray-500 text-xs">Sort:</span>
+          <select
+            value={sortBy}
+            onChange={(e) => { setSortBy(e.target.value as SortBy); setPage(1) }}
+            className="outline-none bg-transparent text-sm font-medium text-gray-700"
+          >
+            {(Object.keys(SORT_LABELS) as SortBy[]).map((k) => (
+              <option key={k} value={k}>{SORT_LABELS[k]}</option>
+            ))}
           </select>
         </div>
       </div>
@@ -147,93 +191,176 @@ export default function NgoApplicationsPage() {
       ) : (
         <>
           <div className="space-y-4">
-            {applications.map((app) => {
+            {applications.map((app, idx) => {
               const status = STATUS_STYLES[app.status] || STATUS_STYLES.Pending
               const StatusIcon = status.icon
               const title = app.task?.title || `Task #${app.task_id}`
               const isExpanded = expandedId === app.id
               const vol = app.volunteer
               const volUser = vol?.user
-              const isVerified = getVerificationStatus(app)
+              const hasScore = app.recommendation_score != null
 
               return (
-                <div key={app.id} className="bg-white rounded-2xl border border-black/5 p-5 shadow-sm">
-                  <div className="flex items-start justify-between gap-4 mb-3">
-                    <div className="flex items-start gap-3 min-w-0">
-                      <div className="w-10 h-10 rounded-xl bg-[#4F46C8]/10 flex items-center justify-center shrink-0">
-                        <User size={18} className="text-[#4F46C8]" />
-                      </div>
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-2">
-                          <p className="font-semibold text-gray-900 truncate">{volUser?.name || 'Unknown'}</p>
-                          {isVerified ? (
-                            <ShieldCheck size={14} className="text-green-600 shrink-0" aria-label="Verified" />
-                          ) : (
-                            <ShieldAlert size={14} className="text-gray-400 shrink-0" aria-label="Not verified" />
-                          )}
-                        </div>
-                        <p className="text-xs text-[#6B7280] truncate">Applied for: {title}</p>
-                        <div className="flex items-center gap-2 text-xs text-[#6B7280] mt-0.5">
-                          <Clock size={12} />
-                          <span>{new Date(app.applied_at).toLocaleDateString()}</span>
-                          {app.status === 'Cancelled' && app.reviewed_at && <span>| Cancelled {new Date(app.reviewed_at).toLocaleDateString()}</span>}
-                        </div>
-                      </div>
-                    </div>
-                    <span className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold shrink-0 ${status.bg} ${status.text}`}>
-                      <StatusIcon size={13} />
-                      {status.label}
-                    </span>
-                  </div>
-
-                  {volUser && (
-                    <button onClick={() => setExpandedId(isExpanded ? null : app.id)} className="flex items-center gap-1.5 text-xs font-medium text-[#4F46C8] hover:text-[#3f39a8] mb-2">
-                      {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-                      {isExpanded ? 'Hide details' : 'View details'}
-                    </button>
+                <div key={app.id} className="bg-white rounded-2xl border border-black/5 shadow-sm overflow-hidden">
+                  {/* Score stripe */}
+                  {hasScore && (
+                    <div
+                      className={`h-0.5 w-full ${
+                        app.recommendation_score! >= 70 ? 'bg-green-400' :
+                        app.recommendation_score! >= 40 ? 'bg-yellow-400' : 'bg-gray-200'
+                      }`}
+                    />
                   )}
 
-                  {isExpanded && volUser && (
-                    <div className="bg-gray-50 rounded-xl p-4 mb-4 text-sm space-y-2.5">
-                      <p><span className="text-[#6B7280]">Email:</span> <span className="text-gray-900">{volUser.email}</span></p>
-                      <p><span className="text-[#6B7280]">Phone:</span> <span className="text-gray-900">{volUser.phone || 'N/A'}</span></p>
-                      <p><span className="text-[#6B7280]">Verification:</span>
-                        <span className={`ml-1 font-medium ${isVerified ? 'text-green-600' : 'text-gray-500'}`}>
-                          {isVerified ? 'Documents Verified' : 'Not Verified'}
+                  <div className="p-5">
+                    <div className="flex items-start justify-between gap-4 mb-3">
+                      <div className="flex items-start gap-3 min-w-0">
+                        {/* Rank */}
+                        {hasScore && (
+                          <div className="w-8 h-8 rounded-full bg-[#4F46C8]/10 flex items-center justify-center shrink-0 text-[10px] font-black text-[#4F46C8]">
+                            #{(meta.current_page - 1) * meta.per_page + idx + 1}
+                          </div>
+                        )}
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2">
+                            <p className="font-semibold text-gray-900 truncate">{volUser?.name || 'Unknown'}</p>
+                            {app.is_verified ? (
+                              <ShieldCheck size={14} className="text-green-600 shrink-0" aria-label="Verified" />
+                            ) : (
+                              <ShieldAlert size={14} className="text-gray-400 shrink-0" aria-label="Not verified" />
+                            )}
+                          </div>
+                          <p className="text-xs text-[#6B7280] truncate">Applied for: {title}</p>
+                          <div className="flex items-center gap-2 text-xs text-[#6B7280] mt-0.5">
+                            <Clock size={12} />
+                            <span>{new Date(app.applied_at).toLocaleDateString()}</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-3 shrink-0">
+                        {/* Recommendation score badge */}
+                        {hasScore && (
+                          <div className="text-center">
+                            <div className={`text-sm font-black px-2.5 py-1 rounded-lg border ${getMatchColor(app.recommendation_score!)}`}>
+                              {Math.round(app.recommendation_score!)}%
+                            </div>
+                            <div className="text-[9px] text-gray-400 mt-0.5">{getScoreLabel(app.recommendation_score!)}</div>
+                          </div>
+                        )}
+                        {!hasScore && (
+                          <div className="text-center">
+                            <div className="text-xs px-2 py-1 rounded-lg bg-gray-100 text-gray-400">No score</div>
+                          </div>
+                        )}
+
+                        <span className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold ${status.bg} ${status.text}`}>
+                          <StatusIcon size={13} />
+                          {status.label}
                         </span>
+                      </div>
+                    </div>
+
+                    {/* Score mini bars */}
+                    {hasScore && (
+                      <div className="grid grid-cols-5 gap-1 mb-3">
+                        {[
+                          { label: 'Sem.', value: app.semantic_match_score },
+                          { label: 'Skill', value: app.skill_overlap_score },
+                          { label: 'Dist.', value: app.distance_score },
+                          { label: 'Avail.', value: app.availability_score },
+                          { label: 'Trust', value: app.trust_score },
+                        ].map((s) => (
+                          <div key={s.label} className="text-center">
+                            <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden mb-0.5">
+                              <div
+                                className={`h-full rounded-full ${getScoreBarColor(s.value ?? 0)}`}
+                                style={{ width: `${Math.round((s.value ?? 0) * 100)}%` }}
+                              />
+                            </div>
+                            <div className="text-[9px] text-gray-400">{s.label}</div>
+                            <div className="text-[9px] font-bold text-gray-600">{formatScore(s.value)}%</div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Matched/missing skills compact */}
+                    {hasScore && (app.matched_skills?.length > 0 || app.missing_skills?.length > 0) && (
+                      <div className="flex flex-wrap gap-1.5 mb-3">
+                        {app.matched_skills?.map((s) => (
+                          <span key={s.id} className="inline-flex items-center gap-0.5 text-[10px] font-medium bg-green-50 text-green-700 border border-green-200 px-2 py-0.5 rounded-full">
+                            <CheckCircle size={8} /> {s.name}
+                          </span>
+                        ))}
+                        {app.missing_skills?.map((s) => (
+                          <span key={s.id} className="text-[10px] font-medium bg-gray-50 text-gray-400 border border-gray-200 px-2 py-0.5 rounded-full">
+                            · {s.name}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Recommendation reason */}
+                    {app.recommendation_reason && (
+                      <p className="text-[11px] text-[#6B7280] italic mb-3 leading-relaxed">
+                        <Sparkles size={9} className="inline mr-1 text-[#4F46C8]" />
+                        {app.recommendation_reason}
                       </p>
-                      {vol.skills && vol.skills.length > 0 && (
-                        <p>
-                          <span className="text-[#6B7280]">Skills:</span>
-                          <span className="flex flex-wrap gap-1 mt-1">
-                            {vol.skills.map((s) => (
-                              <span key={s.id} className="text-xs bg-[#EEF0FF] text-[#4F46C8] px-2 py-0.5 rounded-full">{s.name}</span>
-                            ))}
+                    )}
+
+                    {volUser && (
+                      <button onClick={() => setExpandedId(isExpanded ? null : app.id)} className="flex items-center gap-1.5 text-xs font-medium text-[#4F46C8] hover:text-[#3f39a8] mb-2">
+                        {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                        {isExpanded ? 'Hide details' : 'View details'}
+                      </button>
+                    )}
+
+                    {isExpanded && volUser && (
+                      <div className="bg-gray-50 rounded-xl p-4 mb-4 text-sm space-y-2.5">
+                        <p><span className="text-[#6B7280]">Email:</span> <span className="text-gray-900">{volUser.email}</span></p>
+                        <p><span className="text-[#6B7280]">Phone:</span> <span className="text-gray-900">{volUser.phone || 'N/A'}</span></p>
+                        <p><span className="text-[#6B7280]">Verification:</span>
+                          <span className={`ml-1 font-medium ${app.is_verified ? 'text-green-600' : 'text-gray-500'}`}>
+                            {app.is_verified ? 'Documents Verified' : 'Not Verified'}
                           </span>
                         </p>
-                      )}
-                      <p><span className="text-[#6B7280]">Opportunity:</span> <span className="text-gray-900">{title} ({app.task?.status})</span></p>
-                    </div>
-                  )}
+                        {app.distance_km != null && (
+                          <p><span className="text-[#6B7280]">Distance:</span> <span className="text-gray-900">{app.distance_km} km</span></p>
+                        )}
+                        {vol.skills && vol.skills.length > 0 && (
+                          <p>
+                            <span className="text-[#6B7280]">Skills:</span>
+                            <span className="flex flex-wrap gap-1 mt-1">
+                              {vol.skills.map((s) => (
+                                <span key={s.id} className="text-xs bg-[#EEF0FF] text-[#4F46C8] px-2 py-0.5 rounded-full">{s.name}</span>
+                              ))}
+                            </span>
+                          </p>
+                        )}
+                        <p><span className="text-[#6B7280]">Opportunity:</span> <span className="text-gray-900">{title} ({app.task?.status})</span></p>
+                      </div>
+                    )}
 
-                      {app.status === 'Pending' && (
-                        <div className="flex gap-3 pt-4 border-t border-gray-100">
-                          <button onClick={() => updateStatus(app.id, 'accept')} className="flex-1 bg-[#4F46C8] hover:bg-[#3f39a8] text-white text-sm font-medium py-2 rounded-lg transition">
-                            Approve
-                          </button>
-                          <button onClick={() => updateStatus(app.id, 'reject')} className="flex-1 bg-white border border-gray-200 hover:bg-gray-50 text-gray-900 text-sm font-medium py-2 rounded-lg transition">
-                            Reject
-                          </button>
-                        </div>
-                      )}
-                      {app.status === 'Accepted' && (
-                        <div className="flex gap-3 pt-4 border-t border-gray-100">
-                          <button onClick={() => cancelAssignment(app.id)} className="flex-1 bg-red-50 border border-red-200 hover:bg-red-100 text-red-700 text-sm font-medium py-2 rounded-lg transition">
-                            Cancel Assignment
-                          </button>
-                        </div>
-                      )}
-                    </div>
+                    {app.status === 'Pending' && (
+                      <div className="flex gap-3 pt-4 border-t border-gray-100">
+                        <button onClick={() => updateStatus(app.id, 'accept')} className="flex-1 bg-[#4F46C8] hover:bg-[#3f39a8] text-white text-sm font-medium py-2 rounded-lg transition">
+                          Approve
+                        </button>
+                        <button onClick={() => updateStatus(app.id, 'reject')} className="flex-1 bg-white border border-gray-200 hover:bg-gray-50 text-gray-900 text-sm font-medium py-2 rounded-lg transition">
+                          Reject
+                        </button>
+                      </div>
+                    )}
+                    {app.status === 'Accepted' && (
+                      <div className="flex gap-3 pt-4 border-t border-gray-100">
+                        <button onClick={() => cancelAssignment(app.id)} className="flex-1 bg-red-50 border border-red-200 hover:bg-red-100 text-red-700 text-sm font-medium py-2 rounded-lg transition">
+                          Cancel Assignment
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
               )
             })}
           </div>

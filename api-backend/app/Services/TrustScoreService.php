@@ -227,8 +227,10 @@ class TrustScoreService implements TrustCalculatorInterface
         $withdrawn = Application::where('volunteer_profile_id', $profile->id)
             ->where('status', 'Withdrawn')->count();
         $lateCheckins = ServiceLog::where('volunteer_profile_id', $profile->id)
-            ->where('confidence_level', 'low')
-            ->orWhere('confidence_level', 'manual_review')
+            ->where(function ($q) {
+                $q->where('confidence_level', 'low')
+                  ->orWhere('confidence_level', 'manual_review');
+            })
             ->where('participation_status', 'completed')
             ->count();
         $totalPenalty =

@@ -7,8 +7,23 @@ import {
   ArrowLeft, CheckCircle, AlertCircle, Loader2,
   MapPin, Calendar, Clock, Users, Layers,
   Building2, Globe, Phone, Mail, Send,
-  Hourglass, CheckCircle2, XCircle,
+  Hourglass, CheckCircle2, XCircle, Sparkles,
+  Target, Brain, Zap, Navigation, Shield,
 } from 'lucide-react';
+import { getMatchColor, getScoreBarColor, formatScore, getScoreLabel } from '@/app/lib/scoring';
+
+interface MatchAnalysis {
+  recommendation_score: number;
+  semantic_match_score: number;
+  skill_overlap_score: number;
+  distance_score: number;
+  availability_score: number;
+  trust_score: number;
+  matched_skills: { id: number; name: string }[];
+  missing_skills: { id: number; name: string }[];
+  distance_km: number | null;
+  recommendation_reason: string;
+}
 
 interface TaskDetail {
   id: number;
@@ -29,6 +44,7 @@ interface TaskDetail {
   task_type: string;
   urgency_level: string;
   application_status: string;
+  match_analysis?: MatchAnalysis;
   ngo: {
     organization_name: string;
     description: string | null;
@@ -271,6 +287,97 @@ export default function OpportunityDetailPage() {
                   </span>
                 ))}
               </div>
+            </div>
+          )}
+
+          {/* ── MATCH ANALYSIS PANEL ── */}
+          {task.match_analysis && (
+            <div className="mt-6 pt-5 border-t border-[#E5E7EB]">
+              <div className="flex items-center gap-2 mb-4">
+                <Sparkles size={16} className="text-[#4F46C8]" />
+                <h2 className="text-sm font-bold text-gray-900">Match Analysis</h2>
+                <span className={`ml-auto text-sm font-black px-3 py-1 rounded-xl border ${getMatchColor(task.match_analysis.recommendation_score)}`}>
+                  {Math.round(task.match_analysis.recommendation_score)}% — {getScoreLabel(task.match_analysis.recommendation_score)}
+                </span>
+              </div>
+
+              {/* Score bars grid */}
+              <div className="grid grid-cols-2 gap-3 mb-4">
+                {[
+                  { label: 'Semantic Match', icon: Brain, value: task.match_analysis.semantic_match_score },
+                  { label: 'Skill Match', icon: Target, value: task.match_analysis.skill_overlap_score },
+                  { label: 'Distance Score', icon: Navigation, value: task.match_analysis.distance_score },
+                  { label: 'Availability', icon: Zap, value: task.match_analysis.availability_score },
+                  { label: 'Trust Score', icon: Shield, value: task.match_analysis.trust_score },
+                ].map(({ label, icon: Icon, value }) => (
+                  <div key={label} className="bg-gray-50 rounded-xl p-3">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-1.5">
+                        <Icon size={13} className="text-[#4F46C8]" />
+                        <span className="text-xs font-medium text-gray-600">{label}</span>
+                      </div>
+                      <span className="text-xs font-bold text-gray-900">{formatScore(value)}%</span>
+                    </div>
+                    <div className="h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                      <div
+                        className={`h-full rounded-full ${getScoreBarColor(value ?? 0)}`}
+                        style={{ width: `${Math.round((value ?? 0) * 100)}%` }}
+                      />
+                    </div>
+                  </div>
+                ))}
+                {task.match_analysis.distance_km != null && (
+                  <div className="bg-gray-50 rounded-xl p-3 flex items-center gap-2">
+                    <Navigation size={13} className="text-[#4F46C8]" />
+                    <div>
+                      <div className="text-xs text-gray-500">Distance</div>
+                      <div className="text-sm font-bold text-gray-900">{task.match_analysis.distance_km} km</div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Matched skills */}
+              {task.match_analysis.matched_skills.length > 0 && (
+                <div className="mb-3">
+                  <p className="text-xs font-semibold text-green-700 mb-1.5 flex items-center gap-1">
+                    <CheckCircle size={11} /> Matched Skills
+                  </p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {task.match_analysis.matched_skills.map((s) => (
+                      <span key={s.id} className="inline-flex items-center gap-1 text-xs font-medium bg-green-50 text-green-700 border border-green-200 px-2.5 py-0.5 rounded-full">
+                        <CheckCircle size={10} /> {s.name}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Missing skills */}
+              {task.match_analysis.missing_skills.length > 0 && (
+                <div className="mb-4">
+                  <p className="text-xs font-semibold text-gray-500 mb-1.5">Missing Skills</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {task.match_analysis.missing_skills.map((s) => (
+                      <span key={s.id} className="text-xs font-medium bg-gray-100 text-gray-500 border border-gray-200 px-2.5 py-0.5 rounded-full">
+                        · {s.name}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Recommendation reason */}
+              {task.match_analysis.recommendation_reason && (
+                <div className="bg-[#EEF0FF] rounded-xl p-3">
+                  <p className="text-xs font-semibold text-[#4F46C8] mb-1 flex items-center gap-1">
+                    <Sparkles size={11} /> Recommendation Reason
+                  </p>
+                  <p className="text-xs text-[#4F46C8]/80 leading-relaxed">
+                    {task.match_analysis.recommendation_reason}
+                  </p>
+                </div>
+              )}
             </div>
           )}
 
