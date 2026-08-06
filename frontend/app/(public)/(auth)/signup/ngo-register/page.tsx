@@ -89,7 +89,7 @@ export default function NGORegister() {
             description: 'An account with this email is already registered. Please login instead.',
             variant: 'destructive',
           })
-          router.push('/login/ngo')
+          router.push('/login/ngo-login')
           return
         }
 

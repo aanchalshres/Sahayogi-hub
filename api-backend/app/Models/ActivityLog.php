@@ -7,6 +7,9 @@ use Illuminate\Database\Eloquent\Model;
 class ActivityLog extends Model
 {
     protected $table = 'activity_logs';
+
+    public $timestamps = false; // ← add this: table only has created_at, not updated_at
+
     protected $fillable = [
         'user_id',
         'action',
@@ -15,8 +18,6 @@ class ActivityLog extends Model
         'ip_address',
     ];
 
-
-    // ActivityLog.php
     public function user()
     {
         return $this->belongsTo(User::class);
