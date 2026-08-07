@@ -158,4 +158,34 @@ class WorkflowController extends Controller
             })->values(),
         ]);
     }
+
+    /**
+     * Final optimisation stage: Minimum-Cost Maximum-Flow recommendations.
+     *
+     * Runs MCMF across all active tasks of the NGO and the eligible volunteer
+     * pool, converting WSM scores into edge costs. Returns a per-task,
+     * capacity-aware recommendation list. This does NOT create assignments —
+     * the NGO approves or rejects the recommended volunteers.
+     */
+    public function optimizedRecommendations(Request $request)
+    {
+        $ngo = $request->user()->ngoProfile;
+
+        $options = [
+            'availability_filter' => ['Available'],
+        ];
+
+        $optimized = $this->workflowService
+            ->generateOptimizedRecommendations($ngo, $options);
+
+        return response()->json([
+            'message' => 'Optimized volunteer recommendations generated (MCMF). ' .
+                         'No assignments were created — review and approve manually.',
+            'total_flow'      => $optimized['total_flow'],
+            'total_cost'      => $optimized['total_cost'],
+            'total_wsm_score' => $optimized['total_wsm_score'],
+            'assignments'     => $optimized['assignments'],
+            'unassigned_volunteers' => $optimized['unassigned_volunteers'],
+        ]);
+    }
 }

@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Application;
+use App\Models\NgoProfile;
 use App\Models\Shortlist;
 use App\Models\Task;
 use App\Models\VolunteerProfile;
@@ -13,7 +14,8 @@ class WorkflowService
 {
     public function __construct(
         private RecommendationService $recommendation,
-        private Ranker $ranker
+        private Ranker $ranker,
+        private MinCostMaxFlowService $minCostMaxFlow
     ) {}
 
     public function generateShortlist(Task $task, ?int $limit = null, ?string $strategy = null): Collection
@@ -79,6 +81,89 @@ class WorkflowService
         });
 
         return $result->sortBy('shortlist_rank')->values();
+    }
+
+    /**
+     * Final optimisation stage: run Minimum-Cost Maximum-Flow over the NGO's
+     * active tasks and the eligible volunteer pool.
+     *
+     * This is the capacity-aware, global counterpart of generateShortlist().
+     * WSM suitability scores are converted to edge costs (cost = 100 − score)
+     * inside MinCostMaxFlowService. The result is a per-task recommendation
+     * list that respects `required_volunteers` capacity and recommends each
+     * volunteer to at most one task.
+     *
+     * This method NEVER creates assignments — it only computes the optimised
+     * recommendation list. The NGO remains the final decision-maker and can
+     * approve or reject the recommended volunteers.
+     *
+     * @param NgoProfile $ngo     the authenticated NGO
+     * @param array      $options MCMF options forwarded to the solver
+     *
+     * @return array the raw MCMF result (total_flow, total_cost,
+     *               total_wsm_score, assignments, unassigned_volunteers)
+     */
+    public function generateOptimizedRecommendations(NgoProfile $ngo, array $options = []): array
+    {
+        // Active tasks of this NGO that have a TF-IDF profile to match on.
+        $tasks = Task::where('ngo_id', $ngo->id)
+            ->whereIn('status', ['Open', 'Ongoing'])
+            ->whereNotNull('tfidf_vector')
+            ->where('tfidf_vector', '!=', '[]')
+            ->with(['skills'])
+            ->get();
+
+        if ($tasks->isEmpty()) {
+            return [
+                'total_flow' => 0,
+                'total_cost' => 0.0,
+                'total_wsm_score' => 0.0,
+                'assignments' => [],
+                'unassigned_volunteers' => [],
+            ];
+        }
+
+        $taskIds = $tasks->pluck('id')->all();
+
+        // Candidate pool: active volunteers with a TF-IDF profile who have not
+        // already applied to (or been accepted for) any of these tasks.
+        $volunteers = VolunteerProfile::with(['user', 'skills'])
+            ->whereHas('user', function ($q) {
+                $q->where('is_active', true);
+            })
+            ->whereNotNull('tfidf_vector')
+            ->where('tfidf_vector', '!=', '[]')
+            ->whereDoesntHave('applications', function ($q) use ($taskIds) {
+                $q->whereIn('task_id', $taskIds)
+                  ->whereIn('status', ['Pending', 'Shortlisted', 'Accepted']);
+            })
+            ->get();
+
+        if ($volunteers->isEmpty()) {
+            return [
+                'total_flow' => 0,
+                'total_cost' => 0.0,
+                'total_wsm_score' => 0.0,
+                'assignments' => [],
+                'unassigned_volunteers' => [],
+            ];
+        }
+
+        // Build the WSM suitability matrix [volunteerId][taskId] => score.
+        $scores = [];
+        foreach ($volunteers as $volunteer) {
+            foreach ($tasks as $task) {
+                $scores[$volunteer->id][$task->id] =
+                    $this->recommendation->computeVolunteerTaskMatchScore($volunteer, $task);
+            }
+        }
+
+        return $this->minCostMaxFlow->optimize(
+            $volunteers->all(),
+            $tasks->all(),
+            $scores,
+            $options
+        );
     }
 
     public function getShortlist(Task $task): Collection

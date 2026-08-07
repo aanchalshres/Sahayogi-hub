@@ -754,6 +754,13 @@ Route::middleware([
         [NgoTaskController::class, 'index']
     );
 
+    // Literal path MUST be registered before the parameterised /{id} route
+    // below, otherwise it would never match (Laravel matches in order).
+    Route::get(
+        '/ngo/tasks/optimized-recommendations',
+        [NgoWorkflowController::class, 'optimizedRecommendations']
+    );
+
     Route::get(
         '/ngo/tasks/{id}',
         [NgoTaskController::class, 'show']
