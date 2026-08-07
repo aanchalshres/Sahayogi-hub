@@ -2,12 +2,11 @@
 import { useEffect, useState, useCallback } from 'react'
 import { apiGet, apiPost } from '@/app/lib/api'
 import {
-  User, Clock, CheckCircle2, XCircle, Hourglass,
-  Inbox, ChevronDown, ChevronUp, Filter, X,
-  ShieldCheck, ShieldAlert, Sparkles, ArrowUpDown,
-  CheckCircle, Brain, Target, Navigation, Zap, Shield,
+  Clock, CheckCircle2, XCircle, Hourglass,
+  Inbox, ChevronDown, ChevronUp, Filter,
+  ShieldCheck, ShieldAlert, MapPin,
 } from 'lucide-react'
-import { getMatchColor, getScoreBarColor, formatScore, getScoreLabel } from '@/app/lib/scoring'
+import { getMatchColor, formatScore } from '@/app/lib/scoring'
 
 interface Application {
   id: number
@@ -19,10 +18,6 @@ interface Application {
   remarks: string | null
   // Recommendation scores (populated by backend)
   recommendation_score: number | null
-  semantic_match_score: number | null
-  skill_overlap_score: number | null
-  distance_score: number | null
-  availability_score: number | null
   trust_score: number | null
   matched_skills: { id: number; name: string }[]
   missing_skills: { id: number; name: string }[]
@@ -32,6 +27,9 @@ interface Application {
   task: { id: number; title: string; status: string }
   volunteer: {
     id: number
+    profile_photo: string | null
+    availability: string | null
+    city: string | null
     skills: { id: number; name: string }[]
     documents: { id: number; status: string }[]
     user: { id: number; name: string; email: string; phone: string }
@@ -50,21 +48,11 @@ interface Meta {
   total: number
 }
 
-type SortBy = 'recommendation_score' | 'trust_score' | 'distance_score' | 'skill_overlap_score' | 'created_at'
-
 const STATUS_STYLES: Record<string, { bg: string; text: string; icon: any; label: string }> = {
   Pending: { bg: 'bg-amber-50', text: 'text-amber-700', icon: Hourglass, label: 'Pending' },
-  Accepted: { bg: 'bg-green-50', text: 'text-green-700', icon: CheckCircle2, label: 'Accepted' },
+  Accepted: { bg: 'bg-green-50', text: 'text-green-700', icon: CheckCircle2, label: 'Approved' },
   Rejected: { bg: 'bg-red-50', text: 'text-red-700', icon: XCircle, label: 'Rejected' },
   Cancelled: { bg: 'bg-gray-100', text: 'text-gray-600', icon: XCircle, label: 'Cancelled' },
-}
-
-const SORT_LABELS: Record<SortBy, string> = {
-  recommendation_score: 'Overall Score',
-  trust_score: 'Trust',
-  distance_score: 'Distance',
-  skill_overlap_score: 'Skill Match',
-  created_at: 'Apply Date',
 }
 
 export default function NgoApplicationsPage() {
@@ -75,7 +63,6 @@ export default function NgoApplicationsPage() {
   const [expandedId, setExpandedId] = useState<number | null>(null)
   const [statusFilter, setStatusFilter] = useState('')
   const [taskFilter, setTaskFilter] = useState('')
-  const [sortBy, setSortBy] = useState<SortBy>('recommendation_score')
   const [page, setPage] = useState(1)
 
   const load = useCallback(async () => {
@@ -86,7 +73,6 @@ export default function NgoApplicationsPage() {
       if (taskFilter) params.set('task_id', taskFilter)
       params.set('page', String(page))
       params.set('per_page', '20')
-      params.set('sort_by', sortBy)
 
       const res = await apiGet<{ data: Application[]; meta: Meta }>(`/api/ngo/applications?${params}`)
       setApplications(res.data)
@@ -96,7 +82,7 @@ export default function NgoApplicationsPage() {
     } finally {
       setLoading(false)
     }
-  }, [statusFilter, taskFilter, page, sortBy])
+  }, [statusFilter, taskFilter, page])
 
   useEffect(() => { load() }, [load])
 
@@ -129,29 +115,44 @@ export default function NgoApplicationsPage() {
     }
   }
 
+  const getInitials = (name: string) => {
+    const parts = name.trim().split(' ')
+    return parts.length >= 2 ? parts[0][0] + parts[1][0] : parts[0]?.[0] || '?'
+  }
+
+  const formatDate = (dateStr: string | null) => {
+    if (!dateStr) return '—'
+    return new Date(dateStr).toLocaleDateString(undefined, {
+      year: 'numeric', month: 'short', day: 'numeric',
+    })
+  }
+
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Applications</h1>
+        <h1 className="text-2xl font-bold text-gray-900">Recommended Applicants</h1>
         <p className="text-sm text-[#6B7280]">
-          Sorted by recommendation score — algorithm assists decision-making only.
+          Applicants ranked by the backend recommendation engine. Approval creates the assignment.
           <span className="text-xs font-medium ml-2 text-[#4F46C8]">({meta.total} total)</span>
         </p>
       </div>
 
-      {/* Filters + Sort */}
+      {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-3 flex-wrap">
+        <div className="relative flex-1 min-w-[140px]">
+          <Filter size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
         <select
-          className="px-3 py-2.5 bg-white border border-gray-200 rounded-lg text-sm outline-none focus:border-[#4F46C8] flex-1 min-w-[140px]"
+          className="pl-9 py-2.5 bg-white border border-gray-200 rounded-lg text-sm outline-none focus:border-[#4F46C8] flex-1 min-w-[140px]"
           value={statusFilter}
           onChange={(e) => { setStatusFilter(e.target.value); setPage(1) }}
         >
           <option value="">All Statuses</option>
           <option value="Pending">Pending</option>
-          <option value="Accepted">Accepted</option>
+          <option value="Accepted">Approved</option>
           <option value="Rejected">Rejected</option>
           <option value="Cancelled">Cancelled</option>
         </select>
+        </div>
 
         <select
           className="px-3 py-2.5 bg-white border border-gray-200 rounded-lg text-sm outline-none focus:border-[#4F46C8] flex-1 min-w-[140px]"
@@ -161,21 +162,6 @@ export default function NgoApplicationsPage() {
           <option value="">All Opportunities</option>
           {tasks.map((t) => <option key={t.id} value={t.id}>{t.title}</option>)}
         </select>
-
-        {/* Sort */}
-        <div className="flex items-center gap-1.5 bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm">
-          <ArrowUpDown size={14} className="text-gray-400" />
-          <span className="text-gray-500 text-xs">Sort:</span>
-          <select
-            value={sortBy}
-            onChange={(e) => { setSortBy(e.target.value as SortBy); setPage(1) }}
-            className="outline-none bg-transparent text-sm font-medium text-gray-700"
-          >
-            {(Object.keys(SORT_LABELS) as SortBy[]).map((k) => (
-              <option key={k} value={k}>{SORT_LABELS[k]}</option>
-            ))}
-          </select>
-        </div>
       </div>
 
       {loading ? (
@@ -185,7 +171,7 @@ export default function NgoApplicationsPage() {
       ) : applications.length === 0 ? (
         <div className="bg-white rounded-2xl border border-black/5 p-10 text-center">
           <Inbox size={36} className="mx-auto text-[#6B7280] mb-3" />
-          <p className="text-gray-900 font-medium mb-1">No applications found</p>
+          <p className="text-gray-900 font-medium mb-1">No applicants found</p>
           <p className="text-[#6B7280] text-sm">Adjust filters or wait for volunteers to apply.</p>
         </div>
       ) : (
@@ -202,27 +188,20 @@ export default function NgoApplicationsPage() {
 
               return (
                 <div key={app.id} className="bg-white rounded-2xl border border-black/5 shadow-sm overflow-hidden">
-                  {/* Score stripe */}
-                  {hasScore && (
-                    <div
-                      className={`h-0.5 w-full ${
-                        app.recommendation_score! >= 70 ? 'bg-green-400' :
-                        app.recommendation_score! >= 40 ? 'bg-yellow-400' : 'bg-gray-200'
-                      }`}
-                    />
-                  )}
-
                   <div className="p-5">
                     <div className="flex items-start justify-between gap-4 mb-3">
                       <div className="flex items-start gap-3 min-w-0">
-                        {/* Rank */}
-                        {hasScore && (
-                          <div className="w-8 h-8 rounded-full bg-[#4F46C8]/10 flex items-center justify-center shrink-0 text-[10px] font-black text-[#4F46C8]">
-                            #{(meta.current_page - 1) * meta.per_page + idx + 1}
+                        {/* Avatar */}
+                        {vol?.profile_photo ? (
+                          <img src={vol.profile_photo} alt={volUser?.name || 'Applicant'}
+                            className="w-10 h-10 rounded-full object-cover border border-gray-200 shrink-0" />
+                        ) : (
+                          <div className="w-10 h-10 rounded-full bg-[#B9C0D4] flex items-center justify-center text-sm font-semibold text-[#111827] shrink-0">
+                            {getInitials(volUser?.name || '?')}
                           </div>
                         )}
                         <div className="min-w-0">
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-2 flex-wrap">
                             <p className="font-semibold text-gray-900 truncate">{volUser?.name || 'Unknown'}</p>
                             {app.is_verified ? (
                               <ShieldCheck size={14} className="text-green-600 shrink-0" aria-label="Verified" />
@@ -230,25 +209,31 @@ export default function NgoApplicationsPage() {
                               <ShieldAlert size={14} className="text-gray-400 shrink-0" aria-label="Not verified" />
                             )}
                           </div>
-                          <p className="text-xs text-[#6B7280] truncate">Applied for: {title}</p>
-                          <div className="flex items-center gap-2 text-xs text-[#6B7280] mt-0.5">
-                            <Clock size={12} />
-                            <span>{new Date(app.applied_at).toLocaleDateString()}</span>
+                          <p className="text-xs text-[#6B7280] truncate">Applicant for: {title}</p>
+                          <div className="flex items-center gap-3 text-xs text-[#6B7280] mt-0.5 flex-wrap">
+                            <span className="flex items-center gap-1"><Clock size={12} /> {formatDate(app.applied_at)}</span>
+                            {app.distance_km != null && (
+                              <span className="flex items-center gap-1"><MapPin size={12} /> {app.distance_km} km away</span>
+                            )}
+                            {vol?.availability && (
+                              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full capitalize bg-sky-50 text-sky-700">
+                                {vol.availability}
+                              </span>
+                            )}
                           </div>
                         </div>
                       </div>
 
                       <div className="flex items-center gap-3 shrink-0">
-                        {/* Recommendation score badge */}
-                        {hasScore && (
+                        {/* Match score badge */}
+                        {hasScore ? (
                           <div className="text-center">
                             <div className={`text-sm font-black px-2.5 py-1 rounded-lg border ${getMatchColor(app.recommendation_score!)}`}>
-                              {Math.round(app.recommendation_score!)}%
+                              {Math.round(app.recommendation_score!)}
                             </div>
-                            <div className="text-[9px] text-gray-400 mt-0.5">{getScoreLabel(app.recommendation_score!)}</div>
+                            <div className="text-[9px] text-gray-400 mt-0.5">Match Score</div>
                           </div>
-                        )}
-                        {!hasScore && (
+                        ) : (
                           <div className="text-center">
                             <div className="text-xs px-2 py-1 rounded-lg bg-gray-100 text-gray-400">No score</div>
                           </div>
@@ -261,41 +246,20 @@ export default function NgoApplicationsPage() {
                       </div>
                     </div>
 
-                    {/* Score mini bars */}
-                    {hasScore && (
-                      <div className="grid grid-cols-5 gap-1 mb-3">
-                        {[
-                          { label: 'Sem.', value: app.semantic_match_score },
-                          { label: 'Skill', value: app.skill_overlap_score },
-                          { label: 'Dist.', value: app.distance_score },
-                          { label: 'Avail.', value: app.availability_score },
-                          { label: 'Trust', value: app.trust_score },
-                        ].map((s) => (
-                          <div key={s.label} className="text-center">
-                            <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden mb-0.5">
-                              <div
-                                className={`h-full rounded-full ${getScoreBarColor(s.value ?? 0)}`}
-                                style={{ width: `${Math.round((s.value ?? 0) * 100)}%` }}
-                              />
-                            </div>
-                            <div className="text-[9px] text-gray-400">{s.label}</div>
-                            <div className="text-[9px] font-bold text-gray-600">{formatScore(s.value)}%</div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
+                    {/* Trust + Skills row */}
+                    <div className="flex items-center gap-4 text-xs text-[#6B7280] mb-3 flex-wrap">
+                      {app.trust_score != null && (
+                        <span>Trust Score: <strong className="text-gray-900">{formatScore(app.trust_score)}%</strong></span>
+                      )}
+                      {vol?.city && <span>Location: <strong className="text-gray-900 capitalize">{vol.city}</strong></span>}
+                    </div>
 
-                    {/* Matched/missing skills compact */}
-                    {hasScore && (app.matched_skills?.length > 0 || app.missing_skills?.length > 0) && (
+                    {/* Skills */}
+                    {vol?.skills && vol.skills.length > 0 && (
                       <div className="flex flex-wrap gap-1.5 mb-3">
-                        {app.matched_skills?.map((s) => (
-                          <span key={s.id} className="inline-flex items-center gap-0.5 text-[10px] font-medium bg-green-50 text-green-700 border border-green-200 px-2 py-0.5 rounded-full">
-                            <CheckCircle size={8} /> {s.name}
-                          </span>
-                        ))}
-                        {app.missing_skills?.map((s) => (
-                          <span key={s.id} className="text-[10px] font-medium bg-gray-50 text-gray-400 border border-gray-200 px-2 py-0.5 rounded-full">
-                            · {s.name}
+                        {vol.skills.map((s) => (
+                          <span key={s.id} className="text-[10px] bg-[#EEF0FF] text-[#4F46C8] px-2 py-0.5 rounded-full">
+                            {s.name}
                           </span>
                         ))}
                       </div>
@@ -304,7 +268,6 @@ export default function NgoApplicationsPage() {
                     {/* Recommendation reason */}
                     {app.recommendation_reason && (
                       <p className="text-[11px] text-[#6B7280] italic mb-3 leading-relaxed">
-                        <Sparkles size={9} className="inline mr-1 text-[#4F46C8]" />
                         {app.recommendation_reason}
                       </p>
                     )}
@@ -312,7 +275,7 @@ export default function NgoApplicationsPage() {
                     {volUser && (
                       <button onClick={() => setExpandedId(isExpanded ? null : app.id)} className="flex items-center gap-1.5 text-xs font-medium text-[#4F46C8] hover:text-[#3f39a8] mb-2">
                         {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-                        {isExpanded ? 'Hide details' : 'View details'}
+                        {isExpanded ? 'Hide profile' : 'View profile'}
                       </button>
                     )}
 
@@ -325,9 +288,6 @@ export default function NgoApplicationsPage() {
                             {app.is_verified ? 'Documents Verified' : 'Not Verified'}
                           </span>
                         </p>
-                        {app.distance_km != null && (
-                          <p><span className="text-[#6B7280]">Distance:</span> <span className="text-gray-900">{app.distance_km} km</span></p>
-                        )}
                         {vol.skills && vol.skills.length > 0 && (
                           <p>
                             <span className="text-[#6B7280]">Skills:</span>

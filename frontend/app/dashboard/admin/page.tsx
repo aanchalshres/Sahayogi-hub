@@ -11,7 +11,6 @@ import { EmptyState } from '@/app/components/ui-custom/EmptyState';
 import { StatsCardSkeleton, ActivitySkeleton } from '@/app/components/ui-custom/Skeleton';
 import { apiGet, apiDelete } from '@/app/lib/api';
 import {
-  Users,
   Heart,
   Building2,
   Clock,
@@ -117,7 +116,7 @@ export default function Dashboard() {
   ];
 
   return (
-    <div className="min-h-screen bg-[#F0F1F3] p-6">
+    <div className="bg-[#F0F1F3] p-6">
       {/* Header Section */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-[#111827]">Dashboard</h1>
@@ -159,22 +158,22 @@ export default function Dashboard() {
       ) : stats ? (
         <>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <StatsCard title="Total Users" value={stats.total_users ?? 0} icon={Users}
-              iconBgStyle={{ backgroundColor: "#E8EAFB" }} iconStyle={{ color: "#4F46C8" }} />
             <StatsCard title="Total Volunteers" value={stats.total_volunteers ?? 0} icon={Heart}
               iconBgColor="bg-red-100" iconColor="text-red-600" />
             <StatsCard title="Total NGOs" value={stats.total_ngos ?? 0} icon={Building2}
               iconBgColor="bg-purple-100" iconColor="text-purple-600" />
             <StatsCard title="Pending Verifications" value={stats.pending_ngos ?? 0} icon={Clock}
               iconBgColor="bg-amber-100" iconColor="text-amber-600" />
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
             <StatsCard title="Active Tasks" value={stats.active_tasks ?? 0} icon={Briefcase}
               iconBgColor="bg-emerald-100" iconColor="text-emerald-600" />
-            <StatsCard title="Total Applications" value={stats.total_applications ?? 0} icon={ClipboardList}
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+            <StatsCard title="Completed Tasks" value={stats.completed_tasks ?? 0} icon={CheckCircle2}
               iconBgColor="bg-blue-100" iconColor="text-blue-600" />
-            <StatsCard title="Service Hours" value={stats.total_service_hours ?? 0} icon={ClockAlert}
+            <StatsCard title="Total Applications" value={stats.total_applications ?? 0} icon={ClipboardList}
               iconBgColor="bg-indigo-100" iconColor="text-indigo-600" />
+            <StatsCard title="Service Hours" value={stats.total_service_hours ?? 0} icon={ClockAlert}
+              iconBgColor="bg-teal-100" iconColor="text-teal-600" />
           </div>
         </>
       ) : null}

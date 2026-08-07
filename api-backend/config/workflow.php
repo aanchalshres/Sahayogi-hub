@@ -4,8 +4,6 @@ return [
 
     'default_strategy' => env('WORKFLOW_RANKING_STRATEGY', 'recommendation'),
 
-    'shortlist_limit' => (int) env('WORKFLOW_SHORTLIST_LIMIT', 10),
-
     'ngo_recommendation_limit' => (int) env('WORKFLOW_NGO_RECOMMENDATION_LIMIT', 10),
 
     /*

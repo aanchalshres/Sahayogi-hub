@@ -6,7 +6,6 @@ use App\Events\TrustScore\TaskCompleted;
 use App\Http\Controllers\Controller;
 use App\Models\Application;
 use App\Models\Task;
-use App\Services\RecommendationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
@@ -201,59 +200,6 @@ class TaskController extends Controller
 
         return response()->json([
             'message' => 'Task deleted'
-        ]);
-    }
-
-    public function recommendedVolunteers(Request $request, $id, RecommendationService $recommendation)
-    {
-        $ngo = $request->user()->ngoProfile;
-
-        $task = Task::where('ngo_id', $ngo->id)
-            ->whereNotNull('tfidf_vector')
-            ->where('tfidf_vector', '!=', '[]')
-            ->findOrFail($id);
-
-        $volunteers = $recommendation->rankVolunteersForTask($task)->take(10);
-
-        return response()->json([
-            'data' => $volunteers->map(function ($v) {
-                $documentsVerified = $v->relationLoaded('documents')
-                    ? $v->documents->where('status', 'verified')->count() > 0
-                    : ($v->documents_verified ?? false);
-
-                return [
-                    'id'                     => $v->id,
-                    'user_id'                => $v->user_id,
-                    'rank'                   => $v->rank ?? null,
-                    'name'                   => $v->user->name ?? 'Unknown',
-                    'email'                  => $v->user->email ?? '',
-                    'phone'                  => $v->user->phone ?? '',
-                    'bio'                    => $v->bio ?? '',
-                    'city'                   => $v->city ?? '',
-                    'country'                => $v->country ?? '',
-                    'availability'           => $v->availability ?? null,
-                    'total_service_hours'    => $v->total_service_hours ?? 0,
-                    'average_rating'         => $v->average_rating ?? 0,
-                    'is_verified'            => (bool) $documentsVerified,
-                    'skills'                 => $v->skills->map(fn ($s) => [
-                        'id'               => $s->id,
-                        'name'             => $s->name,
-                        'proficiency_level' => $s->pivot->proficiency_level ?? null,
-                    ]),
-                    // ── Recommendation scores ──────────────────────────────
-                    'recommendation_score'   => $v->recommendation_score,
-                    'semantic_match_score'   => $v->semantic_match_score ?? 0,
-                    'distance_score'         => $v->distance_score ?? 0,
-                    'skill_overlap_score'    => $v->skill_overlap_score ?? 0,
-                    'availability_score'     => $v->availability_score ?? 0,
-                    'trust_score'            => $v->trust_score ?? 0.5,
-                    // ── Rich metadata ─────────────────────────────────────
-                    'matched_skills'         => $v->matched_skills ?? [],
-                    'missing_skills'         => $v->missing_skills ?? [],
-                    'distance_km'            => $v->distance_km ?? null,
-                    'recommendation_reason'  => $v->recommendation_reason ?? '',
-                ];
-            }),
         ]);
     }
 

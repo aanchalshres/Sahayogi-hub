@@ -66,17 +66,4 @@ class WorkflowController extends Controller
             }),
         ]);
     }
-
-    public function strategies()
-    {
-        return response()->json([
-            'data' => [
-                [
-                    'key' => 'recommendation',
-                    'label' => config('workflow.strategies.recommendation.label', 'Recommendation Score'),
-                    'weights' => config('workflow.strategies.recommendation.weights', []),
-                ],
-            ],
-        ]);
-    }
 }

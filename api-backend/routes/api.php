@@ -19,13 +19,10 @@ use App\Http\Controllers\Admin\CertificateController;
 use App\Http\Controllers\Admin\ReviewController;
 use App\Http\Controllers\Admin\AnalyticsController;
 use App\Http\Controllers\Admin\SettingsController;
-use App\Http\Controllers\Admin\NotificationController as AdminNotificationController;
 use App\Http\Controllers\Admin\UserManagementController;
 use App\Http\Controllers\Admin\ExportController;
 use App\Http\Controllers\Admin\NGOManagementController;
 use App\Http\Controllers\Admin\ActivityLogController;
-use App\Http\Controllers\Admin\CategoryController as AdminCategoryController;
-use App\Http\Controllers\Admin\SkillController as AdminSkillController;
 
 use App\Http\Controllers\Ngo\TaskController as NgoTaskController;
 use App\Http\Controllers\Ngo\ApplicationController as NgoApplicationController;
@@ -486,38 +483,6 @@ Route::middleware([
 
     /*
     |--------------------------------------------------------------------------
-    | Admin Notifications
-    |--------------------------------------------------------------------------
-    */
-
-    Route::get(
-        '/admin/notifications',
-        [AdminNotificationController::class, 'index']
-    );
-
-    Route::get(
-        '/admin/notifications/unread-count',
-        [AdminNotificationController::class, 'unreadCount']
-    );
-
-    Route::post(
-        '/admin/notifications/{id}/read',
-        [AdminNotificationController::class, 'markAsRead']
-    );
-
-    Route::post(
-        '/admin/notifications/read-all',
-        [AdminNotificationController::class, 'markAllAsRead']
-    );
-
-    Route::delete(
-        '/admin/notifications/{id}',
-        [AdminNotificationController::class, 'destroy']
-    );
-
-
-    /*
-    |--------------------------------------------------------------------------
     | Admin User Management
     |--------------------------------------------------------------------------
     */
@@ -619,70 +584,6 @@ Route::middleware([
 
     /*
     |--------------------------------------------------------------------------
-    | Categories Management
-    |--------------------------------------------------------------------------
-    */
-
-    Route::get(
-        '/admin/categories',
-        [AdminCategoryController::class, 'index']
-    );
-
-    Route::post(
-        '/admin/categories',
-        [AdminCategoryController::class, 'store']
-    );
-
-    Route::get(
-        '/admin/categories/{id}',
-        [AdminCategoryController::class, 'show']
-    );
-
-    Route::put(
-        '/admin/categories/{id}',
-        [AdminCategoryController::class, 'update']
-    );
-
-    Route::delete(
-        '/admin/categories/{id}',
-        [AdminCategoryController::class, 'destroy']
-    );
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | Skills Management
-    |--------------------------------------------------------------------------
-    */
-
-    Route::get(
-        '/admin/skills',
-        [AdminSkillController::class, 'index']
-    );
-
-    Route::post(
-        '/admin/skills',
-        [AdminSkillController::class, 'store']
-    );
-
-    Route::get(
-        '/admin/skills/{id}',
-        [AdminSkillController::class, 'show']
-    );
-
-    Route::put(
-        '/admin/skills/{id}',
-        [AdminSkillController::class, 'update']
-    );
-
-    Route::delete(
-        '/admin/skills/{id}',
-        [AdminSkillController::class, 'destroy']
-    );
-
-
-    /*
-    |--------------------------------------------------------------------------
     | Trust Score Management
     |--------------------------------------------------------------------------
     */
@@ -754,13 +655,6 @@ Route::middleware([
         [NgoTaskController::class, 'index']
     );
 
-    // Literal path MUST be registered before the parameterised /{id} route
-    // below, otherwise it would never match (Laravel matches in order).
-    Route::get(
-        '/ngo/tasks/optimized-recommendations',
-        [NgoWorkflowController::class, 'optimizedRecommendations']
-    );
-
     Route::get(
         '/ngo/tasks/{id}',
         [NgoTaskController::class, 'show']
@@ -774,11 +668,6 @@ Route::middleware([
     Route::post(
         '/ngo/tasks/{id}/complete',
         [NgoTaskController::class, 'complete']
-    );
-
-    Route::get(
-        '/ngo/tasks/{id}/recommended-volunteers',
-        [NgoTaskController::class, 'recommendedVolunteers']
     );
 
     Route::put(
@@ -1054,23 +943,8 @@ Route::get(
 */
 
 Route::get(
-    '/ngo/tasks/{id}/shortlist',
-    [NgoWorkflowController::class, 'shortlist']
-);
-
-Route::post(
-    '/ngo/tasks/{id}/generate-shortlist',
-    [NgoWorkflowController::class, 'generateShortlist']
-);
-
-Route::get(
     '/ngo/tasks/{id}/prioritized-applications',
     [NgoWorkflowController::class, 'prioritizedApplications']
-);
-
-Route::get(
-    '/ngo/strategies',
-    [NgoWorkflowController::class, 'strategies']
 );
 
 Route::get(
@@ -1467,11 +1341,6 @@ Route::middleware([
     Route::get(
         '/volunteer/recommended-ngos',
         [VolunteerWorkflowController::class, 'recommendedNgos']
-    );
-
-    Route::get(
-        '/volunteer/strategies',
-        [VolunteerWorkflowController::class, 'strategies']
     );
 
 });

@@ -72,49 +72,49 @@ function generateVector(array $skills): array
     return $vector ?: ['general' => 0.5];
 }
 
-it('benchmarks 100 volunteers ranking', function () {
+it('benchmarks task ranking for 100 volunteers', function () {
     createDataset(100, 10, $this->ngo);
 
-    $task = Task::first();
+    $volunteer = VolunteerProfile::first();
     $service = app(RecommendationService::class);
 
     $start = microtime(true);
-    $ranked = $service->rankVolunteersForTask($task);
+    $ranked = $service->rankTasksForVolunteer($volunteer);
     $duration = microtime(true) - $start;
 
-    expect($ranked)->toHaveCount(100);
+    expect($ranked)->toHaveCount(10);
     expect($duration)->toBeLessThan(30);
 
     $this->addToAssertionCount(1);
 })->group('benchmark');
 
-it('benchmarks 500 volunteers ranking', function () {
+it('benchmarks task ranking for 500 volunteers', function () {
     createDataset(500, 10, $this->ngo);
 
-    $task = Task::first();
+    $volunteer = VolunteerProfile::first();
     $service = app(RecommendationService::class);
 
     $start = microtime(true);
-    $ranked = $service->rankVolunteersForTask($task);
+    $ranked = $service->rankTasksForVolunteer($volunteer);
     $duration = microtime(true) - $start;
 
-    expect($ranked)->toHaveCount(500);
+    expect($ranked)->toHaveCount(10);
     expect($duration)->toBeLessThan(120);
 
     $this->addToAssertionCount(1);
 })->group('benchmark');
 
-it('benchmarks 1000 volunteers ranking', function () {
+it('benchmarks task ranking for 1000 volunteers', function () {
     createDataset(1000, 10, $this->ngo);
 
-    $task = Task::first();
+    $volunteer = VolunteerProfile::first();
     $service = app(RecommendationService::class);
 
     $start = microtime(true);
-    $ranked = $service->rankVolunteersForTask($task);
+    $ranked = $service->rankTasksForVolunteer($volunteer);
     $duration = microtime(true) - $start;
 
-    expect($ranked)->toHaveCount(1000);
+    expect($ranked)->toHaveCount(10);
     expect($duration)->toBeLessThan(300);
 
     $this->addToAssertionCount(1);

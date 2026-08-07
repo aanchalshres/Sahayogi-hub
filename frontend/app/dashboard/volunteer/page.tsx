@@ -362,7 +362,7 @@ export default function VolunteerDashboard() {
                         {/* Score breakdown bars */}
                         <div className="grid grid-cols-5 gap-1 mb-3">
                           {[
-                            { label: 'Semantic', value: task.semantic_match_score },
+                            { label: 'Profile', value: task.semantic_match_score },
                             { label: 'Skills', value: task.skill_overlap_score },
                             { label: 'Distance', value: task.distance_score },
                             { label: 'Avail.', value: task.availability_score },
@@ -597,7 +597,7 @@ export default function VolunteerDashboard() {
             {/* Quick Actions */}
             <section className="grid grid-cols-2 gap-2">
               <button
-                onClick={() => router.push('/dashboard/volunteer/skills')}
+                onClick={() => router.push('/dashboard/volunteer/documents')}
                 className="flex flex-col items-center justify-center bg-white border border-black/5 rounded-xl p-3 shadow-sm hover:shadow-md transition"
               >
                 <Upload size={18} className="text-[#4F46C8] mb-1" />

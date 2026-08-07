@@ -2,7 +2,8 @@
 
 import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { apiGet, apiPut, apiDelete, apiUpload } from "@/app/lib/api";
+import { apiGet, apiPost, apiPut, apiDelete, apiUpload } from "@/app/lib/api";
+import SkillSelector from "@/app/components/ui-custom/SkillSelector";
 
 interface VolunteerSkill {
   id: number;
@@ -76,6 +77,11 @@ interface EditFormData {
   emergency_contact_name: string;
   emergency_contact_phone: string;
   availability: string;
+}
+
+interface Skill {
+  id: number;
+  name: string;
 }
 
 function mapApiResponse(apiData: any): VolunteerProfile {
@@ -277,6 +283,8 @@ function TrustScoreCard() {
   );
 }
 
+type ProfileTab = "overview" | "account" | "password" | "availability" | "skills" | "preferences";
+
 export default function VolunteerProfilePage() {
   const router = useRouter();
   const [profile, setProfile] = useState<VolunteerProfile | null>(null);
@@ -284,6 +292,8 @@ export default function VolunteerProfilePage() {
   const [documentStatus, setDocumentStatus] = useState<string>("none");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+
+  const [tab, setTab] = useState<ProfileTab>("overview");
 
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [formData, setFormData] = useState<EditFormData | null>(null);
@@ -296,8 +306,38 @@ export default function VolunteerProfilePage() {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Skills
+  const [availableSkills, setAvailableSkills] = useState<Skill[]>([]);
+  const [selectedSkillIds, setSelectedSkillIds] = useState<number[]>([]);
+  const [skillsSaving, setSkillsSaving] = useState(false);
+  const [skillsMessage, setSkillsMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+
+  // Account (name / phone)
+  const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [accountSaving, setAccountSaving] = useState(false);
+
+  // Password
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [newPasswordConfirmation, setNewPasswordConfirmation] = useState("");
+  const [showCurrent, setShowCurrent] = useState(false);
+  const [showNew, setShowNew] = useState(false);
+  const [changingPassword, setChangingPassword] = useState(false);
+
+  // Availability
+  const [availability, setAvailability] = useState("Available");
+  const [availabilitySaving, setAvailabilitySaving] = useState(false);
+
+  // Preferences (UI-only)
+  const [notifyEmail, setNotifyEmail] = useState(true);
+  const [notifyApp, setNotifyApp] = useState(true);
+
+  const [settingsMessage, setSettingsMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+
   useEffect(() => {
     fetchVolunteerProfile();
+    fetchAvailableSkills();
   }, []);
 
   const fetchVolunteerProfile = async () => {
@@ -305,14 +345,102 @@ export default function VolunteerProfilePage() {
       setLoading(true);
       setError("");
       const response = await apiGet<any>("/volunteer/profile");
-      setProfile(mapApiResponse(response.data));
+      const mapped = mapApiResponse(response.data);
+      setProfile(mapped);
       setCompletion(response.completion || null);
       setDocumentStatus(response.document_status || "none");
+      setName(mapped.name ?? "");
+      setPhone(mapped.phone ?? "");
+      setAvailability(availabilityToForm(mapped.availability) || "available");
+      setSelectedSkillIds(mapped.skills.map((s) => s.id));
     } catch (err: any) {
       console.error(err);
       setError(err.message || "Failed to load volunteer profile.");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchAvailableSkills = async () => {
+    try {
+      const data = await apiGet<any>("/skills");
+      setAvailableSkills(data.data || []);
+    } catch {
+      console.error("Failed to load available skills.");
+    }
+  };
+
+  const saveSkills = async () => {
+    setSkillsSaving(true);
+    setSkillsMessage(null);
+    try {
+      await apiPost("/volunteer/skills", { skill_ids: selectedSkillIds });
+      setSkillsMessage({ type: "success", text: "Skills updated successfully!" });
+      await fetchVolunteerProfile();
+    } catch (err: any) {
+      console.error(err);
+      setSkillsMessage({ type: "error", text: err.message || "Failed to save skills. Please try again." });
+    } finally {
+      setSkillsSaving(false);
+    }
+  };
+
+  const handleUpdateAccount = async () => {
+    setAccountSaving(true);
+    setSettingsMessage(null);
+    try {
+      await apiPut("/volunteer/profile", { name, phone: phone || null });
+      setSettingsMessage({ type: "success", text: "Account updated successfully!" });
+      await fetchVolunteerProfile();
+    } catch (err: any) {
+      console.error(err);
+      setSettingsMessage({ type: "error", text: err.message || "Failed to update account." });
+    } finally {
+      setAccountSaving(false);
+    }
+  };
+
+  const handleChangePassword = async () => {
+    if (newPassword !== newPasswordConfirmation) {
+      setSettingsMessage({ type: "error", text: "Passwords do not match." });
+      return;
+    }
+    if (newPassword.length < 8) {
+      setSettingsMessage({ type: "error", text: "Password must be at least 8 characters." });
+      return;
+    }
+    setChangingPassword(true);
+    setSettingsMessage(null);
+    try {
+      await apiPost("/volunteer/change-password", {
+        current_password: currentPassword,
+        new_password: newPassword,
+        new_password_confirmation: newPasswordConfirmation,
+      });
+      setSettingsMessage({ type: "success", text: "Password changed successfully!" });
+      setCurrentPassword("");
+      setNewPassword("");
+      setNewPasswordConfirmation("");
+    } catch (err: any) {
+      console.error(err);
+      setSettingsMessage({ type: "error", text: err.message || "Failed to change password." });
+    } finally {
+      setChangingPassword(false);
+    }
+  };
+
+  const handleUpdateAvailability = async () => {
+    setAvailabilitySaving(true);
+    setSettingsMessage(null);
+    try {
+      await apiPut("/volunteer/profile", { availability: availabilityToApi(availability) });
+      setSettingsMessage({ type: "success", text: "Availability updated!" });
+      await fetchVolunteerProfile();
+    } catch (err: any) {
+      console.error(err);
+      setSettingsMessage({ type: "error", text: err.message || "Failed to update availability." });
+    } finally {
+      setAvailabilitySaving(false);
     }
   };
 
@@ -442,6 +570,15 @@ export default function VolunteerProfilePage() {
 
   const completionPercent = completion?.percent ?? 0;
 
+  const tabs: { key: ProfileTab; label: string }[] = [
+    { key: "overview", label: "Overview" },
+    { key: "account", label: "Account" },
+    { key: "password", label: "Password" },
+    { key: "availability", label: "Availability" },
+    { key: "skills", label: "Skills" },
+    { key: "preferences", label: "Preferences" },
+  ];
+
   if (loading) {
     return (
       <div className="min-h-screen bg-[#F0F1F3] flex items-center justify-center">
@@ -464,6 +601,18 @@ export default function VolunteerProfilePage() {
   }
 
   const verifInfo = getVerificationStatusInfo(documentStatus);
+
+  const renderSettingsAlert = () => {
+    if (!settingsMessage) return null;
+    const isSuccess = settingsMessage.type === "success";
+    return (
+      <div className={`rounded-lg p-4 text-sm ${isSuccess ? "bg-green-50 border border-green-200 text-green-700" : "bg-red-50 border border-red-200 text-red-600"}`}>
+        {settingsMessage.text}
+      </div>
+    );
+  };
+
+  const inputClass = "w-full border border-[#CACDD3] rounded-lg px-3 py-2 text-sm text-[#111827] focus:outline-none focus:ring-2 focus:ring-[#4F46C8] focus:border-transparent";
 
   return (
     <>
@@ -544,204 +693,381 @@ export default function VolunteerProfilePage() {
             </div>
           </div>
 
-          {/* Profile Completion */}
-          <div className="bg-white rounded-xl border border-[#CACDD3] p-6">
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="text-base font-semibold text-[#111827]">Profile Completion</h2>
-              <span className="text-sm font-bold text-[#4F46C8]">{completionPercent}%</span>
-            </div>
-            <div className="w-full h-2.5 bg-gray-200 rounded-full overflow-hidden">
-              <div className="h-full bg-[#4F46C8] rounded-full transition-all duration-500"
-                style={{ width: `${completionPercent}%` }} />
-            </div>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4 text-xs text-[#6B7280]">
-              <div className="flex items-center gap-1.5">
-                <span className={`w-2 h-2 rounded-full ${profile.name && profile.phone ? "bg-green-500" : "bg-gray-300"}`} />
-                Personal Info
-              </div>
-              <div className="flex items-center gap-1.5">
-                <span className={`w-2 h-2 rounded-full ${profile.primary_location || profile.city ? "bg-green-500" : "bg-gray-300"}`} />
-                Location
-              </div>
-              <div className="flex items-center gap-1.5">
-                <span className={`w-2 h-2 rounded-full ${completion?.has_skills ? "bg-green-500" : "bg-gray-300"}`} />
-                Skills
-              </div>
-              <div className="flex items-center gap-1.5">
-                <span className={`w-2 h-2 rounded-full ${completion?.has_documents ? "bg-green-500" : "bg-gray-300"}`} />
-                Documents
-              </div>
-            </div>
+          {/* Tab bar */}
+          <div className="flex gap-2 flex-wrap">
+            {tabs.map((t) => (
+              <button
+                key={t.key}
+                onClick={() => setTab(t.key)}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
+                  tab === t.key
+                    ? "bg-[#4F46C8] text-white"
+                    : "bg-white border border-[#CACDD3] text-[#6B7280] hover:border-[#4F46C8]"
+                }`}
+              >
+                {t.label}
+              </button>
+            ))}
           </div>
 
-          <div className="grid lg:grid-cols-3 gap-6">
-            {/* Left Column */}
-            <div className="lg:col-span-2 space-y-6">
-              {/* About me */}
+          {renderSettingsAlert()}
+
+          {tab === "overview" && (
+            <>
+              {/* Profile Completion */}
               <div className="bg-white rounded-xl border border-[#CACDD3] p-6">
-                <h2 className="text-base font-semibold text-[#111827] mb-3">About me</h2>
-                <div className="bg-[#B9C0D4]/20 rounded-lg p-4">
-                  <p className="text-sm text-[#111827] leading-relaxed">
-                    {profile.bio || "No bio available."}
-                  </p>
+                <div className="flex items-center justify-between mb-3">
+                  <h2 className="text-base font-semibold text-[#111827]">Profile Completion</h2>
+                  <span className="text-sm font-bold text-[#4F46C8]">{completionPercent}%</span>
+                </div>
+                <div className="w-full h-2.5 bg-gray-200 rounded-full overflow-hidden">
+                  <div className="h-full bg-[#4F46C8] rounded-full transition-all duration-500"
+                    style={{ width: `${completionPercent}%` }} />
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4 text-xs text-[#6B7280]">
+                  <div className="flex items-center gap-1.5">
+                    <span className={`w-2 h-2 rounded-full ${profile.name && profile.phone ? "bg-green-500" : "bg-gray-300"}`} />
+                    Personal Info
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className={`w-2 h-2 rounded-full ${profile.primary_location || profile.city ? "bg-green-500" : "bg-gray-300"}`} />
+                    Location
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className={`w-2 h-2 rounded-full ${completion?.has_skills ? "bg-green-500" : "bg-gray-300"}`} />
+                    Skills
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className={`w-2 h-2 rounded-full ${completion?.has_documents ? "bg-green-500" : "bg-gray-300"}`} />
+                    Documents
+                  </div>
                 </div>
               </div>
 
-              {/* Personal information */}
-              <div className="bg-white rounded-xl border border-[#CACDD3] p-6">
-                <h2 className="text-base font-semibold text-[#111827] mb-4">Personal information</h2>
-                <div className="grid sm:grid-cols-2 gap-4">
-                  {[
-                    { label: "Phone", value: profile.phone },
-                    { label: "Gender", value: profile.gender },
-                    { label: "Date of birth", value: formatDate(profile.date_of_birth) },
-                    { label: "Location", value: profile.primary_location },
-                    { label: "City", value: profile.city },
-                    { label: "Country", value: profile.country },
-                  ].map(({ label, value }) => (
-                    <div key={label}>
-                      <p className="text-xs text-[#6B7280] mb-0.5">{label}</p>
-                      <p className="text-sm font-medium text-[#111827] capitalize">{value || "N/A"}</p>
+              <div className="grid lg:grid-cols-3 gap-6">
+                {/* Left Column */}
+                <div className="lg:col-span-2 space-y-6">
+                  {/* About me */}
+                  <div className="bg-white rounded-xl border border-[#CACDD3] p-6">
+                    <h2 className="text-base font-semibold text-[#111827] mb-3">About me</h2>
+                    <div className="bg-[#B9C0D4]/20 rounded-lg p-4">
+                      <p className="text-sm text-[#111827] leading-relaxed">
+                        {profile.bio || "No bio available."}
+                      </p>
                     </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Skills */}
-              <div className="bg-white rounded-xl border border-[#CACDD3] p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-base font-semibold text-[#111827]">Skills</h2>
-                  <button onClick={() => router.push("/dashboard/volunteer/skills")}
-                    className="text-xs text-[#4F46C8] hover:text-[#4338CA] font-medium">
-                    Manage skills
-                  </button>
-                </div>
-                {profile.skills.length === 0 ? (
-                  <p className="text-sm text-[#6B7280]">No skills added yet.</p>
-                ) : (
-                  <div className="flex flex-wrap gap-2">
-                    {profile.skills.map((skill) => (
-                      <span
-                        key={skill.id}
-                        className="px-3 py-1.5 bg-[#4F46C8]/10 text-[#4F46C8] rounded-full text-sm font-medium"
-                      >
-                        {skill.name}
-                      </span>
-                    ))}
                   </div>
-                )}
-              </div>
 
-              {/* Documents */}
-              <div className="bg-white rounded-xl border border-[#CACDD3] p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-base font-semibold text-[#111827]">Documents</h2>
-                  <button onClick={() => router.push("/dashboard/volunteer/documents")}
-                    className="text-xs text-[#4F46C8] hover:text-[#4338CA] font-medium">
-                    Manage Documents &rarr;
-                  </button>
-                </div>
-                {profile.documents.length === 0 ? (
-                  <p className="text-sm text-[#6B7280]">No documents uploaded yet.</p>
-                ) : (
-                  <div className="space-y-4">
-                    {profile.documents.map((doc) => {
-                      const previewUrl = `${API_BASE}/storage/${doc.file_path}`;
-                      const isImage = doc.mime_type.startsWith("image/");
-                      const isPdf = doc.mime_type === "application/pdf";
-                      return (
-                        <div key={doc.id} className="border border-[#CACDD3] rounded-lg overflow-hidden">
-                          <div className="flex items-center justify-between px-4 py-2.5 bg-[#F0F1F3]">
-                            <div className="min-w-0">
-                              <p className="text-sm font-medium text-[#111827] capitalize">
-                                {doc.document_type.replace("_", " ")}
-                              </p>
-                              <p className="text-xs text-[#6B7280]">{formatDate(doc.created_at)}</p>
-                            </div>
-                            <div className="shrink-0">
-                              <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${getDocumentStatusBadge(doc.status)}`}>
-                                {doc.status}
-                              </span>
-                            </div>
-                          </div>
-                          <div className="p-2 bg-white">
-                            {isImage ? (
-                              <img src={previewUrl} alt={doc.document_type}
-                                className="w-full max-h-48 object-contain rounded" />
-                            ) : isPdf ? (
-                              <iframe src={previewUrl} className="w-full h-48 rounded bg-gray-50"
-                                title={doc.original_name} />
-                            ) : (
-                              <div className="w-full h-24 flex items-center justify-center bg-gray-50 rounded text-xs text-[#6B7280]">
-                                Preview not available.
-                              </div>
-                            )}
-                          </div>
+                  {/* Personal information */}
+                  <div className="bg-white rounded-xl border border-[#CACDD3] p-6">
+                    <h2 className="text-base font-semibold text-[#111827] mb-4">Personal information</h2>
+                    <div className="grid sm:grid-cols-2 gap-4">
+                      {[
+                        { label: "Phone", value: profile.phone },
+                        { label: "Gender", value: profile.gender },
+                        { label: "Date of birth", value: formatDate(profile.date_of_birth) },
+                        { label: "Location", value: profile.primary_location },
+                        { label: "City", value: profile.city },
+                        { label: "Country", value: profile.country },
+                      ].map(({ label, value }) => (
+                        <div key={label}>
+                          <p className="text-xs text-[#6B7280] mb-0.5">{label}</p>
+                          <p className="text-sm font-medium text-[#111827] capitalize">{value || "N/A"}</p>
                         </div>
-                      );
-                    })}
+                      ))}
+                    </div>
                   </div>
-                )}
+
+                  {/* Skills */}
+                  <div className="bg-white rounded-xl border border-[#CACDD3] p-6">
+                    <div className="flex items-center justify-between mb-4">
+                      <h2 className="text-base font-semibold text-[#111827]">Skills</h2>
+                      <button onClick={() => setTab("skills")}
+                        className="text-xs text-[#4F46C8] hover:text-[#4338CA] font-medium">
+                        Manage skills
+                      </button>
+                    </div>
+                    {profile.skills.length === 0 ? (
+                      <p className="text-sm text-[#6B7280]">No skills added yet.</p>
+                    ) : (
+                      <div className="flex flex-wrap gap-2">
+                        {profile.skills.map((skill) => (
+                          <span
+                            key={skill.id}
+                            className="px-3 py-1.5 bg-[#4F46C8]/10 text-[#4F46C8] rounded-full text-sm font-medium"
+                          >
+                            {skill.name}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Documents */}
+                  <div className="bg-white rounded-xl border border-[#CACDD3] p-6">
+                    <div className="flex items-center justify-between mb-4">
+                      <h2 className="text-base font-semibold text-[#111827]">Documents</h2>
+                      <button onClick={() => router.push("/dashboard/volunteer/documents")}
+                        className="text-xs text-[#4F46C8] hover:text-[#4338CA] font-medium">
+                        Manage Documents &rarr;
+                      </button>
+                    </div>
+                    {profile.documents.length === 0 ? (
+                      <p className="text-sm text-[#6B7280]">No documents uploaded yet.</p>
+                    ) : (
+                      <div className="space-y-4">
+                        {profile.documents.map((doc) => {
+                          const previewUrl = `${API_BASE}/storage/${doc.file_path}`;
+                          const isImage = doc.mime_type.startsWith("image/");
+                          const isPdf = doc.mime_type === "application/pdf";
+                          return (
+                            <div key={doc.id} className="border border-[#CACDD3] rounded-lg overflow-hidden">
+                              <div className="flex items-center justify-between px-4 py-2.5 bg-[#F0F1F3]">
+                                <div className="min-w-0">
+                                  <p className="text-sm font-medium text-[#111827] capitalize">
+                                    {doc.document_type.replace("_", " ")}
+                                  </p>
+                                  <p className="text-xs text-[#6B7280]">{formatDate(doc.created_at)}</p>
+                                </div>
+                                <div className="shrink-0">
+                                  <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${getDocumentStatusBadge(doc.status)}`}>
+                                    {doc.status}
+                                  </span>
+                                </div>
+                              </div>
+                              <div className="p-2 bg-white">
+                                {isImage ? (
+                                  <img src={previewUrl} alt={doc.document_type}
+                                    className="w-full max-h-48 object-contain rounded" />
+                                ) : isPdf ? (
+                                  <iframe src={previewUrl} className="w-full h-48 rounded bg-gray-50"
+                                    title={doc.original_name} />
+                                ) : (
+                                  <div className="w-full h-24 flex items-center justify-center bg-gray-50 rounded text-xs text-[#6B7280]">
+                                    Preview not available.
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Right Column */}
+                <div className="space-y-6">
+                  {/* Verification Status */}
+                  <div className="bg-white rounded-xl border border-[#CACDD3] p-6">
+                    <h2 className="text-base font-semibold text-[#111827] mb-4">Verification Status</h2>
+                    <div className={`flex items-center gap-3 ${verifInfo.bg} rounded-lg p-4`}>
+                      {documentStatus === "verified" ? (
+                        <IconCheck className="h-6 w-6 text-green-600 shrink-0" />
+                      ) : documentStatus === "pending" ? (
+                        <IconClock className="h-6 w-6 text-yellow-600 shrink-0" />
+                      ) : documentStatus === "rejected" ? (
+                        <IconX className="h-6 w-6 text-red-600 shrink-0" />
+                      ) : (
+                        <IconUpload className="h-6 w-6 text-gray-500 shrink-0" />
+                      )}
+                      <div>
+                        <p className={`text-sm font-semibold ${verifInfo.color}`}>{verifInfo.label}</p>
+                        <p className="text-xs text-[#6B7280] mt-0.5">
+                          {documentStatus === "none" && "No documents uploaded yet"}
+                          {documentStatus === "pending" && "Documents are being reviewed by admin"}
+                          {documentStatus === "verified" && "Your identity has been verified"}
+                          {documentStatus === "rejected" && "Upload new documents for re-verification"}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Emergency Contact */}
+                  <div className="bg-white rounded-xl border border-[#CACDD3] p-6">
+                    <h2 className="text-base font-semibold text-[#111827] mb-4">Emergency contact</h2>
+                    <div className="space-y-3">
+                      <div>
+                        <p className="text-xs text-[#6B7280] mb-0.5">Contact name</p>
+                        <p className="text-sm font-medium text-[#111827]">{profile.emergency_contact_name || "N/A"}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-[#6B7280] mb-0.5">Phone number</p>
+                        <p className="text-sm font-medium text-[#111827]">{profile.emergency_contact_phone || "N/A"}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Trust Score */}
+                  <TrustScoreCard />
+
+                  {/* Profile Actions */}
+                  <div className="bg-white rounded-xl border border-[#CACDD3] p-6">
+                    <h2 className="text-base font-semibold text-[#111827] mb-4">Profile Actions</h2>
+                    <div className="space-y-2">
+                      <button onClick={openEditModal}
+                        className="w-full bg-[#4F46C8] hover:bg-[#4338CA] text-white text-sm font-medium py-2.5 rounded-lg transition-colors">
+                        Edit profile
+                      </button>
+                      <button onClick={() => setTab("account")}
+                        className="w-full border border-[#CACDD3] hover:bg-[#F0F1F3] text-[#6B7280] hover:text-[#111827] text-sm font-medium py-2.5 rounded-lg transition-colors">
+                        Account settings
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
+
+          {tab === "account" && (
+            <div className="bg-white rounded-xl border border-[#CACDD3] p-6 max-w-2xl">
+              <h2 className="text-lg font-semibold text-[#111827] mb-5">Account Information</h2>
+              <div className="space-y-5">
+                <div>
+                  <label className="block text-sm font-medium text-[#111827] mb-1">Email</label>
+                  <input type="email" value={profile.email || ""} disabled
+                    className="w-full border border-[#CACDD3] rounded-lg p-2.5 text-sm bg-gray-50 text-[#6B7280] cursor-not-allowed" />
+                  <p className="text-xs text-[#6B7280] mt-1">Email cannot be changed.</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-[#111827] mb-1">Name</label>
+                  <input type="text" value={name} onChange={(e) => setName(e.target.value)}
+                    className="w-full border border-[#CACDD3] rounded-lg p-2.5 text-sm focus:outline-none focus:border-[#4F46C8]" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-[#111827] mb-1">Phone</label>
+                  <input type="text" value={phone} onChange={(e) => setPhone(e.target.value)}
+                    className="w-full border border-[#CACDD3] rounded-lg p-2.5 text-sm focus:outline-none focus:border-[#4F46C8]" />
+                </div>
+                <button onClick={handleUpdateAccount} disabled={accountSaving}
+                  className="px-5 py-2.5 bg-[#4F46C8] text-white rounded-lg text-sm font-medium hover:bg-[#4F46C8]/90 disabled:bg-[#4F46C8]/50 transition">
+                  {accountSaving ? "Saving..." : "Save Changes"}
+                </button>
               </div>
             </div>
+          )}
 
-            {/* Right Column */}
-            <div className="space-y-6">
-              {/* Verification Status */}
-              <div className="bg-white rounded-xl border border-[#CACDD3] p-6">
-                <h2 className="text-base font-semibold text-[#111827] mb-4">Verification Status</h2>
-                <div className={`flex items-center gap-3 ${verifInfo.bg} rounded-lg p-4`}>
-                  {documentStatus === "verified" ? (
-                    <IconCheck className="h-6 w-6 text-green-600 shrink-0" />
-                  ) : documentStatus === "pending" ? (
-                    <IconClock className="h-6 w-6 text-yellow-600 shrink-0" />
-                  ) : documentStatus === "rejected" ? (
-                    <IconX className="h-6 w-6 text-red-600 shrink-0" />
-                  ) : (
-                    <IconUpload className="h-6 w-6 text-gray-500 shrink-0" />
-                  )}
-                  <div>
-                    <p className={`text-sm font-semibold ${verifInfo.color}`}>{verifInfo.label}</p>
-                    <p className="text-xs text-[#6B7280] mt-0.5">
-                      {documentStatus === "none" && "No documents uploaded yet"}
-                      {documentStatus === "pending" && "Documents are being reviewed by admin"}
-                      {documentStatus === "verified" && "Your identity has been verified"}
-                      {documentStatus === "rejected" && "Upload new documents for re-verification"}
-                    </p>
+          {tab === "password" && (
+            <div className="bg-white rounded-xl border border-[#CACDD3] p-6 max-w-2xl mx-auto">
+              <h2 className="text-lg font-semibold text-[#111827] mb-1">Change Password</h2>
+              <p className="text-sm text-[#6B7280] mb-5">Use at least 8 characters for your new password.</p>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-[#111827] mb-1">Current Password</label>
+                  <div className="relative">
+                    <input type={showCurrent ? "text" : "password"} value={currentPassword}
+                      onChange={(e) => setCurrentPassword(e.target.value)}
+                      className="w-full border border-[#CACDD3] rounded-lg p-2.5 text-sm pr-10 focus:outline-none focus:border-[#4F46C8]" />
+                    <button type="button" onClick={() => setShowCurrent(!showCurrent)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-[#6B7280] text-sm">
+                      {showCurrent ? "Hide" : "Show"}
+                    </button>
                   </div>
                 </div>
-              </div>
-
-              {/* Emergency Contact */}
-              <div className="bg-white rounded-xl border border-[#CACDD3] p-6">
-                <h2 className="text-base font-semibold text-[#111827] mb-4">Emergency contact</h2>
-                <div className="space-y-3">
-                  <div>
-                    <p className="text-xs text-[#6B7280] mb-0.5">Contact name</p>
-                    <p className="text-sm font-medium text-[#111827]">{profile.emergency_contact_name || "N/A"}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-[#6B7280] mb-0.5">Phone number</p>
-                    <p className="text-sm font-medium text-[#111827]">{profile.emergency_contact_phone || "N/A"}</p>
+                <div>
+                  <label className="block text-sm font-medium text-[#111827] mb-1">New Password</label>
+                  <div className="relative">
+                    <input type={showNew ? "text" : "password"} value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      className="w-full border border-[#CACDD3] rounded-lg p-2.5 text-sm pr-10 focus:outline-none focus:border-[#4F46C8]" />
+                    <button type="button" onClick={() => setShowNew(!showNew)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-[#6B7280] text-sm">
+                      {showNew ? "Hide" : "Show"}
+                    </button>
                   </div>
                 </div>
-              </div>
-
-              {/* Trust Score */}
-              <TrustScoreCard />
-
-              {/* Profile Actions */}
-              <div className="bg-white rounded-xl border border-[#CACDD3] p-6">
-                <h2 className="text-base font-semibold text-[#111827] mb-4">Profile Actions</h2>
-                <div className="space-y-2">
-                  <button onClick={openEditModal}
-                    className="w-full bg-[#4F46C8] hover:bg-[#4338CA] text-white text-sm font-medium py-2.5 rounded-lg transition-colors">
-                    Edit profile
-                  </button>
+                <div>
+                  <label className="block text-sm font-medium text-[#111827] mb-1">Confirm New Password</label>
+                  <input type="password" value={newPasswordConfirmation}
+                    onChange={(e) => setNewPasswordConfirmation(e.target.value)}
+                    className="w-full border border-[#CACDD3] rounded-lg p-2.5 text-sm focus:outline-none focus:border-[#4F46C8]" />
                 </div>
+                <button onClick={handleChangePassword}
+                  disabled={changingPassword || !currentPassword || !newPassword || !newPasswordConfirmation}
+                  className="px-5 py-2.5 bg-[#4F46C8] text-white rounded-lg text-sm font-medium hover:bg-[#4F46C8]/90 disabled:bg-[#4F46C8]/50 transition">
+                  {changingPassword ? "Changing..." : "Change Password"}
+                </button>
               </div>
             </div>
-          </div>
+          )}
+
+          {tab === "availability" && (
+            <div className="bg-white rounded-xl border border-[#CACDD3] p-6 max-w-2xl">
+              <h2 className="text-lg font-semibold text-[#111827] mb-1">Availability</h2>
+              <p className="text-sm text-[#6B7280] mb-5">Set your current availability status for new tasks.</p>
+              <div>
+                <label className="block text-sm font-medium text-[#111827] mb-1">Status</label>
+                <select value={availability} onChange={(e) => setAvailability(e.target.value)}
+                  className="w-full border border-[#CACDD3] rounded-lg p-2.5 text-sm focus:outline-none focus:border-[#4F46C8] bg-white">
+                  <option value="available">Available</option>
+                  <option value="unavailable">Unavailable</option>
+                  <option value="busy">Busy</option>
+                </select>
+              </div>
+              <button onClick={handleUpdateAvailability} disabled={availabilitySaving}
+                className="mt-5 px-5 py-2.5 bg-[#4F46C8] text-white rounded-lg text-sm font-medium hover:bg-[#4F46C8]/90 disabled:bg-[#4F46C8]/50 transition">
+                {availabilitySaving ? "Updating..." : "Update Availability"}
+              </button>
+            </div>
+          )}
+
+          {tab === "skills" && (
+            <div className="bg-white rounded-xl border border-[#CACDD3] p-6">
+              <div className="mb-4">
+                <h2 className="text-lg font-semibold text-[#111827]">Skills</h2>
+                <p className="text-sm text-[#6B7280]">Select the skills that best describe your abilities.</p>
+              </div>
+              {skillsMessage && (
+                <div className={`mb-4 rounded-lg p-3 text-sm ${skillsMessage.type === "success" ? "bg-green-50 border border-green-200 text-green-700" : "bg-red-50 border border-red-200 text-red-600"}`}>
+                  {skillsMessage.text}
+                </div>
+              )}
+              <SkillSelector
+                skills={availableSkills}
+                selectedIds={selectedSkillIds}
+                onChange={setSelectedSkillIds}
+                loading={availableSkills.length === 0}
+                label="Your Skills"
+              />
+              <div className="mt-6 flex items-center gap-3">
+                <button onClick={saveSkills} disabled={skillsSaving}
+                  className="px-6 py-2.5 bg-[#4F46C8] text-white rounded-lg text-sm font-medium hover:bg-[#4338CA] transition disabled:opacity-60 flex items-center gap-2">
+                  {skillsSaving && <IconSpinner className="w-4 h-4 border-2 border-white/40 border-t-white" />}
+                  {skillsSaving ? "Saving..." : "Save Skills"}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {tab === "preferences" && (
+            <div className="bg-white rounded-xl border border-[#CACDD3] p-6 max-w-2xl">
+              <h2 className="text-lg font-semibold text-[#111827] mb-1">Notification Preferences</h2>
+              <p className="text-sm text-[#6B7280] mb-5">Configure how you receive notifications.</p>
+              <div className="space-y-3">
+                <label className="flex items-center gap-3 p-3 rounded-lg border border-[#CACDD3] hover:bg-gray-50 cursor-pointer">
+                  <input type="checkbox" checked={notifyEmail}
+                    onChange={(e) => setNotifyEmail(e.target.checked)}
+                    className="h-4 w-4 accent-[#4F46C8]" />
+                  <div>
+                    <p className="text-sm font-medium text-[#111827]">Email Notifications</p>
+                    <p className="text-xs text-[#6B7280]">Receive updates via email.</p>
+                  </div>
+                </label>
+                <label className="flex items-center gap-3 p-3 rounded-lg border border-[#CACDD3] hover:bg-gray-50 cursor-pointer">
+                  <input type="checkbox" checked={notifyApp}
+                    onChange={(e) => setNotifyApp(e.target.checked)}
+                    className="h-4 w-4 accent-[#4F46C8]" />
+                  <div>
+                    <p className="text-sm font-medium text-[#111827]">In-App Notifications</p>
+                    <p className="text-xs text-[#6B7280]">Receive notifications within the app.</p>
+                  </div>
+                </label>
+              </div>
+              <p className="text-xs text-[#6B7280] mt-4">
+                Notification preference persistence is handled by the backend notification system.
+              </p>
+            </div>
+          )}
         </div>
       </div>
 
@@ -761,25 +1087,25 @@ export default function VolunteerProfilePage() {
                 <label className="block text-xs text-[#6B7280] mb-1">Full name</label>
                 <input type="text" name="name" value={formData.name} onChange={handleChange}
                   placeholder="e.g. Ramesh Adhikari"
-                  className="w-full border border-[#CACDD3] rounded-lg px-3 py-2 text-sm text-[#111827] focus:outline-none focus:ring-2 focus:ring-[#4F46C8] focus:border-transparent" />
+                  className={inputClass} />
               </div>
               <div>
                 <label className="block text-xs text-[#6B7280] mb-1">Phone</label>
                 <input type="tel" name="phone" value={formData.phone} onChange={handleChange}
                   placeholder="e.g. +977 9841234567"
-                  className="w-full border border-[#CACDD3] rounded-lg px-3 py-2 text-sm text-[#111827] focus:outline-none focus:ring-2 focus:ring-[#4F46C8] focus:border-transparent" />
+                  className={inputClass} />
               </div>
               <div>
                 <label className="block text-xs text-[#6B7280] mb-1">Bio</label>
                 <textarea name="bio" value={formData.bio} onChange={handleChange} rows={3}
                   placeholder="Tell us about yourself..."
-                  className="w-full border border-[#CACDD3] rounded-lg px-3 py-2 text-sm text-[#111827] focus:outline-none focus:ring-2 focus:ring-[#4F46C8] focus:border-transparent resize-none" />
+                  className={`${inputClass} resize-none`} />
               </div>
               <div className="grid sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs text-[#6B7280] mb-1">Gender</label>
                   <select name="gender" value={formData.gender} onChange={handleChange}
-                    className="w-full border border-[#CACDD3] rounded-lg px-3 py-2 text-sm text-[#111827] focus:outline-none focus:ring-2 focus:ring-[#4F46C8] bg-white">
+                    className={`${inputClass} bg-white`}>
                     <option value="">Select gender</option>
                     <option value="male">Male</option>
                     <option value="female">Female</option>
@@ -789,27 +1115,27 @@ export default function VolunteerProfilePage() {
                 <div>
                   <label className="block text-xs text-[#6B7280] mb-1">Date of birth</label>
                   <input type="date" name="date_of_birth" value={formData.date_of_birth} onChange={handleChange}
-                    className="w-full border border-[#CACDD3] rounded-lg px-3 py-2 text-sm text-[#111827] focus:outline-none focus:ring-2 focus:ring-[#4F46C8]" />
+                    className={inputClass} />
                 </div>
               </div>
               <div>
                 <label className="block text-xs text-[#6B7280] mb-1">Primary Location</label>
                 <input type="text" name="primary_location" value={formData.primary_location} onChange={handleChange}
                   placeholder="e.g. Lagankhel, Lalitpur-3"
-                  className="w-full border border-[#CACDD3] rounded-lg px-3 py-2 text-sm text-[#111827] focus:outline-none focus:ring-2 focus:ring-[#4F46C8]" />
+                  className={inputClass} />
               </div>
               <div className="grid sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs text-[#6B7280] mb-1">City</label>
                   <input type="text" name="city" value={formData.city} onChange={handleChange}
                     placeholder="e.g. Lalitpur"
-                    className="w-full border border-[#CACDD3] rounded-lg px-3 py-2 text-sm text-[#111827] focus:outline-none focus:ring-2 focus:ring-[#4F46C8]" />
+                    className={inputClass} />
                 </div>
                 <div>
                   <label className="block text-xs text-[#6B7280] mb-1">Country</label>
                   <input type="text" name="country" value={formData.country} onChange={handleChange}
                     placeholder="e.g. Nepal"
-                    className="w-full border border-[#CACDD3] rounded-lg px-3 py-2 text-sm text-[#111827] focus:outline-none focus:ring-2 focus:ring-[#4F46C8]" />
+                    className={inputClass} />
                 </div>
               </div>
               <div className="grid sm:grid-cols-2 gap-4">
@@ -817,19 +1143,19 @@ export default function VolunteerProfilePage() {
                   <label className="block text-xs text-[#6B7280] mb-1">Emergency contact name</label>
                   <input type="text" name="emergency_contact_name" value={formData.emergency_contact_name} onChange={handleChange}
                     placeholder="e.g. Sita Adhikari"
-                    className="w-full border border-[#CACDD3] rounded-lg px-3 py-2 text-sm text-[#111827] focus:outline-none focus:ring-2 focus:ring-[#4F46C8]" />
+                    className={inputClass} />
                 </div>
                 <div>
                   <label className="block text-xs text-[#6B7280] mb-1">Emergency contact phone</label>
                   <input type="tel" name="emergency_contact_phone" value={formData.emergency_contact_phone} onChange={handleChange}
                     placeholder="e.g. +977 9841234567"
-                    className="w-full border border-[#CACDD3] rounded-lg px-3 py-2 text-sm text-[#111827] focus:outline-none focus:ring-2 focus:ring-[#4F46C8]" />
+                    className={inputClass} />
                 </div>
               </div>
               <div>
                 <label className="block text-xs text-[#6B7280] mb-1">Availability</label>
                 <select name="availability" value={formData.availability} onChange={handleChange}
-                  className="w-full border border-[#CACDD3] rounded-lg px-3 py-2 text-sm text-[#111827] focus:outline-none focus:ring-2 focus:ring-[#4F46C8] bg-white">
+                  className={`${inputClass} bg-white`}>
                   <option value="">Select availability</option>
                   <option value="available">Available</option>
                   <option value="busy">Busy</option>

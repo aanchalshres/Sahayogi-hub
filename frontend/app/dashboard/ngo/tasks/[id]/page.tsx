@@ -5,12 +5,11 @@ import { apiGet } from '@/app/lib/api'
 import {
   ArrowLeft, MapPin, Calendar, Users, Clock,
   AlertTriangle, Globe, Edit3, Trash2,
-  Sparkles, Target, Brain, Zap, Navigation, Shield,
-  CheckCircle, ShieldCheck, Star, UserCheck, AlertCircle,
-  Inbox, Hourglass, CheckCircle2, XCircle, ChevronDown, ChevronUp,
+  CheckCircle, AlertCircle, Inbox,
+  ChevronDown, ChevronUp,
 } from 'lucide-react'
 import Link from 'next/link'
-import { getMatchColor, getScoreBarColor, formatScore, getScoreLabel } from '@/app/lib/scoring'
+import { getMatchColor, getScoreLabel } from '@/app/lib/scoring'
 
 interface TaskDetail {
   id: number
@@ -42,33 +41,6 @@ interface TaskDetail {
   ngo: { id: number; organization_name: string; logo: string | null; city: string | null; country: string | null }
 }
 
-interface RecommendedVolunteer {
-  id: number
-  user_id: number
-  rank: number | null
-  name: string
-  email: string
-  phone: string
-  bio: string
-  city: string
-  country: string
-  availability: string | null
-  total_service_hours: number
-  average_rating: number
-  is_verified: boolean
-  skills: { id: number; name: string; proficiency_level: string | null }[]
-  recommendation_score: number
-  semantic_match_score: number
-  distance_score: number
-  skill_overlap_score: number
-  availability_score: number
-  trust_score: number
-  matched_skills: { id: number; name: string }[]
-  missing_skills: { id: number; name: string }[]
-  distance_km: number | null
-  recommendation_reason: string
-}
-
 interface ApplicationItem {
   id: number
   task_id: number
@@ -78,12 +50,7 @@ interface ApplicationItem {
   status: string
   applied_at: string
   remarks: string | null
-  priority_score: number
   recommendation_score: number
-  semantic_match_score: number
-  distance_score: number
-  skill_overlap_score: number
-  availability_score: number
   trust_score: number
   matched_skills: { id: number; name: string }[]
   missing_skills: { id: number; name: string }[]
@@ -91,7 +58,7 @@ interface ApplicationItem {
   recommendation_reason: string
 }
 
-type Tab = 'details' | 'recommended' | 'applications'
+type Tab = 'details' | 'applications'
 
 export default function TaskDetailPage() {
   const router = useRouter()
@@ -103,10 +70,6 @@ export default function TaskDetailPage() {
   const [error, setError] = useState<string | null>(null)
 
   const [activeTab, setActiveTab] = useState<Tab>('details')
-  const [volunteers, setVolunteers] = useState<RecommendedVolunteer[]>([])
-  const [volLoading, setVolLoading] = useState(false)
-  const [volError, setVolError] = useState<string | null>(null)
-  const [expandedVol, setExpandedVol] = useState<number | null>(null)
   const [applications, setApplications] = useState<ApplicationItem[]>([])
   const [appLoading, setAppLoading] = useState(false)
   const [appError, setAppError] = useState<string | null>(null)
@@ -126,24 +89,6 @@ export default function TaskDetailPage() {
     }
     load()
   }, [taskId])
-
-  useEffect(() => {
-    if (activeTab !== 'recommended') return
-    if (volunteers.length > 0) return // already loaded
-    const load = async () => {
-      try {
-        setVolLoading(true)
-        setVolError(null)
-        const res = await apiGet<{ data: RecommendedVolunteer[] }>(`/api/ngo/tasks/${taskId}/recommended-volunteers`)
-        setVolunteers(res.data ?? [])
-      } catch (err: any) {
-        setVolError(err.message || 'Failed to load recommendations')
-      } finally {
-        setVolLoading(false)
-      }
-    }
-    load()
-  }, [activeTab, taskId])
 
   useEffect(() => {
     if (activeTab !== 'applications') return
@@ -202,6 +147,13 @@ export default function TaskDetailPage() {
 
   const remaining = task.required_volunteers - task.accepted_applications
 
+  const appStatusStyle = (status: string) => {
+    if (status === 'Pending') return 'bg-amber-50 text-amber-700'
+    if (status === 'Accepted') return 'bg-green-50 text-green-700'
+    if (status === 'Rejected') return 'bg-red-50 text-red-700'
+    return 'bg-gray-100 text-gray-600'
+  }
+
   return (
     <div className="space-y-6">
       <button onClick={() => router.back()} className="flex items-center gap-2 text-[#6B7280] hover:text-[#111827] text-sm font-medium transition-colors">
@@ -242,22 +194,18 @@ export default function TaskDetailPage() {
 
         {/* Tabs */}
         <div className="flex border-b border-gray-100">
-          {(['details', 'recommended', 'applications'] as Tab[]).map((tab) => (
+          {(['details', 'applications'] as Tab[]).map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`flex items-center gap-2 px-6 py-3.5 text-sm font-semibold transition-colors border-b-2 -mb-px capitalize ${
+              className={`flex items-center gap-2 px-6 py-3.5 text-sm font-semibold transition-colors border-b-2 -mb-px ${
                 activeTab === tab
                   ? 'text-[#4F46C8] border-[#4F46C8]'
                   : 'text-gray-500 border-transparent hover:text-gray-700'
               }`}
             >
-              {tab === 'recommended' && <Sparkles size={14} />}
               {tab === 'applications' && <Inbox size={14} />}
-              {tab === 'details' ? 'Task Details' : tab === 'recommended' ? 'Recommended Volunteers' : 'Applications'}
-              {tab === 'recommended' && (
-                <span className="bg-[#EEF0FF] text-[#4F46C8] text-[10px] font-bold px-1.5 py-0.5 rounded-full">AI</span>
-              )}
+              {tab === 'details' ? 'Task Details' : 'Applications'}
               {tab === 'applications' && task.pending_applications > 0 && (
                 <span className="bg-amber-100 text-amber-700 text-[10px] font-bold px-1.5 py-0.5 rounded-full">{task.pending_applications}</span>
               )}
@@ -361,179 +309,19 @@ export default function TaskDetailPage() {
           </div>
         )}
 
-        {/* Recommended Volunteers Tab */}
-        {activeTab === 'recommended' && (
-          <div className="p-6">
-            <div className="flex items-center gap-2 mb-2">
-              <Sparkles size={16} className="text-[#4F46C8]" />
-              <h2 className="text-sm font-bold text-gray-900">Top Recommended Volunteers</h2>
-              <span className="text-xs text-[#6B7280] ml-auto">Ranked by Hybrid Recommendation Algorithm · Top 10</span>
-            </div>
-            <p className="text-xs text-[#6B7280] mb-5">
-              These volunteers have not yet applied. Scores reflect semantic similarity, skills, distance, availability, and trust.
-            </p>
-
-            {volLoading ? (
-              <div className="flex items-center justify-center py-16">
-                <div className="w-9 h-9 border-4 border-[#4F46C8]/30 border-t-[#4F46C8] rounded-full animate-spin" />
-              </div>
-            ) : volError ? (
-              <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-center">
-                <AlertCircle size={28} className="mx-auto text-red-500 mb-2" />
-                <p className="text-sm text-red-700">{volError}</p>
-                <p className="text-xs text-red-500 mt-1">Ensure the task has been processed by TF-IDF before requesting recommendations.</p>
-              </div>
-            ) : volunteers.length === 0 ? (
-              <div className="bg-gray-50 border border-dashed border-gray-200 rounded-xl p-10 text-center">
-                <Sparkles size={28} className="mx-auto text-gray-300 mb-3" />
-                <p className="text-sm font-medium text-gray-600">No recommended volunteers found</p>
-                <p className="text-xs text-gray-400 mt-1">This may mean the task lacks a TF-IDF vector or all eligible volunteers have already applied.</p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {volunteers.map((vol) => {
-                  const isExpanded = expandedVol === vol.id
-                  const overallScore = vol.recommendation_score
-
-                  return (
-                    <div key={vol.id} className="bg-white border border-black/5 rounded-xl shadow-sm hover:shadow-md transition-all overflow-hidden">
-                      {/* Rank stripe */}
-                      <div className={`h-1 w-full ${overallScore >= 70 ? 'bg-green-500' : overallScore >= 40 ? 'bg-yellow-400' : 'bg-gray-300'}`} />
-
-                      <div className="p-5">
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="flex items-start gap-3 flex-1 min-w-0">
-                            {/* Rank badge */}
-                            <div className="w-8 h-8 rounded-full bg-[#4F46C8]/10 flex items-center justify-center shrink-0 text-xs font-black text-[#4F46C8]">
-                              #{vol.rank ?? '?'}
-                            </div>
-                            <div className="min-w-0">
-                              <div className="flex items-center gap-2 flex-wrap">
-                                <p className="font-semibold text-gray-900">{vol.name}</p>
-                                {vol.is_verified && (
-                                  <ShieldCheck size={14} className="text-green-600 shrink-0" aria-label="Verified" />
-                                )}
-                                {vol.availability && (
-                                  <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
-                                    vol.availability === 'Available' ? 'bg-green-50 text-green-700' :
-                                    vol.availability === 'Busy' ? 'bg-amber-50 text-amber-700' : 'bg-red-50 text-red-700'
-                                  }`}>
-                                    {vol.availability}
-                                  </span>
-                                )}
-                              </div>
-                              <p className="text-xs text-[#6B7280] mt-0.5 flex items-center gap-2 flex-wrap">
-                                {vol.city && <><MapPin size={10} className="inline" />{vol.city}</>}
-                                {vol.distance_km != null && <><span>·</span>{vol.distance_km} km away</>}
-                                {vol.total_service_hours > 0 && <><span>·</span>{vol.total_service_hours}h service</>}
-                                {vol.average_rating > 0 && (
-                                  <><span>·</span><Star size={10} className="inline text-amber-400" /> {vol.average_rating.toFixed(1)}</>
-                                )}
-                              </p>
-                            </div>
-                          </div>
-
-                          {/* Overall score badge */}
-                          <div className="shrink-0 text-center">
-                            <div className={`text-base font-black px-3 py-1.5 rounded-xl border ${getMatchColor(overallScore)}`}>
-                              {Math.round(overallScore)}%
-                            </div>
-                            <div className="text-[9px] text-gray-400 mt-0.5 font-medium">{getScoreLabel(overallScore)}</div>
-                          </div>
-                        </div>
-
-                        {/* Score mini-bars */}
-                        <div className="mt-3 grid grid-cols-5 gap-1">
-                          {[
-                            { label: 'Sem.', value: vol.semantic_match_score },
-                            { label: 'Skill', value: vol.skill_overlap_score },
-                            { label: 'Dist.', value: vol.distance_score },
-                            { label: 'Avail.', value: vol.availability_score },
-                            { label: 'Trust', value: vol.trust_score },
-                          ].map((s) => (
-                            <div key={s.label} className="text-center">
-                              <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden mb-0.5">
-                                <div
-                                  className={`h-full rounded-full ${getScoreBarColor(s.value ?? 0)}`}
-                                  style={{ width: `${Math.round((s.value ?? 0) * 100)}%` }}
-                                />
-                              </div>
-                              <div className="text-[9px] text-gray-400">{s.label}</div>
-                              <div className="text-[10px] font-bold text-gray-700">{formatScore(s.value)}%</div>
-                            </div>
-                          ))}
-                        </div>
-
-                        {/* Matched/Missing skills compact view */}
-                        {(vol.matched_skills.length > 0 || vol.missing_skills.length > 0) && (
-                          <div className="mt-3 flex flex-wrap gap-1.5">
-                            {vol.matched_skills.map((s) => (
-                              <span key={s.id} className="inline-flex items-center gap-0.5 text-[10px] font-medium bg-green-50 text-green-700 border border-green-200 px-2 py-0.5 rounded-full">
-                                <CheckCircle size={8} /> {s.name}
-                              </span>
-                            ))}
-                            {vol.missing_skills.map((s) => (
-                              <span key={s.id} className="text-[10px] font-medium bg-gray-50 text-gray-400 border border-gray-200 px-2 py-0.5 rounded-full">
-                                · {s.name}
-                              </span>
-                            ))}
-                          </div>
-                        )}
-
-                        {/* Recommendation reason */}
-                        {vol.recommendation_reason && (
-                          <p className="mt-2 text-[11px] text-[#6B7280] italic leading-relaxed">
-                            {vol.recommendation_reason}
-                          </p>
-                        )}
-
-                        {/* Expand toggle */}
-                        <button
-                          onClick={() => setExpandedVol(isExpanded ? null : vol.id)}
-                          className="mt-3 text-xs font-medium text-[#4F46C8] hover:text-[#3f39a8]"
-                        >
-                          {isExpanded ? 'Hide details ↑' : 'View details ↓'}
-                        </button>
-
-                        {/* Expanded detail */}
-                        {isExpanded && (
-                          <div className="mt-3 pt-3 border-t border-gray-100 space-y-2 text-xs text-gray-600">
-                            {vol.email && <p><span className="text-gray-400">Email:</span> {vol.email}</p>}
-                            {vol.phone && <p><span className="text-gray-400">Phone:</span> {vol.phone}</p>}
-                            {vol.bio && <p><span className="text-gray-400">Bio:</span> {vol.bio}</p>}
-                            {vol.skills.length > 0 && (
-                              <div>
-                                <span className="text-gray-400">All skills:</span>
-                                <div className="flex flex-wrap gap-1 mt-1">
-                                  {vol.skills.map((s) => (
-                                    <span key={s.id} className="bg-[#EEF0FF] text-[#4F46C8] px-2 py-0.5 rounded-full text-[10px]">
-                                      {s.name}
-                                    </span>
-                                  ))}
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-            )}
-          </div>
-        )}
-
         {/* Applications Tab */}
         {activeTab === 'applications' && (
           <div className="p-6">
             <div className="flex items-center gap-2 mb-2">
               <Inbox size={16} className="text-[#4F46C8]" />
-              <h2 className="text-sm font-bold text-gray-900">Applications</h2>
-              <span className="text-xs text-[#6B7280] ml-auto">Sorted by recommendation score</span>
+              <h2 className="text-sm font-bold text-gray-900">Applicants</h2>
             </div>
             <p className="text-xs text-[#6B7280] mb-5">
-              Applicants ranked by the Hybrid Recommendation Algorithm. Makes decisions easier — does not auto-accept or reject.
+              Approved applicants become assignments. You can review and decide for this opportunity on the
+              <Link href="/dashboard/ngo/applications" className="text-[#4F46C8] font-medium mx-1 hover:underline">
+                Recommended Applicants
+              </Link>
+              page.
             </p>
 
             {appLoading ? (
@@ -570,17 +358,14 @@ export default function TaskDetailPage() {
                             <div className="min-w-0">
                               <div className="flex items-center gap-2 flex-wrap">
                                 <p className="font-semibold text-gray-900">{app.volunteer_name}</p>
-                                <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
-                                  app.status === 'Pending' ? 'bg-amber-50 text-amber-700' :
-                                  app.status === 'Accepted' ? 'bg-green-50 text-green-700' :
-                                  app.status === 'Rejected' ? 'bg-red-50 text-red-700' : 'bg-gray-100 text-gray-600'
-                                }`}>
+                                <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${appStatusStyle(app.status)}`}>
                                   {app.status}
                                 </span>
                               </div>
                               <p className="text-xs text-[#6B7280] mt-0.5 flex items-center gap-2 flex-wrap">
-                                {app.applied_at && <><Clock size={10} className="inline" />{new Date(app.applied_at).toLocaleDateString()}</>}
-                                {app.distance_km != null && <><span>·</span>{app.distance_km} km</>}
+                                {app.applied_at && <><Clock size={10} className="inline" />Applied {new Date(app.applied_at).toLocaleDateString()}</>}
+                                {app.distance_km != null && <><span>·</span>{app.distance_km} km away</>}
+                                {app.trust_score != null && <><span>·</span>Trust {Math.round(app.trust_score * 100)}%</>}
                               </p>
                             </div>
                           </div>
@@ -591,28 +376,6 @@ export default function TaskDetailPage() {
                             </div>
                             <div className="text-[9px] text-gray-400 mt-0.5 font-medium">{getScoreLabel(overallScore)}</div>
                           </div>
-                        </div>
-
-                        {/* Score mini bars */}
-                        <div className="mt-3 grid grid-cols-5 gap-1">
-                          {[
-                            { label: 'Sem.', value: app.semantic_match_score },
-                            { label: 'Skill', value: app.skill_overlap_score },
-                            { label: 'Dist.', value: app.distance_score },
-                            { label: 'Avail.', value: app.availability_score },
-                            { label: 'Trust', value: app.trust_score },
-                          ].map((s) => (
-                            <div key={s.label} className="text-center">
-                              <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden mb-0.5">
-                                <div
-                                  className={`h-full rounded-full ${getScoreBarColor(s.value ?? 0)}`}
-                                  style={{ width: `${Math.round((s.value ?? 0) * 100)}%` }}
-                                />
-                              </div>
-                              <div className="text-[9px] text-gray-400">{s.label}</div>
-                              <div className="text-[10px] font-bold text-gray-700">{formatScore(s.value)}%</div>
-                            </div>
-                          ))}
                         </div>
 
                         {/* Matched/Missing skills */}

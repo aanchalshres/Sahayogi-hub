@@ -1,6 +1,6 @@
 // app/lib/scoring.ts
 // ─────────────────────────────────────────────────────────────────────────────
-// Display utilities for the Hybrid Recommendation Algorithm output.
+// Display utilities for the recommendation service output.
 // All scores are computed by the backend RecommendationService.
 // These helpers only format and explain the values — they do NOT recalculate.
 // ─────────────────────────────────────────────────────────────────────────────
@@ -47,11 +47,11 @@ export function generateExplanation(scores: RecommendationScores & { distance_km
   const distanceKm  = scores.distance_km;
 
   if (semantic >= 0.75) {
-    reasons.push('Very high semantic similarity');
+    reasons.push('Very strong profile match');
   } else if (semantic >= 0.5) {
-    reasons.push('Good semantic match');
+    reasons.push('Good profile match');
   } else if (semantic >= 0.25) {
-    reasons.push('Partial semantic similarity');
+    reasons.push('Partial profile match');
   }
 
   if (skill >= 0.75) {

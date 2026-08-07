@@ -292,7 +292,7 @@ export default function VolunteerTasksPage() {
                       </div>
                       <div className="grid grid-cols-5 gap-1 text-center">
                         {[
-                          { label: 'Semantic', value: task.semantic_match_score },
+                          { label: 'Profile', value: task.semantic_match_score },
                           { label: 'Skills', value: task.skill_overlap_score },
                           { label: 'Distance', value: task.distance_score },
                           { label: 'Avail.', value: task.availability_score },

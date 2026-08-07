@@ -75,41 +75,6 @@ it('runs the complete recommendation pipeline end-to-end', function () {
     expect($matchScore)->toBe($scores['recommendation_score']);
 });
 
-it('ranks volunteers for a task', function () {
-    $skill = Skill::factory()->create(['name' => 'Teaching']);
-
-    $volunteers = [];
-    for ($i = 0; $i < 3; $i++) {
-        $u = User::factory()->create(['role' => 'volunteer', 'is_active' => true]);
-        $vp = VolunteerProfile::factory()->create([
-            'user_id' => $u->id,
-            'availability' => 'Available',
-            'trust_score' => 0.5 + ($i * 0.2),
-            'trust_updated_at' => now(),
-            'tfidf_vector' => ['teaching' => 0.5 + ($i * 0.2)],
-        ]);
-        $vp->skills()->attach($skill->id);
-        $volunteers[] = $vp;
-    }
-
-    $task = Task::factory()->create([
-        'ngo_id' => $this->ngo->id,
-        'status' => 'Open',
-        'tfidf_vector' => ['teaching' => 0.8],
-    ]);
-    $task->skills()->attach($skill->id);
-
-    $service = app(RecommendationService::class);
-    $ranked = $service->rankVolunteersForTask($task);
-
-    expect($ranked)->toHaveCount(3);
-
-    $scores = $ranked->pluck('recommendation_score')->toArray();
-    for ($i = 0; $i < count($scores) - 1; $i++) {
-        expect($scores[$i])->toBeGreaterThanOrEqual($scores[$i + 1]);
-    }
-});
-
 it('ranks tasks for a volunteer', function () {
     $skill = Skill::factory()->create(['name' => 'Teaching']);
 
@@ -163,7 +128,7 @@ it('persists trust score components through recalculate', function () {
     expect($dbProfile->trust_score_components)->toBe($refreshed->trust_score_components);
 });
 
-it('generates shortlist with correct scores', function () {
+it('prioritizes applications with correct scores', function () {
     $skill = Skill::factory()->create(['name' => 'Teaching']);
 
     $volUser = User::factory()->create(['role' => 'volunteer', 'is_active' => true]);
@@ -184,16 +149,19 @@ it('generates shortlist with correct scores', function () {
     ]);
     $task->skills()->attach($skill->id);
 
+    \App\Models\Application::factory()->create([
+        'task_id' => $task->id,
+        'volunteer_profile_id' => $volunteer->id,
+        'status' => 'Pending',
+        'applied_at' => now(),
+    ]);
+
     $workflowService = app(\App\Services\WorkflowService::class);
-    $shortlist = $workflowService->generateShortlist($task, 5, 'recommendation');
+    $prioritized = $workflowService->getPrioritizedApplications($task, 'recommendation');
 
-    expect($shortlist)->toHaveCount(1);
-    expect($shortlist[0]->shortlist_rank)->toBe(1);
-
-    $shortlistEntry = \App\Models\Shortlist::where('task_id', $task->id)->first();
-    expect($shortlistEntry)->not->toBeNull();
-    expect($shortlistEntry->recommendation_score)->not->toBeNull();
-    expect($shortlistEntry->semantic_match_score)->not->toBeNull();
+    expect($prioritized)->toHaveCount(1);
+    expect($prioritized[0]->priority_score)->toBeGreaterThan(0);
+    expect($prioritized[0]->recommendation_score)->not->toBeNull();
 });
 
 it('performs optimal recommendation via MCMF without auto-accepting', function () {
