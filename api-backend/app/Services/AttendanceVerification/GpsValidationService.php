@@ -2,12 +2,14 @@
 
 namespace App\Services\AttendanceVerification;
 
+use App\Algorithms\Matching\HaversineDistance;
 use App\Models\Task;
 use App\Services\AttendanceVerification\Contracts\GpsValidationServiceInterface;
 
 class GpsValidationService implements GpsValidationServiceInterface
 {
     public function __construct(
+        private HaversineDistance $haversine,
         private array $config = []
     ) {
         $this->config = config('attendance-verification.gps', []);
@@ -50,7 +52,8 @@ class GpsValidationService implements GpsValidationServiceInterface
             ];
         }
 
-        $distance = $this->calculateDistance($latitude, $longitude, $taskLat, $taskLng);
+        // Shared Haversine implementation (returns km) converted to meters.
+        $distance = $this->haversine->calculate($latitude, $longitude, $taskLat, $taskLng) * 1000;
 
         if ($distance > $maxDistance) {
             $errors[] = "Distance from task ({$distance}m) exceeds max ({$maxDistance}m)";
@@ -67,14 +70,5 @@ class GpsValidationService implements GpsValidationServiceInterface
             'accuracy' => $accuracy,
             'errors' => $errors,
         ];
-    }
-
-    public function calculateDistance(float $lat1, float $lon1, float $lat2, float $lon2): float
-    {
-        $earthRadius = 6371000;
-        $dLat = deg2rad($lat2 - $lat1);
-        $dLon = deg2rad($lon2 - $lon1);
-        $a = sin($dLat / 2) ** 2 + cos(deg2rad($lat1)) * cos(deg2rad($lat2)) * sin($dLon / 2) ** 2;
-        return $earthRadius * 2 * atan2(sqrt($a), sqrt(1 - $a));
     }
 }

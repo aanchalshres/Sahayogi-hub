@@ -7,14 +7,12 @@ use App\Models\NgoProfile;
 use App\Models\Shortlist;
 use App\Models\Task;
 use App\Models\VolunteerProfile;
-use App\Services\Ranking\Ranker;
 use Illuminate\Database\Eloquent\Collection;
 
 class WorkflowService
 {
     public function __construct(
         private RecommendationService $recommendation,
-        private Ranker $ranker,
         private MinCostMaxFlowService $minCostMaxFlow
     ) {}
 
@@ -37,15 +35,9 @@ class WorkflowService
         foreach ($shortlisted as $volunteer) {
             $currentRank = $rank++;
 
-            $scores = [
-                'semantic_match_score' => $volunteer->semantic_match_score ?? 0,
-                'distance_score' => $volunteer->distance_score ?? 0,
-                'skill_overlap_score' => $volunteer->skill_overlap_score ?? 0,
-                'availability_score' => $volunteer->availability_score ?? 0,
-                'trust_score' => $volunteer->trust_score ?? 0.5,
-            ];
-
-            $strategyScore = $this->ranker->score($scores, $strategy);
+            // WSM is the single scoring stage — its output (recommendation_score)
+            // is the strategy score for the shortlist.
+            $strategyScore = ($volunteer->recommendation_score ?? 0) / 100;
 
             $upsertData[] = [
                 'task_id' => $task->id,
@@ -218,8 +210,9 @@ class WorkflowService
             $application->missing_skills = $detailed['missing_skills'];
             $application->distance_km = $detailed['distance_km'];
             $application->recommendation_reason = $detailed['recommendation_reason'];
-            $application->priority_score = round($this->ranker->score($detailed, $strategy) * 100, 1);
-            $application->strategy_used = $strategy;
+            // WSM output is the priority score for the single strategy.
+            $application->priority_score = $detailed['recommendation_score'];
+            $application->strategy_used = 'recommendation';
         });
 
         return $applications->sortByDesc('priority_score')->values();
@@ -249,7 +242,9 @@ class WorkflowService
             }
 
             $scores = $this->recommendation->computeAllScores($volunteer, $task);
-            $strategyScore = $this->ranker->score($scores, $strategy);
+
+            // The single strategy (WSM) score is recommendation_score (0-100).
+            $strategyScore = ($scores['recommendation_score'] ?? 0) / 100;
 
             $ngoId = $task->ngo->id;
 

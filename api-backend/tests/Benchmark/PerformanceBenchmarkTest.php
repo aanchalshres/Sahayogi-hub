@@ -7,9 +7,9 @@ use App\Models\NgoProfile;
 use App\Models\Skill;
 use App\Services\RecommendationService;
 use App\Services\TrustScoreService;
+use App\Services\MinCostMaxFlowService;
 use App\Algorithms\Matching\TfIdfVectorizer;
 use App\Algorithms\Matching\CosineSimilarity;
-use App\Algorithms\Assignment\HungarianMatcher;
 
 uses(Tests\TestCase::class);
 
@@ -120,26 +120,34 @@ it('benchmarks 1000 volunteers ranking', function () {
     $this->addToAssertionCount(1);
 })->group('benchmark');
 
-it('benchmarks hungarian matcher with increasing matrix sizes', function () {
-    $matcher = new HungarianMatcher();
+it('benchmarks min-cost max-flow with increasing task sizes', function () {
+    $service = app(MinCostMaxFlowService::class);
 
     $sizes = [10, 50, 100];
 
     foreach ($sizes as $n) {
-        $matrix = [];
+        $volunteers = [];
+        $tasks = [];
+        $scores = [];
+
         for ($i = 0; $i < $n; $i++) {
-            $row = [];
-            for ($j = 0; $j < $n; $j++) {
-                $row[] = round(fake()->randomFloat(4, 0, 1), 4);
+            $volunteers[] = ['id' => $i + 1, 'name' => "V{$i}", 'availability' => 'Available'];
+        }
+        for ($j = 0; $j < $n; $j++) {
+            $tasks[] = ['id' => $j + 1, 'title' => "T-{$j}", 'required_volunteers' => 2];
+        }
+
+        foreach ($volunteers as $v) {
+            foreach ($tasks as $t) {
+                $scores[$v['id']][$t['id']] = round(fake()->randomFloat(4, 0, 100), 4);
             }
-            $matrix[] = $row;
         }
 
         $start = microtime(true);
-        $result = $matcher->solve($matrix);
+        $result = $service->optimize($volunteers, $tasks, $scores);
         $duration = microtime(true) - $start;
 
-        expect($result)->toHaveCount($n);
+        expect($result)->toHaveKey('assignments');
         expect($duration)->toBeLessThan(60);
     }
 

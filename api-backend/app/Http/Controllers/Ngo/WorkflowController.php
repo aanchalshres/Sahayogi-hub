@@ -5,14 +5,12 @@ namespace App\Http\Controllers\Ngo;
 use App\Http\Controllers\Controller;
 use App\Models\Task;
 use App\Services\WorkflowService;
-use App\Services\Ranking\Ranker;
 use Illuminate\Http\Request;
 
 class WorkflowController extends Controller
 {
     public function __construct(
-        private WorkflowService $workflowService,
-        private Ranker $ranker
+        private WorkflowService $workflowService
     ) {}
 
     public function shortlist(Request $request, $id)
@@ -62,7 +60,7 @@ class WorkflowController extends Controller
 
         $validated = $request->validate([
             'limit' => 'nullable|integer|min:1|max:50',
-            'strategy' => 'nullable|string|in:' . implode(',', array_keys(Ranker::getAvailableStrategies())),
+            'strategy' => 'nullable|string',
         ]);
 
         $limit = $validated['limit'] ?? null;
@@ -110,7 +108,7 @@ class WorkflowController extends Controller
             ->findOrFail($id);
 
         $validated = $request->validate([
-            'strategy' => 'nullable|string|in:' . implode(',', array_keys(Ranker::getAvailableStrategies())),
+            'strategy' => 'nullable|string',
         ]);
 
         $strategy = $validated['strategy'] ?? null;
@@ -149,13 +147,13 @@ class WorkflowController extends Controller
     public function strategies()
     {
         return response()->json([
-            'data' => collect(Ranker::getAvailableStrategies())->map(function ($label, $key) {
-                return [
-                    'key' => $key,
-                    'label' => $label,
-                    'weights' => config("workflow.strategies.{$key}.weights", []),
-                ];
-            })->values(),
+            'data' => [
+                [
+                    'key' => 'recommendation',
+                    'label' => config('workflow.strategies.recommendation.label', 'Recommendation Score'),
+                    'weights' => config('workflow.strategies.recommendation.weights', []),
+                ],
+            ],
         ]);
     }
 

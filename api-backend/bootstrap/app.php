@@ -20,7 +20,6 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'auth' => \App\Http\Middleware\Authenticate::class,
             'role' => \App\Http\Middleware\CheckRole::class,
-            'verified_ngo' => \App\Http\Middleware\VerifiedNgo::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

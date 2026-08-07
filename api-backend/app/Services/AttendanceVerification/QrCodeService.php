@@ -71,11 +71,6 @@ class QrCodeService implements QrCodeServiceInterface
         return $qrCode->update(['is_active' => false]);
     }
 
-    public function revokeByTask(Task $task): void
-    {
-        QrCode::where('task_id', $task->id)->update(['is_active' => false]);
-    }
-
     public function isExpired(QrCode $qrCode): bool
     {
         return $qrCode->expires_at->isPast();

@@ -182,7 +182,7 @@ class AttendanceVerificationService implements AttendanceVerificationServiceInte
                 'check_out_gps_accuracy' => $gpsData['accuracy'] ?? null,
                 'check_out_distance_from_task' => $gpsValidation['distance'] ?? null,
                 'attendance_confidence_score' => $overallConfidence,
-                'confidence_level' => $overallConfidence >= 85 ? 'high' : ($overallConfidence >= 65 ? 'medium' : ($overallConfidence >= 40 ? 'low' : 'manual_review')),
+                'confidence_level' => $this->confidenceService->classify($overallConfidence),
                 'device_info' => $deviceInfo ? array_merge($log->device_info ?? [], $deviceInfo) : $log->device_info,
             ]);
 
@@ -193,28 +193,6 @@ class AttendanceVerificationService implements AttendanceVerificationServiceInte
         $this->dispatchBackgroundJobs($log, 'check_out');
 
         return $log;
-    }
-
-    public function getStatus(ServiceLog $log): array
-    {
-        return [
-            'id' => $log->id,
-            'status' => $log->participation_status,
-            'checked_in' => !is_null($log->check_in_time),
-            'checked_out' => !is_null($log->check_out_time),
-            'check_in_time' => $log->check_in_time,
-            'check_out_time' => $log->check_out_time,
-            'hours' => $log->hours,
-            'confidence_score' => $log->attendance_confidence_score,
-            'confidence_level' => $log->confidence_level,
-            'verification_method' => $log->verification_method,
-            'check_in_distance' => $log->check_in_distance_from_task,
-            'check_out_distance' => $log->check_out_distance_from_task,
-            'task' => $log->task ? [
-                'id' => $log->task->id,
-                'title' => $log->task->title,
-            ] : null,
-        ];
     }
 
     private function dispatchBackgroundJobs(ServiceLog $log, string $action): void

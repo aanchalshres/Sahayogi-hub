@@ -4,14 +4,12 @@ namespace App\Http\Controllers\Volunteer;
 
 use App\Http\Controllers\Controller;
 use App\Models\Application;
-use App\Services\MatchingService;
 use App\Services\RecommendationService;
 use Illuminate\Http\Request;
 
 class TaskController extends Controller
 {
     public function __construct(
-        private MatchingService $matchingService,
         private RecommendationService $recommendationService
     ) {}
 
@@ -39,7 +37,7 @@ class TaskController extends Controller
         ]));
 
         return response()->json([
-            'data' => $this->matchingService
+            'data' => $this->recommendationService
                 ->rankTasksForVolunteer($profile, $filters)
         ]);
     }
@@ -62,7 +60,7 @@ class TaskController extends Controller
             ], 404);
         }
 
-        $task = $this->matchingService->getTaskDetail($id);
+        $task = $this->recommendationService->getTaskDetail($id);
 
         $app = Application::where('task_id', $id)
             ->where('volunteer_profile_id', $profile->id)

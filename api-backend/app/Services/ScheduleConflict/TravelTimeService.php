@@ -2,14 +2,15 @@
 
 namespace App\Services\ScheduleConflict;
 
-use App\Algorithms\Contracts\TravelTimeInterface;
+use App\Algorithms\Matching\HaversineDistance;
 
-class TravelTimeService implements TravelTimeInterface
+class TravelTimeService
 {
     private array $config;
 
-    public function __construct()
-    {
+    public function __construct(
+        private HaversineDistance $distance
+    ) {
         $this->config = config('schedule-conflict');
     }
 
@@ -34,14 +35,6 @@ class TravelTimeService implements TravelTimeInterface
             return null;
         }
 
-        $earthRadius = 6371;
-        $dLat = deg2rad($lat2 - $lat1);
-        $dLng = deg2rad($lng2 - $lng1);
-        $a = sin($dLat / 2) * sin($dLat / 2) +
-            cos(deg2rad($lat1)) * cos(deg2rad($lat2)) *
-            sin($dLng / 2) * sin($dLng / 2);
-        $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
-
-        return round($earthRadius * $c, 2);
+        return round($this->distance->calculate($lat1, $lng1, $lat2, $lng2), 2);
     }
 }

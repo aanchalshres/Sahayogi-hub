@@ -190,6 +190,19 @@ class RecommendationService
         return $this->computeAllScores($volunteer, $task)['recommendation_score'];
     }
 
+    public function getTaskDetail(int $taskId): Task
+    {
+        return Task::with([
+                'ngo.user',
+                'skills',
+                'category',
+            ])
+            ->whereHas('ngo', function ($query) {
+                $query->where('verification_status', 'verified');
+            })
+            ->findOrFail($taskId);
+    }
+
     public function getTrustScore(VolunteerProfile $volunteer): float
     {
         $id = $volunteer->id;

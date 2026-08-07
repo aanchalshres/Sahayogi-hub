@@ -3,12 +3,11 @@
 uses(Tests\TestCase::class);
 
 use App\Services\AssignmentService;
-use App\Algorithms\Assignment\HungarianMatcher;
 use App\Models\Application;
 use App\Models\Task;
 use App\Models\VolunteerProfile;
 
-it('batch assigns volunteers to tasks optimally', function () {
+it('computes optimized MCMF recommendations without accepting applications', function () {
     $volunteer1 = VolunteerProfile::factory()->create(['tfidf_vector' => ['a' => 1.0]]);
     $volunteer2 = VolunteerProfile::factory()->create(['tfidf_vector' => ['b' => 1.0]]);
 
@@ -34,8 +33,12 @@ it('batch assigns volunteers to tasks optimally', function () {
     );
 
     expect($result)->toHaveCount(2);
-    expect($result[0]['status'])->toBe('Accepted');
-    expect($result[1]['status'])->toBe('Accepted');
+    expect($result[0]['status'])->toBe('recommended');
+    expect($result[1]['status'])->toBe('recommended');
+
+    // No auto-accept: applications must remain untouched.
+    expect(Application::find($app1->id)->status)->toBe('Pending');
+    expect(Application::find($app2->id)->status)->toBe('Pending');
 });
 
 it('returns empty array for no applications', function () {
@@ -45,7 +48,7 @@ it('returns empty array for no applications', function () {
     expect($result)->toBe([]);
 });
 
-it('handles mismatched volunteer-task assignments', function () {
+it('handles mismatched volunteer-task recommendations', function () {
     $volunteer = VolunteerProfile::factory()->create(['tfidf_vector' => ['a' => 1.0]]);
     $task = Task::factory()->create(['tfidf_vector' => ['b' => 1.0], 'status' => 'Open']);
 
@@ -62,21 +65,7 @@ it('handles mismatched volunteer-task assignments', function () {
     expect($result[0]['match_score'])->toBeGreaterThanOrEqual(0);
 });
 
-it('uses hungarian solver for optimal assignment', function () {
-    $solver = app(HungarianMatcher::class);
-
-    $matrix = [
-        [0.9, 0.1],
-        [0.1, 0.9],
-    ];
-
-    $result = $solver->solve($matrix);
-
-    expect($result[0])->toBe(1);
-    expect($result[1])->toBe(0);
-});
-
-it('walks through assignment pipeline correctly', function () {
+it('walks through the recommendation pipeline correctly', function () {
     $volunteer1 = VolunteerProfile::factory()->create(['tfidf_vector' => ['teaching' => 0.8, 'math' => 0.6], 'latitude' => 27.7, 'longitude' => 85.3, 'availability' => 'Available', 'trust_score' => 0.8, 'trust_updated_at' => now()]);
     $volunteer2 = VolunteerProfile::factory()->create(['tfidf_vector' => ['science' => 0.9], 'latitude' => 27.8, 'longitude' => 85.4, 'availability' => 'Available', 'trust_score' => 0.6, 'trust_updated_at' => now()]);
 

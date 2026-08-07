@@ -2,9 +2,7 @@
 
 namespace App\Services\ScheduleConflict;
 
-use App\Algorithms\Contracts\TimeOverlapInterface;
-
-class TimeOverlapService implements TimeOverlapInterface
+class TimeOverlapService
 {
     private array $config;
 
@@ -63,22 +61,6 @@ class TimeOverlapService implements TimeOverlapInterface
             'gap_minutes' => 0,
             'conflict_type' => $this->classifyConflict($overlapRatio),
         ];
-    }
-
-    public function hasOverlap(
-        ?string $taskAStart, ?string $taskAEnd,
-        ?string $taskBStart, ?string $taskBEnd,
-        int $bufferMinutes = 0
-    ): bool {
-        $result = $this->calculateOverlap($taskAStart, $taskAEnd, $taskBStart, $taskBEnd);
-
-        if ($result['has_overlap']) return true;
-
-        if ($bufferMinutes > 0 && $result['gap_minutes'] !== null && $result['gap_minutes'] < $bufferMinutes) {
-            return true;
-        }
-
-        return false;
     }
 
     public function classifyConflict(float $overlapRatio): string

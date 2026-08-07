@@ -2,15 +2,13 @@
 
 namespace App\Services\ScheduleConflict;
 
-use App\Algorithms\Contracts\ConflictDetectionInterface;
 use App\Models\Application;
 use App\Models\ScheduleConflict;
 use App\Models\Task;
 use App\Models\VolunteerProfile;
 use App\Services\ActivityLogService;
-use Illuminate\Support\Facades\DB;
 
-class ScheduleConflictService implements ConflictDetectionInterface
+class ScheduleConflictService
 {
     public function __construct(
         private TimeOverlapService $timeOverlap,
@@ -167,29 +165,6 @@ class ScheduleConflictService implements ConflictDetectionInterface
                 'end_date' => $taskB->end_date,
             ],
         ];
-    }
-
-    public function checkForConflictsInSchedule(int $volunteerProfileId): int
-    {
-        $commitments = $this->getActiveCommitments($volunteerProfileId);
-        $conflictCount = 0;
-
-        for ($i = 0; $i < count($commitments); $i++) {
-            for ($j = $i + 1; $j < count($commitments); $j++) {
-                $taskA = $commitments[$i]['task'];
-                $taskB = $commitments[$j]['task'];
-
-                $conflict = $this->detectConflict($taskA, $taskB, $volunteerProfileId);
-                if ($conflict && $conflict['has_conflict']) {
-                    $this->persistConflict(
-                        $volunteerProfileId, $taskA->id, $taskB->id, $conflict
-                    );
-                    $conflictCount++;
-                }
-            }
-        }
-
-        return $conflictCount;
     }
 
     public function getAnalytics(): array

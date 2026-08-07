@@ -27,15 +27,4 @@ class ConflictResolutionService
 
         return $conflict->fresh();
     }
-
-    public function getSuggestedResolution(string $conflictType, float $score): string
-    {
-        $default = config('schedule-conflict.default_resolution', 'warn_ngo');
-
-        if ($score >= 0.75) return 'manual_override';
-        if ($score >= 0.50) return 'warn_ngo';
-        if ($score >= 0.25) return 'warn_volunteer';
-
-        return $default;
-    }
 }

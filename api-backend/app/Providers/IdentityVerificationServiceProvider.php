@@ -2,9 +2,7 @@
 
 namespace App\Providers;
 
-use App\Algorithms\IdentityVerification\Contracts\DocumentValidatorInterface;
 use App\Algorithms\IdentityVerification\Contracts\OcrProviderInterface;
-use App\Algorithms\IdentityVerification\DocumentValidation\DocumentValidator;
 use App\Algorithms\IdentityVerification\Ocr\StructuredOcrParser;
 use App\Algorithms\IdentityVerification\Ocr\TesseractOcrProvider;
 use App\Services\IdentityVerification\VerificationPipelineService;
@@ -22,8 +20,6 @@ class IdentityVerificationServiceProvider extends ServiceProvider
                 default => new TesseractOcrProvider(),
             };
         });
-
-        $this->app->bind(DocumentValidatorInterface::class, DocumentValidator::class);
 
         $this->app->singleton(StructuredOcrParser::class);
         $this->app->singleton(VerificationPipelineService::class);

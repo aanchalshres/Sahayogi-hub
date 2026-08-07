@@ -3,8 +3,6 @@
 namespace App\Services;
 
 use App\Models\NgoProfile;
-use App\Models\User;
-use App\Models\VerificationSession;
 
 class VerificationService
 {
@@ -133,17 +131,5 @@ class VerificationService
                 'phone' => $ngo->user?->phone,
             ],
         ];
-    }
-
-    /**
-     * Start a volunteer verification session.
-     * Called when the volunteer begins the KYC process.
-     */
-    public function startVolunteerVerification(User $user): VerificationSession
-    {
-        return VerificationSession::create([
-            'user_id' => $user->id,
-            'status'  => 'pending',
-        ]);
     }
 }

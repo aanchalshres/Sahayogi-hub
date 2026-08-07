@@ -7,11 +7,10 @@ use App\Models\Document;
 use App\Models\ServiceLog;
 use App\Models\TrustScoreHistory;
 use App\Models\VolunteerProfile;
-use App\Algorithms\Contracts\TrustCalculatorInterface;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
 
-class TrustScoreService implements TrustCalculatorInterface
+class TrustScoreService
 {
     private array $config;
 

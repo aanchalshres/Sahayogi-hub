@@ -67,19 +67,9 @@ class User extends Authenticatable
             return $this->hasOne(VolunteerProfile::class);
         }
 
-        public function verificationWorkflow()
-        {
-            return $this->hasOne(VerificationWorkflow::class);
-        }
-
         public function reviewedDocuments()
         {
             return $this->hasMany(Document::class, 'reviewed_by');
-        }
-
-        public function verificationSessions()
-        {
-            return $this->hasMany(VerificationSession::class);
         }
 
         public function notifications()

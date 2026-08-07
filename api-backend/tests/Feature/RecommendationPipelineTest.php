@@ -12,7 +12,6 @@ use App\Services\TrustScoreService;
 use App\Services\TfIdfGenerationService;
 use App\Algorithms\Matching\CosineSimilarity;
 use App\Algorithms\Matching\HaversineDistance;
-use App\Algorithms\Assignment\HungarianMatcher;
 use App\Services\AssignmentService;
 
 beforeEach(function () {
@@ -197,7 +196,7 @@ it('generates shortlist with correct scores', function () {
     expect($shortlistEntry->semantic_match_score)->not->toBeNull();
 });
 
-it('performs optimal assignment via hungarian algorithm', function () {
+it('performs optimal recommendation via MCMF without auto-accepting', function () {
     $skill = Skill::factory()->create(['name' => 'Coding']);
 
     $volUser = User::factory()->create(['role' => 'volunteer', 'is_active' => true]);
@@ -230,8 +229,11 @@ it('performs optimal assignment via hungarian algorithm', function () {
     );
 
     expect($result)->toHaveCount(1);
-    expect($result[0]['status'])->toBe('Accepted');
+    expect($result[0]['status'])->toBe('recommended');
     expect($result[0]['match_score'])->toBeGreaterThan(0);
+
+    // No auto-accept: the application stays Pending.
+    expect(\App\Models\Application::find($application->id)->status)->toBe('Pending');
 });
 
 it('verifies database consistency after pipeline execution', function () {
