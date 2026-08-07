@@ -18,8 +18,10 @@ return [
     |--------------------------------------------------------------------------
     */
     'gps' => [
-        'max_distance_meters' => env('ATT_GPS_MAX_DISTANCE', 500),
-        'require_gps' => env('ATT_REQUIRE_GPS', true),
+        // Radius within which a volunteer must be to mark attendance.
+        // Default: 150 metres (reduced from 500 m; configurable via ATT_GPS_MAX_DISTANCE).
+        'max_distance_meters' => env('ATT_GPS_MAX_DISTANCE', 150),
+        'require_gps'         => env('ATT_REQUIRE_GPS', true),
         'max_accuracy_meters' => env('ATT_GPS_MAX_ACCURACY', 50),
     ],
 
@@ -37,13 +39,13 @@ return [
     /*
     |--------------------------------------------------------------------------
     | Confidence Score Weights (must sum to 1.0)
+    | GPS-only verification — no QR weight.
     |--------------------------------------------------------------------------
     */
     'weights' => [
-        'qr_validity' => 0.30,
-        'gps_accuracy' => 0.35,
-        'time_validity' => 0.25,
-        'device_consistency' => 0.10,
+        'gps_accuracy'        => 0.50,
+        'time_validity'       => 0.35,
+        'device_consistency'  => 0.15,
     ],
 
     /*

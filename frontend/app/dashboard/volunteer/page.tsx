@@ -410,27 +410,44 @@ export default function VolunteerDashboard() {
                           >
                             Details
                           </button>
-                          <button
-                            onClick={async () => {
-                              setApplying(task.id)
-                              try {
-                                await apiPost(`/volunteer/tasks/${task.id}/apply`, {})
-                                router.push('/dashboard/volunteer/applications')
-                              } catch {
-                                alert('Failed to apply. You may have already applied.')
-                              } finally {
-                                setApplying(null)
-                              }
-                            }}
-                            disabled={applying === task.id}
-                            className="flex-1 text-xs font-semibold bg-[#4F46C8] text-white py-2 rounded-lg hover:bg-[#4338CA] transition disabled:opacity-60 flex items-center justify-center gap-1"
-                          >
-                            {applying === task.id ? (
-                              <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                            ) : (
-                              <><Send size={11} /> Apply</>
-                            )}
-                          </button>
+                          {task.application_status ? (
+                            <div className={`flex-1 text-xs font-semibold py-2 rounded-lg flex items-center justify-center gap-1 border ${
+                              task.application_status === 'Accepted'
+                                ? 'bg-green-50 border-green-200 text-green-700'
+                                : task.application_status === 'Rejected'
+                                ? 'bg-red-50 border-red-200 text-red-500'
+                                : 'bg-[#F0F1F3] border-[#CACDD3] text-[#6B7280]'
+                            }`}>
+                              <CheckCircle size={11} />
+                              {task.application_status === 'Accepted'
+                                ? 'Accepted'
+                                : task.application_status === 'Rejected'
+                                ? 'Rejected'
+                                : 'Applied'}
+                            </div>
+                          ) : (
+                            <button
+                              onClick={async () => {
+                                setApplying(task.id)
+                                try {
+                                  await apiPost(`/volunteer/tasks/${task.id}/apply`, {})
+                                  router.push('/dashboard/volunteer/applications')
+                                } catch {
+                                  alert('Failed to apply. You may have already applied.')
+                                } finally {
+                                  setApplying(null)
+                                }
+                              }}
+                              disabled={applying === task.id}
+                              className="flex-1 text-xs font-semibold bg-[#4F46C8] text-white py-2 rounded-lg hover:bg-[#4338CA] transition disabled:opacity-60 flex items-center justify-center gap-1"
+                            >
+                              {applying === task.id ? (
+                                <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                              ) : (
+                                <><Send size={11} /> Apply</>
+                              )}
+                            </button>
+                          )}
                         </div>
                       </div>
                     )

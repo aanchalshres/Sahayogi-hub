@@ -22,6 +22,7 @@ interface VolunteerTask {
   category_id?: number;
   selectedSkills?: string[];
   skills?: { id: number; name: string }[];
+  application_status?: string | null; // null = not applied
   [key: string]: unknown;
 }
 
@@ -322,23 +323,40 @@ export default function VolunteerTasksPage() {
                       <Eye className="h-4 w-4" />
                       Details
                     </button>
-                    <button
-                      onClick={() => handleApply(task)}
-                      disabled={applying === task.id}
-                      className="flex-1 inline-flex items-center justify-center gap-2 bg-[#4F46C8] hover:bg-[#4F46C8]/90 disabled:bg-[#4F46C8]/50 text-white py-2.5 rounded-lg transition font-medium text-sm"
-                    >
-                      {applying === task.id ? (
-                        <>
-                          <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                          Applying...
-                        </>
-                      ) : (
-                        <>
-                          <Send className="h-4 w-4" />
-                          Apply Now
-                        </>
-                      )}
-                    </button>
+                    {task.application_status ? (
+                      <div className={`flex-1 inline-flex items-center justify-center gap-2 py-2.5 rounded-lg font-medium text-sm border ${
+                        task.application_status === 'Accepted'
+                          ? 'bg-green-50 border-green-200 text-green-700'
+                          : task.application_status === 'Rejected'
+                          ? 'bg-red-50 border-red-200 text-red-500'
+                          : 'bg-[#F0F1F3] border-[#CACDD3] text-[#6B7280]'
+                      }`}>
+                        <CheckCircle className="h-4 w-4" />
+                        {task.application_status === 'Accepted'
+                          ? 'Accepted'
+                          : task.application_status === 'Rejected'
+                          ? 'Rejected'
+                          : 'Applied'}
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => handleApply(task)}
+                        disabled={applying === task.id}
+                        className="flex-1 inline-flex items-center justify-center gap-2 bg-[#4F46C8] hover:bg-[#4F46C8]/90 disabled:bg-[#4F46C8]/50 text-white py-2.5 rounded-lg transition font-medium text-sm"
+                      >
+                        {applying === task.id ? (
+                          <>
+                            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                            Applying...
+                          </>
+                        ) : (
+                          <>
+                            <Send className="h-4 w-4" />
+                            Apply Now
+                          </>
+                        )}
+                      </button>
+                    )}
                   </div>
                 </div>
               )

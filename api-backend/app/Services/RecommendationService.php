@@ -281,7 +281,12 @@ class RecommendationService
 
         $tasks = $query->get();
 
-        $tasks->each(function ($task) use ($volunteer) {
+        // Pre-load all applications by this volunteer in one query to avoid N+1.
+        $applications = \App\Models\Application::where('volunteer_profile_id', $volunteer->id)
+            ->whereIn('task_id', $tasks->pluck('id'))
+            ->pluck('status', 'task_id'); // [ task_id => status ]
+
+        $tasks->each(function ($task) use ($volunteer, $applications) {
             $detailed = $this->computeDetailedScores($volunteer, $task);
             $task->recommendation_score  = $detailed['recommendation_score'];
             $task->match_score           = $detailed['recommendation_score'];
@@ -294,6 +299,9 @@ class RecommendationService
             $task->missing_skills        = $detailed['missing_skills'];
             $task->distance_km           = $detailed['distance_km'];
             $task->recommendation_reason = $detailed['recommendation_reason'];
+            // Expose the volunteer's application status so the frontend
+            // can disable the Apply button for already-applied tasks.
+            $task->application_status    = $applications->get($task->id, null);
         });
 
         $sorted = $tasks->sortByDesc('recommendation_score')->values();

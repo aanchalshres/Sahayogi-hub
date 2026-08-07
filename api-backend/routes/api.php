@@ -1205,15 +1205,23 @@ Route::middleware([
 
     /*
     |--------------------------------------------------------------------------
-    | Secure Attendance Verification (QR + GPS)
+    | GPS Attendance Verification (presence-only — does NOT complete tasks)
     |--------------------------------------------------------------------------
+    |
+    | These routes record that a volunteer was physically present at a task
+    | location, verified by GPS / Haversine distance check.
+    |
+    | Task completion, service hours, and certificate generation are handled
+    | separately by the NGO workflow and are NOT triggered by attendance.
     */
 
+    // Primary route: volunteer clicks "Mark Attendance"
     Route::post(
-        '/volunteer/attendance/validate-qr',
-        [SecureAttendanceController::class, 'validateQr']
+        '/volunteer/attendance/mark',
+        [SecureAttendanceController::class, 'markAttendance']
     );
 
+    // Alias for legacy front-end calls (same logic as mark-attendance)
     Route::post(
         '/volunteer/attendance/secure-check-in',
         [SecureAttendanceController::class, 'checkIn']

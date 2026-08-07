@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { MapPin, Search, Navigation, AlertTriangle } from 'lucide-react'
+import { MapPin, Search, Navigation, AlertTriangle, Layers, Satellite } from 'lucide-react'
 
 interface LocationPickerProps {
   latitude?: number | null
@@ -11,6 +11,30 @@ interface LocationPickerProps {
   label?: string
 }
 
+// ---------------------------------------------------------------------------
+// Tile layer definitions
+// ---------------------------------------------------------------------------
+const TILES = {
+  google_streets: {
+    label: 'Streets',
+    icon: 'streets',
+    url: 'https://mt{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}',
+    subdomains: ['0', '1', '2', '3'],
+    attribution: '© Google Maps',
+    maxZoom: 21,
+  },
+  google_hybrid: {
+    label: 'Satellite',
+    icon: 'satellite',
+    url: 'https://mt{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}',
+    subdomains: ['0', '1', '2', '3'],
+    attribution: '© Google Maps',
+    maxZoom: 21,
+  },
+} as const
+
+type TileKey = keyof typeof TILES
+
 export default function LocationPicker({
   latitude,
   longitude,
@@ -18,38 +42,41 @@ export default function LocationPicker({
   error,
   label = 'Location',
 }: LocationPickerProps) {
-  const containerRef = useRef<HTMLDivElement>(null)
-  const mapRef = useRef<any>(null)
-  const markerRef = useRef<any>(null)
-  const initializedRef = useRef(false)
+  const containerRef    = useRef<HTMLDivElement>(null)
+  const mapRef          = useRef<any>(null)
+  const markerRef       = useRef<any>(null)
+  const tileLayerRef    = useRef<any>(null)
+  const initializedRef  = useRef(false)
   const geocodeAbortRef = useRef<AbortController | null>(null)
 
-  const [lat, setLat] = useState<number>(latitude ?? 27.7172)
-  const [lng, setLng] = useState<number>(longitude ?? 85.3240)
-  const [address, setAddress] = useState<string>('')
-  const [searchQuery, setSearchQuery] = useState('')
+  const [lat, setLat]                   = useState<number>(latitude ?? 27.7172)
+  const [lng, setLng]                   = useState<number>(longitude ?? 85.3240)
+  const [address, setAddress]           = useState<string>('')
+  const [searchQuery, setSearchQuery]   = useState('')
   const [searchResults, setSearchResults] = useState<any[]>([])
-  const [searching, setSearching] = useState(false)
-  const [showResults, setShowResults] = useState(false)
-  const [selected, setSelected] = useState(false)
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const searchRef = useRef<HTMLDivElement>(null)
-  const onChangeRef = useRef(onChange)
+  const [searching, setSearching]       = useState(false)
+  const [showResults, setShowResults]   = useState(false)
+  const [selected, setSelected]         = useState(false)
+  const [activeLayer, setActiveLayer]   = useState<TileKey>('google_streets')
+
+  const debounceRef   = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const searchRef     = useRef<HTMLDivElement>(null)
+  const onChangeRef   = useRef(onChange)
   onChangeRef.current = onChange
 
   const emitChange = useCallback((newLat: number, newLng: number, newAddr: string) => {
     onChangeRef.current({ lat: newLat, lng: newLng, address: newAddr || `${newLat.toFixed(6)}, ${newLng.toFixed(6)}` })
   }, [])
 
+  // ---------------------------------------------------------------------------
+  // Reverse geocoding (Nominatim — free, no key needed)
+  // ---------------------------------------------------------------------------
   const reverseGeocode = useCallback(async (lat: number, lng: number): Promise<string> => {
-    if (geocodeAbortRef.current) {
-      geocodeAbortRef.current.abort()
-    }
+    if (geocodeAbortRef.current) geocodeAbortRef.current.abort()
     const controller = new AbortController()
     geocodeAbortRef.current = controller
-
     try {
-      const res = await fetch(
+      const res  = await fetch(
         `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&addressdetails=1`,
         { signal: controller.signal, headers: { 'Accept-Language': 'en' } }
       )
@@ -73,7 +100,9 @@ export default function LocationPicker({
     emitChange(newLat, newLng, addr)
   }, [reverseGeocode, emitChange])
 
-  // ---------- Map initialization (single-shot) ----------
+  // ---------------------------------------------------------------------------
+  // Map initialization (single-shot)
+  // ---------------------------------------------------------------------------
   useEffect(() => {
     const container = containerRef.current
     if (!container || initializedRef.current) return
@@ -86,50 +115,84 @@ export default function LocationPicker({
 
       if (cancelled || !container) return
 
+      // Clean up any zombie Leaflet instance
       const anyContainer = container as any
       if (anyContainer._leaflet_map) {
         anyContainer._leaflet_map.remove()
         delete anyContainer._leaflet_map
       }
 
+      // Fix default icon URLs
       delete (L.Icon.Default.prototype as any)._getIconUrl
       L.Icon.Default.mergeOptions({
         iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png',
-        iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png',
-        shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+        iconUrl:       'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png',
+        shadowUrl:     'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
       })
 
       const initLat = latitude ?? 27.7172
       const initLng = longitude ?? 85.3240
 
-      mapRef.current = L.map(container, {
+      const map = L.map(container, {
         center: [initLat, initLng],
-        zoom: 13,
-        zoomControl: true,
+        zoom: 15,
+        zoomControl: false,         // we add it bottom-right below
+        attributionControl: false,
       })
 
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-        maxZoom: 19,
-      }).addTo(mapRef.current)
+      // Custom position for zoom controls
+      L.control.zoom({ position: 'bottomright' }).addTo(map)
 
-      markerRef.current = L.marker([initLat, initLng], { draggable: true }).addTo(mapRef.current)
+      // Attribution — tiny, bottom-left
+      L.control.attribution({ position: 'bottomleft', prefix: false }).addTo(map)
 
-      markerRef.current.on('dragend', () => {
+      // Initial tile layer (Google Streets)
+      const tile = TILES.google_streets
+      const layer = L.tileLayer(tile.url, {
+        subdomains: tile.subdomains as any,
+        attribution: tile.attribution,
+        maxZoom: tile.maxZoom,
+      }).addTo(map)
+      tileLayerRef.current = layer
+      mapRef.current = map
+
+      // Custom styled marker
+      const customIcon = L.divIcon({
+        className: '',
+        html: `
+          <div style="
+            width: 32px; height: 32px;
+            background: #4F46C8;
+            border: 3px solid #fff;
+            border-radius: 50% 50% 50% 0;
+            transform: rotate(-45deg);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.35);
+          "></div>`,
+        iconSize:   [32, 32],
+        iconAnchor: [16, 32],
+        popupAnchor:[0, -32],
+      })
+
+      const marker = L.marker([initLat, initLng], {
+        draggable: true,
+        icon: customIcon,
+      }).addTo(map)
+      markerRef.current = marker
+
+      marker.on('dragend', () => {
         const pos = markerRef.current.getLatLng()
         handleLocationSelect(Number(pos.lat.toFixed(6)), Number(pos.lng.toFixed(6)))
       })
 
-      mapRef.current.on('click', (e: any) => {
+      map.on('click', (e: any) => {
         const newLat = Number(e.latlng.lat.toFixed(6))
         const newLng = Number(e.latlng.lng.toFixed(6))
-        markerRef.current.setLatLng([newLat, newLng])
+        marker.setLatLng([newLat, newLng])
         handleLocationSelect(newLat, newLng)
       })
 
       initializedRef.current = true
 
-      // Initialize with saved coordinates
       if (latitude != null && longitude != null) {
         setLat(latitude)
         setLng(longitude)
@@ -143,20 +206,21 @@ export default function LocationPicker({
 
     return () => {
       cancelled = true
-      if (geocodeAbortRef.current) {
-        geocodeAbortRef.current.abort()
-      }
+      geocodeAbortRef.current?.abort()
       if (mapRef.current) {
         mapRef.current.remove()
-        mapRef.current = null
+        mapRef.current   = null
         markerRef.current = null
+        tileLayerRef.current = null
       }
       initializedRef.current = false
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // ---------- Sync map marker when lat/lng changes ----------
+  // ---------------------------------------------------------------------------
+  // Sync marker when lat/lng state changes
+  // ---------------------------------------------------------------------------
   useEffect(() => {
     if (initializedRef.current && mapRef.current && markerRef.current) {
       markerRef.current.setLatLng([lat, lng])
@@ -164,7 +228,9 @@ export default function LocationPicker({
     }
   }, [lat, lng])
 
-  // ---------- Update when props change (edit page loads coordinates asynchronously) ----------
+  // ---------------------------------------------------------------------------
+  // Sync when edit-page loads coordinates asynchronously
+  // ---------------------------------------------------------------------------
   const prevLatRef = useRef(latitude)
   const prevLngRef = useRef(longitude)
   useEffect(() => {
@@ -180,113 +246,217 @@ export default function LocationPicker({
     }
   }, [latitude, longitude, selected, handleLocationSelect])
 
-  // ---------- Click-outside search results ----------
+  // ---------------------------------------------------------------------------
+  // Tile layer switcher
+  // ---------------------------------------------------------------------------
+  const switchLayer = useCallback(async (key: TileKey) => {
+    if (!mapRef.current) return
+    const L = await import('leaflet')
+    if (tileLayerRef.current) {
+      mapRef.current.removeLayer(tileLayerRef.current)
+    }
+    const tile  = TILES[key]
+    const layer = L.tileLayer(tile.url, {
+      subdomains: tile.subdomains as any,
+      attribution: tile.attribution,
+      maxZoom: tile.maxZoom,
+    }).addTo(mapRef.current)
+    tileLayerRef.current = layer
+    setActiveLayer(key)
+  }, [])
+
+  // ---------------------------------------------------------------------------
+  // Click-outside dismiss for search dropdown
+  // ---------------------------------------------------------------------------
   useEffect(() => {
-    const handleClick = (e: MouseEvent) => {
+    const handle = (e: MouseEvent) => {
       if (searchRef.current && !searchRef.current.contains(e.target as Node)) {
         setShowResults(false)
       }
     }
-    document.addEventListener('mousedown', handleClick)
-    return () => document.removeEventListener('mousedown', handleClick)
+    document.addEventListener('mousedown', handle)
+    return () => document.removeEventListener('mousedown', handle)
   }, [])
 
-  // ---------- Search ----------
+  // ---------------------------------------------------------------------------
+  // Search — Photon (photon.komoot.io)
+  // Powered by OpenStreetMap + Elasticsearch. Far better than Nominatim for
+  // partial queries, local names, and South/Southeast Asian locations.
+  // Biased toward the current map center so nearby results rank first.
+  // ---------------------------------------------------------------------------
   const searchLocation = useCallback(async (query: string) => {
-    if (!query.trim()) {
-      setSearchResults([])
-      return
-    }
+    if (!query.trim()) { setSearchResults([]); return }
     setSearching(true)
     try {
-      const res = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5&addressdetails=1`,
-        { headers: { 'Accept-Language': 'en' } }
-      )
+      // Bias results toward current map center within ~100 km
+      const biasLat = mapRef.current ? mapRef.current.getCenter().lat : lat
+      const biasLng = mapRef.current ? mapRef.current.getCenter().lng : lng
+      const url = `https://photon.komoot.io/api/?q=${encodeURIComponent(query)}&limit=6&lang=en&lat=${biasLat}&lon=${biasLng}`
+      const res  = await fetch(url)
       const data = await res.json()
-      setSearchResults(data)
+      // Photon returns GeoJSON FeatureCollection
+      setSearchResults(data.features ?? [])
       setShowResults(true)
     } catch {
       setSearchResults([])
     } finally {
       setSearching(false)
     }
-  }, [])
+  }, [lat, lng])
 
   const handleSearchInput = (value: string) => {
     setSearchQuery(value)
     if (debounceRef.current) clearTimeout(debounceRef.current)
-    debounceRef.current = setTimeout(() => searchLocation(value), 400)
+    debounceRef.current = setTimeout(() => searchLocation(value), 300)
   }
 
-  const selectSearchResult = (result: any) => {
-    const newLat = Number(result.lat)
-    const newLng = Number(result.lon)
-    const displayName = result.display_name
+  const selectSearchResult = (feature: any) => {
+    // Photon returns [lon, lat] in coordinates
+    const [featureLng, featureLat] = feature.geometry.coordinates
+    const props = feature.properties
+    // Build a readable display name from Photon properties
+    const parts = [
+      props.name,
+      props.street && props.housenumber ? `${props.street} ${props.housenumber}` : props.street,
+      props.district || props.suburb,
+      props.city || props.town || props.village,
+      props.state,
+      props.country,
+    ].filter(Boolean)
+    const displayName = parts.join(', ')
     setAddress(displayName)
     setSearchQuery(displayName)
     setShowResults(false)
-    handleLocationSelect(newLat, newLng)
+    handleLocationSelect(featureLat, featureLng)
   }
 
+  // ---------------------------------------------------------------------------
+  // Render
+  // ---------------------------------------------------------------------------
   return (
     <div className="space-y-2">
       <label className="text-sm font-medium text-gray-700 mb-1 block">
         {label} <span className="text-red-500">*</span>
       </label>
 
+      {/* Search bar */}
       <div ref={searchRef} className="relative">
         <div className="relative">
-          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
           <input
             type="text"
             placeholder="Search for a location..."
-            className="w-full pl-9 pr-4 py-2.5 bg-white border border-gray-200 rounded-lg text-sm outline-none focus:border-[#4F46C8] focus:ring-1 focus:ring-[#4F46C8]/30 transition"
+            className="w-full pl-9 pr-10 py-2.5 bg-white border border-gray-200 rounded-xl text-sm outline-none focus:border-[#4F46C8] focus:ring-2 focus:ring-[#4F46C8]/20 transition"
             value={searchQuery}
             onChange={(e) => handleSearchInput(e.target.value)}
             onFocus={() => searchResults.length > 0 && setShowResults(true)}
           />
           {searching && (
             <div className="absolute right-3 top-1/2 -translate-y-1/2">
-              <div className="h-4 w-4 animate-spin rounded-full border-b-2 border-[#4F46C8]" />
+              <div className="h-4 w-4 animate-spin rounded-full border-2 border-[#4F46C8] border-t-transparent" />
             </div>
           )}
         </div>
 
-        {showResults && searchResults.length > 0 && (
-          <div className="absolute z-50 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-            {searchResults.map((result, index) => (
-              <button
-                key={index}
-                type="button"
-                className="w-full text-left px-3 py-2.5 text-sm hover:bg-[#EEF0FF] transition flex items-start gap-2 border-b border-gray-50 last:border-0"
-                onClick={() => selectSearchResult(result)}
-              >
-                <MapPin size={14} className="mt-0.5 shrink-0 text-[#4F46C8]" />
-                <span className="text-gray-700 line-clamp-2">{result.display_name}</span>
-              </button>
-            ))}
+        {showResults && searchQuery.trim().length > 0 && !searching && (
+          <div className="absolute z-[999] mt-1.5 w-full bg-white border border-gray-100 rounded-xl shadow-xl overflow-hidden">
+            {searchResults.length > 0 ? (
+              <div className="max-h-64 overflow-y-auto">
+                {searchResults.map((feature: any, index: number) => {
+                  const props = feature.properties
+                  const name  = props.name || props.street || 'Unknown place'
+                  const sub   = [
+                    props.district || props.suburb,
+                    props.city || props.town || props.village,
+                    props.state,
+                    props.country,
+                  ].filter(Boolean).join(', ')
+                  return (
+                    <button
+                      key={index}
+                      type="button"
+                      className="w-full text-left px-3 py-2.5 hover:bg-[#EEF0FF] transition-colors flex items-start gap-2.5 border-b border-gray-50 last:border-0"
+                      onClick={() => selectSearchResult(feature)}
+                    >
+                      <MapPin size={14} className="mt-0.5 shrink-0 text-[#4F46C8]" />
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium text-gray-800 truncate">{name}</p>
+                        {sub && <p className="text-xs text-gray-400 truncate">{sub}</p>}
+                      </div>
+                    </button>
+                  )
+                })}
+              </div>
+            ) : (
+              <div className="px-4 py-3 text-sm text-gray-400 text-center">
+                No results for <span className="font-medium text-gray-600">"{searchQuery}"</span>
+                <p className="text-xs mt-0.5">Try a broader name or drop a pin directly on the map.</p>
+              </div>
+            )}
           </div>
         )}
       </div>
 
-      <div
-        ref={containerRef}
-        className="relative w-full rounded-lg overflow-hidden border border-gray-200"
-        style={{ height: '300px', zIndex: 0 }}
-      />
+      {/* Map container */}
+      <div className="relative w-full rounded-xl overflow-hidden border border-gray-200 shadow-sm" style={{ height: '380px' }}>
+        <div ref={containerRef} className="w-full h-full" style={{ zIndex: 0 }} />
 
+        {/* Tile switcher overlay */}
+        <div className="absolute top-3 right-3 z-[400] flex gap-1 bg-white/95 backdrop-blur-sm rounded-lg shadow-md border border-gray-100 p-1">
+          <button
+            type="button"
+            title="Street view"
+            onClick={() => switchLayer('google_streets')}
+            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition-all ${
+              activeLayer === 'google_streets'
+                ? 'bg-[#4F46C8] text-white shadow-sm'
+                : 'text-gray-600 hover:bg-gray-100'
+            }`}
+          >
+            <Layers size={13} />
+            Streets
+          </button>
+          <button
+            type="button"
+            title="Satellite view"
+            onClick={() => switchLayer('google_hybrid')}
+            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition-all ${
+              activeLayer === 'google_hybrid'
+                ? 'bg-[#4F46C8] text-white shadow-sm'
+                : 'text-gray-600 hover:bg-gray-100'
+            }`}
+          >
+            <Satellite size={13} />
+            Satellite
+          </button>
+        </div>
+
+        {/* "Click to pin" hint when nothing is selected */}
+        {!selected && (
+          <div className="absolute bottom-10 left-1/2 -translate-x-1/2 z-[400] pointer-events-none">
+            <div className="bg-black/70 backdrop-blur-sm text-white text-xs px-3 py-1.5 rounded-full flex items-center gap-1.5 whitespace-nowrap shadow">
+              <MapPin size={12} />
+              Click anywhere on the map to drop a pin
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Selected address */}
       {address && (
-        <div className="flex items-start gap-2 text-sm text-gray-600 bg-gray-50 rounded-lg p-3">
-          <Navigation size={14} className="mt-0.5 shrink-0 text-[#4F46C8]" />
-          <span>{address}</span>
+        <div className="flex items-start gap-2 text-sm text-gray-700 bg-[#EEF0FF] rounded-xl px-4 py-3 border border-[#4F46C8]/10">
+          <Navigation size={15} className="mt-0.5 shrink-0 text-[#4F46C8]" />
+          <div>
+            <p className="text-xs font-semibold text-[#4F46C8] mb-0.5">Selected location</p>
+            <p className="text-gray-600 text-xs leading-relaxed">{address}</p>
+            <p className="text-[10px] text-gray-400 mt-0.5">
+              {lat.toFixed(6)}, {lng.toFixed(6)}
+            </p>
+          </div>
         </div>
       )}
 
-      {!selected && !address && (
-        <p className="text-xs text-gray-400">Click on the map or search for a location to select it.</p>
-      )}
-
+      {/* Error */}
       {error && (
         <div className="flex items-start gap-2 text-xs text-red-500 mt-1">
           <AlertTriangle size={12} className="mt-0.5 shrink-0" />

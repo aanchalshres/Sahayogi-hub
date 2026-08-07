@@ -53,6 +53,7 @@ const STATUS_STYLES: Record<string, { bg: string; text: string; icon: any; label
   Accepted: { bg: 'bg-green-50', text: 'text-green-700', icon: CheckCircle2, label: 'Approved' },
   Rejected: { bg: 'bg-red-50', text: 'text-red-700', icon: XCircle, label: 'Rejected' },
   Cancelled: { bg: 'bg-gray-100', text: 'text-gray-600', icon: XCircle, label: 'Cancelled' },
+  Withdrawn: { bg: 'bg-purple-50', text: 'text-purple-600', icon: XCircle, label: 'Withdrawn' },
 }
 
 export default function NgoApplicationsPage() {
@@ -151,6 +152,7 @@ export default function NgoApplicationsPage() {
           <option value="Accepted">Approved</option>
           <option value="Rejected">Rejected</option>
           <option value="Cancelled">Cancelled</option>
+          <option value="Withdrawn">Withdrawn</option>
         </select>
         </div>
 
@@ -302,7 +304,7 @@ export default function NgoApplicationsPage() {
                       </div>
                     )}
 
-                    {app.status === 'Pending' && (
+                    {app.status === 'Pending' && app.status !== 'Withdrawn' && (
                       <div className="flex gap-3 pt-4 border-t border-gray-100">
                         <button onClick={() => updateStatus(app.id, 'accept')} className="flex-1 bg-[#4F46C8] hover:bg-[#3f39a8] text-white text-sm font-medium py-2 rounded-lg transition">
                           Approve
@@ -312,7 +314,13 @@ export default function NgoApplicationsPage() {
                         </button>
                       </div>
                     )}
-                    {app.status === 'Accepted' && (
+                    {app.status === 'Accepted' && app.task?.status === 'Completed' && (
+                      <div className="flex items-center gap-2 pt-4 border-t border-gray-100">
+                        <CheckCircle2 size={15} className="text-green-600 shrink-0" />
+                        <span className="text-sm font-medium text-green-700">Task Completed</span>
+                      </div>
+                    )}
+                    {app.status === 'Accepted' && app.task?.status !== 'Completed' && (
                       <div className="flex gap-3 pt-4 border-t border-gray-100">
                         <button onClick={() => cancelAssignment(app.id)} className="flex-1 bg-red-50 border border-red-200 hover:bg-red-100 text-red-700 text-sm font-medium py-2 rounded-lg transition">
                           Cancel Assignment
