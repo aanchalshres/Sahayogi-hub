@@ -33,6 +33,7 @@ use App\Http\Controllers\Ngo\ProfileController as NgoProfileController;
 use App\Http\Controllers\Ngo\DashboardController as NgoDashboardController;
 use App\Http\Controllers\Ngo\NotificationController as NgoNotificationController;
 use App\Http\Controllers\Ngo\DocumentController as NgoDocumentController;
+use App\Http\Controllers\Ngo\EncryptedDocumentController as NgoEncryptedDocumentController;
 use App\Http\Controllers\Ngo\AttendanceController as NgoAttendanceController;
 use App\Http\Controllers\Ngo\ReportsController as NgoReportsController;
 use App\Http\Controllers\Ngo\RatingController as NgoRatingController;
@@ -44,6 +45,7 @@ use App\Http\Controllers\Volunteer\ApplicationController as VolunteerApplication
 use App\Http\Controllers\Volunteer\ProfileController as VolunteerProfileController;
 use App\Http\Controllers\Volunteer\SkillController as VolunteerSkillController;
 use App\Http\Controllers\Volunteer\DocumentController as VolunteerDocumentController;
+use App\Http\Controllers\Volunteer\EncryptedDocumentController as VolunteerEncryptedDocumentController;
 use App\Http\Controllers\Volunteer\DashboardController as VolunteerDashboardController;
 use App\Http\Controllers\Volunteer\NotificationController as VolunteerNotificationController;
 use App\Http\Controllers\Volunteer\AttendanceController as VolunteerAttendanceController;
@@ -871,6 +873,33 @@ Route::delete(
 
 /*
 |--------------------------------------------------------------------------
+| Encrypted Documents (AES-256-GCM)
+|--------------------------------------------------------------------------
+*/
+
+Route::get(
+    '/ngo/encrypted-documents',
+    [NgoEncryptedDocumentController::class, 'index']
+);
+
+Route::post(
+    '/ngo/encrypted-documents',
+    [NgoEncryptedDocumentController::class, 'store']
+);
+
+Route::get(
+    '/ngo/encrypted-documents/{id}',
+    [NgoEncryptedDocumentController::class, 'show']
+);
+
+Route::delete(
+    '/ngo/encrypted-documents/{id}',
+    [NgoEncryptedDocumentController::class, 'destroy']
+);
+
+
+/*
+|--------------------------------------------------------------------------
 | Dashboard
 |--------------------------------------------------------------------------
 */
@@ -1192,6 +1221,33 @@ Route::middleware([
     Route::delete(
         '/volunteer/documents/{id}',
         [VolunteerDocumentController::class, 'destroy']
+    );
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Encrypted Documents (AES-256-GCM)
+    |--------------------------------------------------------------------------
+    */
+
+    Route::get(
+        '/volunteer/encrypted-documents',
+        [VolunteerEncryptedDocumentController::class, 'index']
+    );
+
+    Route::post(
+        '/volunteer/encrypted-documents',
+        [VolunteerEncryptedDocumentController::class, 'store']
+    );
+
+    Route::get(
+        '/volunteer/encrypted-documents/{id}',
+        [VolunteerEncryptedDocumentController::class, 'show']
+    );
+
+    Route::delete(
+        '/volunteer/encrypted-documents/{id}',
+        [VolunteerEncryptedDocumentController::class, 'destroy']
     );
 
 
