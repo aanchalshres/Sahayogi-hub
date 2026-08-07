@@ -92,8 +92,17 @@ export default function VolunteersPage() {
     setDetailLoading(true);
     try {
       const res = await apiGet<any>(`/api/admin/volunteers/${volunteer.id}`);
-      setSelectedVolunteer(res.data ?? res);
-    } catch (err: any) {
+      const raw = res.data ?? res;
+      // The detail endpoint nests user info under raw.user — flatten it to match the list shape
+      const normalized = {
+        ...raw,
+        name: raw.user?.name ?? raw.name ?? volunteer.name,
+        email: raw.user?.email ?? raw.email ?? volunteer.email,
+        phone: raw.user?.phone ?? raw.phone ?? volunteer.phone,
+        joined_at: raw.joined_at ?? raw.user?.created_at ?? volunteer.joined_at,
+      };
+      setSelectedVolunteer(normalized);
+    } catch {
       setSelectedVolunteer(volunteer);
     } finally {
       setDetailLoading(false);

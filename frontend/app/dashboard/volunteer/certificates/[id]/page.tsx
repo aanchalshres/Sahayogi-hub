@@ -3,43 +3,21 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { apiGet } from "@/app/lib/api";
-import { Award, Download, ShieldCheck, QrCode, Share2, ArrowLeft, Copy, CheckCircle } from "lucide-react";
+import { Award, Download, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 
-interface AuthStatus {
-  verification_count: number;
-  last_verified_at: string | null;
-  is_revoked: boolean;
-  status: string;
-}
-
-interface QrData {
-  qr_code_url: string | null;
-  verification_url: string;
-  certificate_number: string;
-}
 
 export default function CertificateDetailPage() {
   const params = useParams();
   const id = params.id as string;
   const [cert, setCert] = useState<any>(null);
-  const [authStatus, setAuthStatus] = useState<AuthStatus | null>(null);
-  const [qrData, setQrData] = useState<QrData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [copied, setCopied] = useState(false);
-  const [showQR, setShowQR] = useState(false);
 
   useEffect(() => {
     (async () => {
       try {
-        const [certRes, authRes, qrRes] = await Promise.all([
-          apiGet<any>(`/volunteer/certificates/${id}`),
-          apiGet<any>(`/volunteer/certificates/${id}/auth-status`).catch(() => null),
-          apiGet<any>(`/volunteer/certificates/${id}/qr`).catch(() => null),
-        ]);
+        const certRes = await apiGet<any>(`/volunteer/certificates/${id}`);
         setCert(certRes.data);
-        if (authRes?.data) setAuthStatus(authRes.data);
-        if (qrRes?.data) setQrData(qrRes.data);
       } catch {
       } finally {
         setLoading(false);
@@ -47,13 +25,6 @@ export default function CertificateDetailPage() {
     })();
   }, [id]);
 
-  const copyUrl = () => {
-    if (qrData?.verification_url) {
-      navigator.clipboard.writeText(qrData.verification_url);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    }
-  };
 
   const handleDownload = async () => {
     try {
@@ -89,8 +60,6 @@ export default function CertificateDetailPage() {
   }
 
   const content = cert.content || {};
-  const statusLabel = authStatus?.is_revoked ? "Revoked" : authStatus?.status === "active" ? "Active" : authStatus?.status || "Unknown";
-  const statusColor = authStatus?.is_revoked ? "text-red-600 bg-red-100" : authStatus?.status === "active" ? "text-green-600 bg-green-100" : "text-gray-600 bg-gray-100";
 
   return (
     <div className="min-h-screen bg-[#F0F1F3] p-6">
@@ -127,80 +96,14 @@ export default function CertificateDetailPage() {
           </div>
         </div>
 
-        <div className="bg-white rounded-xl border border-[#CACDD3] p-5">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <ShieldCheck className="w-5 h-5 text-[#4F46C8]" />
-              <div>
-                <p className="text-sm font-medium text-[#111827]">Authentication Status</p>
-                <p className="text-xs text-[#6B7280] mt-0.5">{cert.certificate_number}</p>
-              </div>
-            </div>
-            <span className={`text-xs font-semibold px-3 py-1 rounded-full ${statusColor}`}>{statusLabel}</span>
-          </div>
-          {authStatus && (
-            <div className="mt-3 flex items-center gap-4 text-xs text-[#6B7280] border-t border-[#CACDD3] pt-3">
-              <span>Verified {authStatus.verification_count} times</span>
-              {authStatus.last_verified_at && <span>Last: {new Date(authStatus.last_verified_at).toLocaleDateString()}</span>}
-            </div>
-          )}
-        </div>
-
-        {qrData && (
-          <div className="bg-white rounded-xl border border-[#CACDD3] p-5">
-            <button onClick={() => setShowQR(!showQR)} className="flex items-center justify-between w-full">
-              <div className="flex items-center gap-3">
-                <QrCode className="w-5 h-5 text-[#4F46C8]" />
-                <div className="text-left">
-                  <p className="text-sm font-medium text-[#111827]">Verification QR Code</p>
-                  <p className="text-xs text-[#6B7280] mt-0.5">Scan to verify certificate</p>
-                </div>
-              </div>
-              <span className="text-xs text-[#4F46C8]">{showQR ? "Hide" : "Show"}</span>
-            </button>
-            {showQR && (
-              <div className="mt-4 pt-4 border-t border-[#CACDD3] space-y-3">
-                {qrData.qr_code_url && (
-                  <div className="flex justify-center">
-                    <img src={qrData.qr_code_url} alt="QR Code" className="w-40 h-40" />
-                  </div>
-                )}
-                <div className="bg-[#F0F1F3] rounded-lg p-3 flex items-center justify-between">
-                  <span className="text-xs text-[#6B7280] truncate mr-2">{qrData.verification_url}</span>
-                  <button onClick={copyUrl} className="shrink-0 p-1.5 rounded-lg hover:bg-white transition-colors" title="Copy URL">
-                    {copied ? <CheckCircle className="w-4 h-4 text-green-600" /> : <Copy className="w-4 h-4 text-[#6B7280]" />}
-                  </button>
-                </div>
-                <a href={qrData.verification_url} target="_blank" rel="noopener noreferrer"
-                  className="flex items-center justify-center gap-2 w-full border border-[#CACDD3] rounded-lg py-2 text-sm text-[#4F46C8] hover:bg-[#F0F1F3] transition-colors">
-                  <ExternalLinkSvg /> Open Verification Page
-                </a>
-              </div>
-            )}
-          </div>
-        )}
-
         <div className="flex gap-3">
           <button onClick={handleDownload}
             className="flex-1 flex items-center justify-center gap-2 bg-[#4F46C8] hover:bg-[#4338CA] text-white py-2.5 rounded-lg text-sm font-medium transition-colors">
             <Download className="w-4 h-4" /> Download Certificate
           </button>
-          {qrData?.verification_url && (
-            <button onClick={copyUrl}
-              className="flex items-center justify-center gap-2 border border-[#CACDD3] hover:bg-[#F0F1F3] px-4 py-2.5 rounded-lg text-sm text-[#6B7280] transition-colors">
-              <Share2 className="w-4 h-4" />
-            </button>
-          )}
         </div>
       </div>
     </div>
   );
 }
 
-function ExternalLinkSvg() {
-  return (
-    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-    </svg>
-  );
-}

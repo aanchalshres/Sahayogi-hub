@@ -29,7 +29,7 @@ const menuItems = [
   { name: "Assignments", href: "/dashboard/volunteer/participations", icon: Users },
   { name: "Documents", href: "/dashboard/volunteer/documents", icon: Upload },
   { name: "Certificates", href: "/dashboard/volunteer/certificates", icon: Award },
-  { name: "Trust History", href: "/dashboard/volunteer/trust-history", icon: TrendingUp },
+  // { name: "Trust History", href: "/dashboard/volunteer/trust-history", icon: TrendingUp },
   { name: "Notifications", href: "/dashboard/volunteer/notifications", icon: Bell },
   { name: "Profile", href: "/dashboard/volunteer/profile", icon: User },
 ];

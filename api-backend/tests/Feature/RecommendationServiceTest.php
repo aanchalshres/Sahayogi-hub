@@ -134,3 +134,62 @@ it('produces deterministic scores', function () {
 
     expect($run1)->toEqual($run2);
 });
+
+it('returns all active tasks regardless of tfidf_vector presence', function () {
+    $volunteer = VolunteerProfile::factory()->create([
+        'tfidf_vector' => ['teaching' => 0.5],
+        'trust_score' => 0.7,
+        'trust_updated_at' => now(),
+        'availability' => 'Available',
+    ]);
+
+    $ngos = \App\Models\NgoProfile::factory()->count(2)->create([
+        'verification_status' => 'verified',
+    ]);
+
+    $taskWithVector = Task::factory()->create([
+        'ngo_id' => $ngos[0]->id,
+        'status' => 'Open',
+        'tfidf_vector' => ['teaching' => 0.4],
+    ]);
+
+    $taskWithoutVector = Task::factory()->create([
+        'ngo_id' => $ngos[1]->id,
+        'status' => 'Open',
+        'tfidf_vector' => null,
+    ]);
+
+    $taskEmptyVector = Task::factory()->create([
+        'ngo_id' => $ngos[1]->id,
+        'status' => 'Open',
+        'tfidf_vector' => [],
+    ]);
+
+    $draftWithoutVector = Task::factory()->create([
+        'ngo_id' => $ngos[1]->id,
+        'status' => 'Draft',
+        'tfidf_vector' => null,
+    ]);
+
+    // Unverified NGO task must be excluded.
+    $unverifiedNgo = \App\Models\NgoProfile::factory()->create([
+        'verification_status' => 'pending',
+    ]);
+    $taskFromUnverifiedNgo = Task::factory()->create([
+        'ngo_id' => $unverifiedNgo->id,
+        'status' => 'Open',
+        'tfidf_vector' => null,
+    ]);
+
+    $service = app(RecommendationService::class);
+    $ranked = $service->rankTasksForVolunteer($volunteer);
+
+    $ids = $ranked->pluck('id')->toArray();
+
+    expect($ranked)->toHaveCount(3);
+    expect($ids)->toContain($taskWithVector->id);
+    expect($ids)->toContain($taskWithoutVector->id);
+    expect($ids)->toContain($taskEmptyVector->id);
+    expect($ids)->not->toContain($draftWithoutVector->id);
+    expect($ids)->not->toContain($taskFromUnverifiedNgo->id);
+});

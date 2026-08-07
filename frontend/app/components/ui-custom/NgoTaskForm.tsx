@@ -34,7 +34,6 @@ export interface NgoTaskFormValues {
   application_deadline: string | null
   urgency_level: string
   status: string
-  selection_logic: string | null
   skills?: { id: number; name: string }[]
 }
 
@@ -64,6 +63,9 @@ export default function NgoTaskForm({ mode, taskId, backHref }: NgoTaskFormProps
   const [initialLat, setInitialLat] = useState<number | null>(null)
   const [initialLng, setInitialLng] = useState<number | null>(null)
 
+  // Today's date string (YYYY-MM-DD) used as the minimum selectable date
+  const todayStr = new Date().toISOString().slice(0, 10)
+
   const [form, setForm] = useState({
     title: '',
     description: '',
@@ -74,7 +76,6 @@ export default function NgoTaskForm({ mode, taskId, backHref }: NgoTaskFormProps
     end_date: '',
     application_deadline: '',
     urgency_level: 'medium',
-    selection_logic: 'manual',
     status: 'draft',
     skills: [] as number[],
   })
@@ -113,7 +114,6 @@ export default function NgoTaskForm({ mode, taskId, backHref }: NgoTaskFormProps
         end_date: task.end_date?.slice(0, 10) || '',
         application_deadline: task.application_deadline?.slice(0, 10) || '',
         urgency_level: task.urgency_level,
-        selection_logic: task.selection_logic || 'manual',
         status: task.status,
         skills: task.skills?.map((s) => s.id) || [],
       })
@@ -146,8 +146,30 @@ export default function NgoTaskForm({ mode, taskId, backHref }: NgoTaskFormProps
     if (!form.title.trim()) errors.title = 'Title is required'
     if (!form.description.trim()) errors.description = 'Description is required'
     if (!isEdit && !form.category_id) errors.category_id = 'Category is required'
-    if (!form.start_date) errors.start_date = 'Start date is required'
     if (!selectedLocation) errors.location = 'Please select a location on the map'
+
+    // ── Date validation ─────────────────────────────────────────────────────
+    if (form.start_date) {
+      if (form.start_date < todayStr) {
+        errors.start_date = 'Start date cannot be in the past'
+      }
+    } else {
+      errors.start_date = 'Start date is required'
+    }
+
+    if (form.application_deadline) {
+      if (form.application_deadline < todayStr) {
+        errors.application_deadline = 'Application deadline cannot be in the past'
+      } else if (form.start_date && form.application_deadline > form.start_date) {
+        errors.application_deadline = 'Application deadline must be on or before the start date'
+      }
+    }
+
+    if (form.end_date && form.start_date && form.end_date < form.start_date) {
+      errors.end_date = 'End date cannot be before the start date'
+    }
+    // ────────────────────────────────────────────────────────────────────────
+
     setFieldErrors(errors)
     return Object.keys(errors).length === 0
   }
@@ -167,7 +189,6 @@ export default function NgoTaskForm({ mode, taskId, backHref }: NgoTaskFormProps
       end_date: form.end_date?.slice(0, 10) || form.end_date || null,
       application_deadline: form.application_deadline?.slice(0, 10) || form.application_deadline || null,
       urgency_level: form.urgency_level,
-      selection_logic: form.selection_logic,
       status,
       skills: form.skills,
     }
@@ -302,23 +323,37 @@ export default function NgoTaskForm({ mode, taskId, backHref }: NgoTaskFormProps
             </div>
             <div>
               <label className="text-sm font-medium text-gray-700 mb-1 block">Start Date <span className="text-red-500">*</span></label>
-              <input type="date" className={inputClass(!!fieldErrors.start_date)} value={form.start_date} onChange={(e) => updateField('start_date', e.target.value)} />
+              <input
+                type="date"
+                min={todayStr}
+                className={inputClass(!!fieldErrors.start_date)}
+                value={form.start_date}
+                onChange={(e) => updateField('start_date', e.target.value)}
+              />
               {fieldErrors.start_date && <p className="text-xs text-red-500 mt-1">{fieldErrors.start_date}</p>}
             </div>
             <div>
               <label className="text-sm font-medium text-gray-700 mb-1 block">End Date</label>
-              <input type="date" className={inputClass()} value={form.end_date} onChange={(e) => updateField('end_date', e.target.value || null)} />
+              <input
+                type="date"
+                min={form.start_date || todayStr}
+                className={inputClass(!!fieldErrors.end_date)}
+                value={form.end_date}
+                onChange={(e) => updateField('end_date', e.target.value || null)}
+              />
+              {fieldErrors.end_date && <p className="text-xs text-red-500 mt-1">{fieldErrors.end_date}</p>}
             </div>
             <div>
               <label className="text-sm font-medium text-gray-700 mb-1 block">Application Deadline</label>
-              <input type="date" className={inputClass()} value={form.application_deadline} onChange={(e) => updateField('application_deadline', e.target.value || null)} />
-            </div>
-            <div>
-              <label className="text-sm font-medium text-gray-700 mb-1 block">Selection Logic</label>
-              <select className={`${inputClass()} appearance-none`} value={form.selection_logic} onChange={(e) => updateField('selection_logic', e.target.value)}>
-                <option value="manual">Manual Review</option>
-                <option value="auto_accept">Auto Accept</option>
-              </select>
+              <input
+                type="date"
+                min={todayStr}
+                max={form.start_date || undefined}
+                className={inputClass(!!fieldErrors.application_deadline)}
+                value={form.application_deadline}
+                onChange={(e) => updateField('application_deadline', e.target.value || null)}
+              />
+              {fieldErrors.application_deadline && <p className="text-xs text-red-500 mt-1">{fieldErrors.application_deadline}</p>}
             </div>
             {isEdit && (
               <div className="md:col-span-2">

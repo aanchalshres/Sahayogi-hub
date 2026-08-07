@@ -304,7 +304,7 @@ export default function OpportunityDetailPage() {
               {/* Score bars grid */}
               <div className="grid grid-cols-2 gap-3 mb-4">
                 {[
-                  { label: 'Profile Match', icon: Brain, value: task.match_analysis.semantic_match_score },
+                  { label: 'Semantic Match', icon: Brain, value: task.match_analysis.semantic_match_score },
                   { label: 'Skill Match', icon: Target, value: task.match_analysis.skill_overlap_score },
                   { label: 'Distance Score', icon: Navigation, value: task.match_analysis.distance_score },
                   { label: 'Availability', icon: Zap, value: task.match_analysis.availability_score },

@@ -56,7 +56,6 @@ class TaskController extends Controller
 
             'category_id' => 'required|exists:categories,id',
             'task_type' => 'required|string',
-            'selection_logic' => 'sometimes|string',
 
             'location' => 'nullable|string',
             'city' => 'nullable|string|max:255',
@@ -65,9 +64,16 @@ class TaskController extends Controller
 
             'required_volunteers' => 'required|integer|min:1',
 
-            'start_date' => 'nullable|date',
+            // Date rules: tasks must not be created with past dates.
+            'start_date' => 'nullable|date|after_or_equal:today',
             'end_date' => 'nullable|date|after_or_equal:start_date',
-            'application_deadline' => 'nullable|date',
+            'application_deadline' => [
+                'nullable',
+                'date',
+                'after_or_equal:today',
+                // Deadline must not exceed start_date when start_date is provided.
+                $request->filled('start_date') ? 'before_or_equal:start_date' : '',
+            ],
 
             'urgency_level' => 'sometimes|string',
             'status' => 'sometimes|string',
@@ -77,6 +83,10 @@ class TaskController extends Controller
             'skills' => 'sometimes|array',
             'skills.*' => 'exists:skills,id',
         ]);
+
+        // selection_logic is controlled by the system, not the NGO.
+        // Always use 'recommendation' on task creation.
+        $validated['selection_logic'] = 'recommendation';
 
         $validated['ngo_id'] = $ngo->id;
         $validated['slug'] = Str::slug($validated['title']) . '-' . Str::random(4);
@@ -113,7 +123,7 @@ class TaskController extends Controller
 
             'category_id' => 'sometimes|exists:categories,id',
             'task_type' => 'sometimes|string',
-            'selection_logic' => 'sometimes|string',
+            // selection_logic is NOT accepted from NGO users on update.
 
             'location' => 'nullable|string',
             'city' => 'nullable|string|max:255',
@@ -122,9 +132,15 @@ class TaskController extends Controller
 
             'required_volunteers' => 'sometimes|integer|min:1',
 
-            'start_date' => 'nullable|date',
+            // Date rules applied on update as well.
+            'start_date' => 'nullable|date|after_or_equal:today',
             'end_date' => 'nullable|date|after_or_equal:start_date',
-            'application_deadline' => 'nullable|date',
+            'application_deadline' => [
+                'nullable',
+                'date',
+                'after_or_equal:today',
+                $request->filled('start_date') ? 'before_or_equal:start_date' : '',
+            ],
 
             'urgency_level' => 'sometimes|string',
             'status' => 'sometimes|string',

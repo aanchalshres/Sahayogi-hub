@@ -3,8 +3,8 @@
 import { useEffect, useState } from 'react'
 import { apiGet } from "@/app/lib/api"
 import {
-  Award, Download, Eye, X, ShieldCheck, Shield,
-  CheckCircle, AlertCircle, QrCode
+  Award, Download, Eye, X,
+  CheckCircle, AlertCircle
 } from 'lucide-react'
 import Link from 'next/link'
 
@@ -30,7 +30,6 @@ export default function VolunteerCertificatesPage() {
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null)
   const [preview, setPreview] = useState<{ html: string; number: string } | null>(null)
   const [downloading, setDownloading] = useState<number | null>(null)
-  const [authStatuses, setAuthStatuses] = useState<Record<number, string>>({})
 
   const loadCerts = async () => {
     setLoading(true)
@@ -38,15 +37,6 @@ export default function VolunteerCertificatesPage() {
       const res = await apiGet<{ data: Certificate[] }>('/volunteer/certificates')
       const certs = res.data ?? []
       setCertificates(certs)
-
-      const statuses: Record<number, string> = {}
-      await Promise.all(certs.slice(0, 20).map(async (c: Certificate) => {
-        try {
-          const authRes = await apiGet<any>(`/volunteer/certificates/${c.id}/auth-status`)
-          statuses[c.id] = authRes.data?.is_revoked ? 'revoked' : authRes.data?.status || 'unknown'
-        } catch { statuses[c.id] = 'unknown' }
-      }))
-      setAuthStatuses(statuses)
     } catch {
       setToast({ message: 'Failed to load certificates.', type: 'error' })
     } finally {
@@ -125,7 +115,6 @@ export default function VolunteerCertificatesPage() {
           <div className="grid gap-4 md:grid-cols-2">
             {certificates.map((cert) => {
               const content = cert.content || {}
-              const authStatus = authStatuses[cert.id]
               return (
                 <Link key={cert.id}
                   href={`/dashboard/volunteer/certificates/${cert.id}`}
@@ -136,21 +125,9 @@ export default function VolunteerCertificatesPage() {
                       <Award className="h-5 w-5 text-[#4F46C8]" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <p className="font-semibold text-[#111827] truncate">
-                          {content.task_title || cert.task?.title || 'Certificate'}
-                        </p>
-                        {authStatus === 'active' && (
-                          <span className="shrink-0" title="SHA-256 Authenticated">
-                            <ShieldCheck className="w-4 h-4 text-green-600" />
-                          </span>
-                        )}
-                        {authStatus === 'revoked' && (
-                          <span className="shrink-0" title="Revoked">
-                            <Shield className="w-4 h-4 text-red-600" />
-                          </span>
-                        )}
-                      </div>
+                      <p className="font-semibold text-[#111827] truncate">
+                        {content.task_title || cert.task?.title || 'Certificate'}
+                      </p>
                       <p className="text-xs text-[#6B7280] mt-0.5">
                         {content.organization_name || cert.ngo?.organization_name || 'NGO'}
                       </p>
