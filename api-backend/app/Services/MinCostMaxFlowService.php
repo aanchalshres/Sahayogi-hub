@@ -234,12 +234,7 @@ class MinCostMaxFlowService
         return $this->dist[$sink] < INF;
     }
 
-    /**
-     * Add a directed edge (and its paired reverse edge) to the residual
-     * network. Every forward edge gets a reverse edge with capacity 0 and
-     * NEGATIVE cost — this is what allows the algorithm to reroute flow and
-     * thereby reach the global optimum.
-     */
+    
     private function addEdge(int $from, int $to, int $cap, float $cost): void
     {
         $forward = ['to' => $to, 'rev' => count($this->graph[$to]), 'cap' => $cap, 'cost' => $cost];
@@ -285,9 +280,7 @@ class MinCostMaxFlowService
                     continue;
                 }
 
-                // The edge has zero residual capacity ⇒ one unit of flow was
-                // pushed through it: this volunteer is recommended to this task.
-                // Its reverse edge carries the original cost we paid.
+
                 $cost = -$this->graph[$edge['to']][$edge['rev']]['cost'];
                 $score = round(100.0 - $cost, 4);
 

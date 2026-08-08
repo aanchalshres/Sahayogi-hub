@@ -56,11 +56,6 @@ class RecommendationService
         ];
     }
 
-    /**
-     * Compute all scores PLUS rich metadata:
-     * matched_skills, missing_skills, distance_km, recommendation_reason
-     * Does NOT change any score values — only enriches the payload.
-     */
     public function computeDetailedScores(
         VolunteerProfile $volunteer,
         Task $task

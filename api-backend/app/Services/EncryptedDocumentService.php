@@ -10,27 +10,13 @@ use Illuminate\Support\Facades\Storage;
 use RuntimeException;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
-/**
- * Encrypts, stores, retrieves and deletes user documents through the
- * pure-PHP AES-256-GCM layer (App\Services\Crypto).
- *
- * Encrypted files live on the private "local" disk (never served
- * statically) and only leave the application inside authenticated download
- * responses.
- */
+
 class EncryptedDocumentService
 {
     public const DISK = 'local';
 
     public const ALGORITHM = 'aes-256-gcm';
 
-    /**
-     * Encrypt an uploaded file and persist its envelope.
-     *
-     * A fresh 96-bit IV is generated per document and the authentication
-     * tag binds the document metadata (name, mime, size, owner) as AAD, so
-     * any tampering with the record is detected at download time.
-     */
     public function store(
         UploadedFile $file,
         int $ownerId,
@@ -135,13 +121,7 @@ class EncryptedDocumentService
         $document->delete();
     }
 
-    /**
-     * Resolve the 32-byte AES-256 key.
-     *
-     * Prefers DOCUMENT_ENCRYPTION_KEY (Base64 of exactly 32 bytes) and
-     * falls back to a SHA-256 derivation of APP_KEY so the feature works
-     * out of the box on existing installs.
-     */
+    
     public function documentKey(): string
     {
         $configured = config('encryption.document_encryption_key');

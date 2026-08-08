@@ -18,19 +18,6 @@ class AssignmentService
         private ScheduleConflictService $scheduleConflictService,
     ) {}
 
-    /**
-     * Compute an optimised (MCMF) recommendation list for the given
-     * applications and tasks.
-     *
-     * This method NEVER creates assignments and NEVER changes application
-     * statuses. It only returns the optimised volunteer→task recommendation
-     * list (capacity-aware, global optimum via Minimum-Cost Maximum-Flow over
-     * the WSM suitability scores). The NGO remains the final decision-maker.
-     *
-     * @param int[] $applicationIds
-     * @param int[] $taskIds
-     * @return array<int, array{application_id: int, volunteer_id: int, volunteer_name: ?string, task_id: int, task_title: string, match_score: float, status: string, assigned_at: null}>
-     */
     public function batchAssign(array $applicationIds, array $taskIds): array
     {
         $applications = Application::whereIn('id', $applicationIds)

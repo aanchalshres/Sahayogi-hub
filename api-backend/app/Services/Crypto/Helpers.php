@@ -4,33 +4,15 @@ namespace App\Services\Crypto;
 
 use InvalidArgumentException;
 
-/**
- * High-level, password/key wrapped helpers around the pure-PHP AES-256-GCM
- * primitives (KeyExpansion, AES256, CTRMode, GHASH, GCM).
- *
- * These helpers expose the hand-written implementation as a small, familiar
- * API and do NOT use any PHP crypt() / openssl_* cipher.
- */
 final class Helpers
 {
-    /**
-     * Generate a fresh 32-byte AES-256 key from the system CSPRNG.
-     *
-     * Time complexity: O(1). Space complexity: O(32).
-     */
+
     public static function generateAESKey(): string
     {
         return random_bytes(32);
     }
 
-    /**
-     * Generate a fresh 96-bit (12 byte) IV usable for AES-256-GCM.
-     *
-     * A new IV MUST be used for every encryption under the same key —
-     * reusing an IV with the same key destroys the GCM security guarantee.
-     *
-     * Time complexity: O(1). Space complexity: O(12).
-     */
+
     public static function generateIV(): string
     {
         return random_bytes(12);
@@ -105,14 +87,7 @@ final class Helpers
         return (new FileEncryptor())->encrypt($sourcePath, $outputPath, $key, aad: $aad);
     }
 
-    /**
-     * Stream-decrypt (and authenticate) a whole file.
-     *
-     * The tag is verified first; on failure an InvalidArgumentException is
-     * thrown and the partial output is removed.
-     *
-     * @return bool true on success
-     */
+ 
     public static function decryptFile(
         string $sourcePath,
         string $outputPath,
