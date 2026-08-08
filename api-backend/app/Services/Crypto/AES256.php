@@ -15,15 +15,12 @@ final class AES256
     /** @var list<string> 15 round keys of 16 bytes, index 0..14 */
     private array $roundKeys = [];
 
-    /** @var array<int, int>|null S-Box lookup table */
+
     private ?array $sBox = null;
 
-    /** @var array<int, int>|null inverse S-Box lookup table */
     private ?array $inverseSBox = null;
 
-    /**
-     * @param string $key 32-byte AES-256 secret key
-     */
+
     public function __construct(string $key)
     {
         if (strlen($key) !== 32) {
@@ -47,20 +44,12 @@ final class AES256
         return (new self($key))->encrypt($block);
     }
 
-    /**
-     * Convenience method: decrypt a single 16-byte block with a key.
-     */
+
     public static function decryptBlock(string $block, string $key): string
     {
         return (new self($key))->decrypt($block);
     }
 
-    /**
-     * Encrypt exactly one 16-byte block.
-     *
-     * Time complexity: O(14 * 16) = O(1) per block (fixed block size).
-     * Space complexity: O(16) state plus O(240) key schedule.
-     */
     public function encrypt(string $block): string
     {
         if (strlen($block) !== self::BLOCK_SIZE) {
@@ -89,12 +78,7 @@ final class AES256
         return pack('C16', ...$state);
     }
 
-    /**
-     * Decrypt exactly one 16-byte block.
-     *
-     * Time complexity: O(14 * 16) = O(1) per block (fixed block size).
-     * Space complexity: O(16) state plus O(240) key schedule.
-     */
+    
     public function decrypt(string $block): string
     {
         if (strlen($block) !== self::BLOCK_SIZE) {

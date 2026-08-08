@@ -4,14 +4,7 @@ namespace App\Services\Crypto;
 
 use InvalidArgumentException;
 
-/**
- * Streaming AES-256-GCM file decryption.
- *
- * The authentication tag is recomputed over the ciphertext and AAD and
- * compared in constant time BEFORE any plaintext is produced. When the tag
- * is valid the ciphertext is streamed through the same CTR keystream in
- * 64 KiB chunks.
- */
+
 final class FileDecryptor
 {
     public const CHUNK_SIZE = 65536;

@@ -4,17 +4,6 @@ namespace App\Services\Crypto;
 
 use InvalidArgumentException;
 
-/**
- * Streaming AES-256-GCM file encryption.
- *
- * Files are encrypted in-place CTR mode (the GCM counter keystream) while
- * the GHASH authentication tag is folded incrementally over the ciphertext
- * and the caller-supplied AAD. The entire file is never loaded into memory.
- *
- * The output is a raw ciphertext file. Callers persist the returned IV and
- * tag (typically next to the file, e.g. in a `.meta` sidecar) so they can be
- * fed back to FileDecryptor.
- */
 final class FileEncryptor
 {
     public const CHUNK_SIZE = 65536;

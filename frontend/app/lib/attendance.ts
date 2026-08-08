@@ -1,21 +1,11 @@
 import { apiGet, apiPost } from '@/app/lib/api';
 
-// ---------------------------------------------------------------------------
-// Mark Attendance (GPS-verified presence — does NOT complete the task)
-// ---------------------------------------------------------------------------
-
 export interface MarkAttendanceResult {
   message: string;
   data: AttendanceLog;
 }
 
-/**
- * Sends the volunteer's GPS coordinates to the backend.
- * The backend verifies they are within the configured radius of the task
- * using the Haversine Distance algorithm, then records attendance.
- *
- * This records PRESENCE ONLY. Task completion is handled by the NGO.
- */
+
 export async function markAttendance(
   taskId: number,
   latitude: number,
@@ -32,9 +22,6 @@ export async function markAttendance(
   });
 }
 
-// ---------------------------------------------------------------------------
-// Secure Check-In (GPS-only, kept for backwards compatibility)
-// ---------------------------------------------------------------------------
 
 export async function secureCheckIn(
   taskId: number,

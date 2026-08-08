@@ -1,9 +1,3 @@
-// app/lib/scoring.ts
-// ─────────────────────────────────────────────────────────────────────────────
-// Display utilities for the recommendation service output.
-// All scores are computed by the backend RecommendationService.
-// These helpers only format and explain the values — they do NOT recalculate.
-// ─────────────────────────────────────────────────────────────────────────────
 
 export interface RecommendationScores {
   recommendation_score?: number;
