@@ -6,7 +6,7 @@ use InvalidArgumentException;
 
 final class GCM
 {
-   
+
     private AES256 $cipher;
 
 
@@ -53,25 +53,7 @@ final class GCM
         }
     }
 
-    /**
-     * Encrypt plaintext with GCM-AES-256, returning the ciphertext and
-     * authentication tag.
-     *
-     * Workflow:
-     *  1. J0 = IV || 0^31 || 1
-     *  2. S_i = E_K(inc32^i(J0)), C = P XOR S (truncated to |P|)
-     *  3. Y = GHASH_H(A || C),  T = Y XOR E_K(J0), truncated to tagLength
-     *
-     * Time complexity: O(n) — one AES block call per 16 bytes of
-     * plaintext plus O(n/16) GF(2^128) multiplications for the tag.
-     * Space complexity: O(n) for the returned ciphertext plus O(16).
-     *
-     * @param string $plaintext binary plaintext
-     * @param string $iv        12-byte unique IV
-     * @param string $aad       additional authenticated data (optional)
-     *
-     * @return array{ciphertext: string, tag: string} binary outputs
-     */
+
     public function encrypt(string $plaintext, string $iv, string $aad = ''): array
     {
         self::assertIv($iv);
@@ -87,17 +69,6 @@ final class GCM
         return ['ciphertext' => $ciphertext, 'tag' => $tag];
     }
 
-    /**
-     * Decrypt ciphertext, verifying the authentication tag first.
-     *
-     * Verification is mandatory: if the recomputed tag does not match
-     * the expected tag (constant-time comparison), an exception is
-     * thrown and no plaintext is returned.
-     *
-     * Time complexity: O(n). Space complexity: O(n).
-     *
-     * @throws InvalidArgumentException when the tag does not verify
-     */
     public function decrypt(string $ciphertext, string $iv, string $tag, string $aad = ''): string
     {
         self::assertIv($iv);
@@ -115,12 +86,7 @@ final class GCM
         return $ctr->keystream(strlen($ciphertext)) ^ $ciphertext;
     }
 
-    /**
-     * Generate the GCM authentication tag over ciphertext and AAD.
-     *
-     * Time complexity: O(n/16) GF(2^128) multiplications.
-     * Space complexity: O(16).
-     */
+
     public function generateAuthenticationTag(string $ciphertext, string $iv, string $aad = ''): string
     {
         self::assertIv($iv);
@@ -128,14 +94,7 @@ final class GCM
         return $this->computeTag($ciphertext, self::buildJ0($iv), $aad);
     }
 
-    /**
-     * Verify a GCM authentication tag in constant time.
-     *
-     * The tag length is enforced so a truncated tag cannot masquerade
-     * as a valid one.
-     *
-     * @return bool true when the tag matches
-     */
+
     public function verifyTag(string $ciphertext, string $iv, string $tag, string $aad = ''): bool
     {
         self::assertIv($iv);
@@ -150,9 +109,7 @@ final class GCM
         return hash_equals($expected, $tag);
     }
 
-    /**
-     * T = GHASH_H(A || C) XOR E_K(J0), truncated to the tag length.
-     */
+   
     private function computeTag(string $ciphertext, string $j0, string $aad): string
     {
         $ghash = new GHASH($this->hashSubkey);

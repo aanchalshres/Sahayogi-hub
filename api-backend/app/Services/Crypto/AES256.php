@@ -78,7 +78,7 @@ final class AES256
         return pack('C16', ...$state);
     }
 
-    
+
     public function decrypt(string $block): string
     {
         if (strlen($block) !== self::BLOCK_SIZE) {
@@ -108,14 +108,7 @@ final class AES256
         return pack('C16', ...$state);
     }
 
-    /**
-     * SubBytes: replace every byte of the state with S-Box(state byte).
-     *
-     * The S-Box is a non-linear byte substitution built from the
-     * multiplicative inverse in GF(2^8) plus an affine transform.
-     *
-     * Time complexity: O(16) per block. Space: O(1).
-     */
+
     private function subBytes(array &$state): void
     {
         foreach ($state as $index => $byte) {
@@ -133,24 +126,12 @@ final class AES256
         }
     }
 
-    /**
-     * ShiftRows: cyclically shift row r of the state left by r bytes.
-     *
-     * With the column-major layout, row r occupies indices
-     * [r, r+4, r+8, r+12]. A byte in row r, column c moves to column
-     * (c - r) mod 4, i.e. new(r, c) = old(r, (c + r) mod 4).
-     *
-     * Time complexity: O(16) per block. Space: O(16).
-     */
+
     private function shiftRows(array &$state): void
     {
         $shifted = array_fill(0, 16, 0);
 
-        // The FIPS-197 recurrence for the ShiftRows transformation,
-        // new(r,c) = old(r, (c + r) mod 4). With a column-major flat
-        // layout, byte (r, c) lives at flat index c*4 + r, so:
-        //
-        //     shifted[c*4 + r] = state[ ((c + r) mod 4)*4 + r ]
+       
         $shifted = array_fill(0, 16, 0);
 
         for ($column = 0; $column < 4; $column++) {
