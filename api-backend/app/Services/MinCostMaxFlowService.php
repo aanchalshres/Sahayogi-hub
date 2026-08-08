@@ -4,75 +4,10 @@ namespace App\Services;
 
 use InvalidArgumentException;
 
-/**
- * Minimum-Cost Maximum-Flow (MCMF) optimisation stage.
- *
- * ─────────────────────────────────────────────────────────────────────────────
- * WHAT THIS CLASS DOES
- * ─────────────────────────────────────────────────────────────────────────────
- * The recommendation pipeline produces a WSM suitability score (0–100) for
- * every (volunteer, task) pair. Picking the "top volunteer for each task"
- * independently is greedy and can produce globally sub-optimal results:
- * two tasks may both want the same high-scoring volunteer, while a second,
- * still-good volunteer sits idle.
- *
- * MCMF solves this as a network-flow problem. We build a directed graph:
- *
- *         Source ──(cap 1)──> Volunteer ──(cap 1, cost)──> Task ──(cap = required_volunteers)──> Sink
- *
- * and route the maximum possible number of volunteers into tasks along the
- * cheapest (lowest-cost) paths. Because volunteer→task edges are built from
- * the WSM score (cost = 100 − score), minimising total cost is equivalent to
- * maximising total WSM suitability while respecting:
- *    • every volunteer is recommended to at most ONE task  (source cap = 1)
- *    • every task receives at most `required_volunteers` (task→sink cap)
- *
- * The result is a global, capacity-aware optimisation — the final stage of
- * the recommendation workflow. This service ONLY produces recommendations;
- * it never writes assignments. The NGO reviews and approves the list.
- *
- * ─────────────────────────────────────────────────────────────────────────────
- * THE ALGORITHM: SUCCESSIVE SHORTEST PATHS (SSP) with SPFA
- * ─────────────────────────────────────────────────────────────────────────────
- * The classic polynomial-time MCMF algorithm is "Successive Shortest Paths":
- *
- *   1. Start with zero flow on every edge (the residual network = original).
- *   2. Find the SHORTEST (cheapest) path from source → sink in the residual
- *      network, where "distance" of an edge is its cost.
- *   3. Push as much flow as possible along that path (the bottleneck edge).
- *   4. Subtract the flow from forward edges and add it to the reverse
- *      ("residual") edges; reverse edges get NEGATIVE cost so flow can be
- *      "undone" if a later augmentation finds a better route.
- *   5. Repeat 2–4 until no path from source to sink remains.
- *
- *   The maximum-flow property guarantees every achievable volunteer is used;
- *   the shortest-path property guarantees the accumulated cost is minimal
- *   (this is the well-known result that augmenting along shortest paths in
- *   a residual network yields a minimum-cost flow).
- *
- * For step 2 we use SPFA (Shortest Path Faster Algorithm) — a queue-based
- * Bellman–Ford variant. Bellman–Ford is required here (not Dijkstra) because
- * residual reverse edges carry negative costs, and Dijkstra cannot handle
- * negative edges without reweighting.
- *
- *   Complexity:  O(F · V · E) worst case,  F = total flow pushed,
- *                V = nodes, E = edges. In practice SPFA is much faster.
- *
- * ─────────────────────────────────────────────────────────────────────────────
- */
+
 class MinCostMaxFlowService
 {
-    /**
-     * An edge in the residual network.
-     *
-     * @var array{to:int, rev:int, cap:int, cost:float}
-     *
-     * to   : the node this edge points to
-     * rev  : index of the paired reverse edge inside $graph[$to]
-     * cap  : remaining capacity (residual). When flow is pushed, forward
-     *        cap decreases and reverse cap increases by the same amount.
-     * cost : cost per unit of flow. Reverse edges store the negated cost.
-     */
+
     private array $graph = [];
 
     /** Shortest-path distances from the source in the current residual graph. */
@@ -87,50 +22,7 @@ class MinCostMaxFlowService
     /** SPFA bookkeeping: is node currently in the relaxation queue? */
     private array $inQueue = [];
 
-    /**
-     * Run the full MCMF optimisation.
-     *
-     * @param array $volunteers List of volunteers. Each entry may be an
-     *                          array with `id`, `name`, `availability` keys,
-     *                          or an Eloquent model exposing those attributes
-     *                          (e.g. VolunteerProfile).
-     * @param array $tasks      List of tasks. Each entry may be an array with
-     *                          `id`, `title`, `required_volunteers` keys, or
-     *                          an Eloquent Task model.
-     * @param array $scores     WSM suitability matrix, keyed by ids:
-     *                          [ volunteerId => [ taskId => score ] ]
-     *                          Scores are 0–100 (0 = no fit, 100 = perfect).
-     *                          Pairs with no entry produce NO edge — the
-     *                          volunteer is never recommended to that task.
-     * @param array $options    Optional tuning:
-     *                          - 'availability_filter' (array of strings):
-     *                            only volunteers whose `availability` value is
-     *                            inside this list enter the graph. Default:
-     *                            all volunteers are eligible.
-     *                          - 'max_recommendations' (int): hard cap on the
-     *                            total number of volunteer→task pairs pushed.
-     *                            Default: unlimited (push the maximum flow).
-     *
-     * @return array{
-     *     total_flow: int,
-     *     total_cost: float,
-     *     total_wsm_score: float,
-     *     assignments: array<int, array{
-     *         task_id: int,
-     *         task_title: string,
-     *         capacity: int,
-     *         filled: int,
-     *         volunteers: array<int, array{
-     *             volunteer_id: int,
-     *             name: string,
-     *             wsm_score: float,
-     *             edge_cost: float,
-     *             rank: int
-     *         }>
-     *     }>,
-     *     unassigned_volunteers: array<int, array{volunteer_id:int, name:string}>
-     * }
-     */
+
     public function optimize(
         array $volunteers,
         array $tasks,
@@ -140,9 +32,6 @@ class MinCostMaxFlowService
         $availabilityFilter = $options['availability_filter'] ?? null;
         $maxFlow            = $options['max_recommendations'] ?? PHP_INT_MAX;
 
-        // Map the semantic volunteer/task ids onto dense integer indices so
-        // the graph can use plain array nodes. Source = 0, volunteers first,
-        // then tasks, then sink = last.
         $volunteerIds = array_values(array_unique(array_map(
             fn ($v) => $this->nodeKey($v, 'id'),
             $volunteers
