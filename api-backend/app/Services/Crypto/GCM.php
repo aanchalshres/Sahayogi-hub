@@ -6,19 +6,16 @@ use InvalidArgumentException;
 
 final class GCM
 {
-    /** @var AES256 block cipher instance */
+   
     private AES256 $cipher;
 
-    /** @var string 16-byte GHASH subkey H = AES_K(0^128) */
+
     private string $hashSubkey;
 
-    /** @var int tag length in bytes (16 = 128 bits, the default) */
+
     private int $tagLength;
 
-    /**
-     * @param string $key      32-byte AES-256 key
-     * @param int    $tagLength tag length in bytes (default 16)
-     */
+
     public function __construct(string $key, int $tagLength = 16)
     {
         if (strlen($key) !== 32) {
