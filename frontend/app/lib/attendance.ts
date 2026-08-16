@@ -1,28 +1,30 @@
-import { apiGet, apiPost, apiDelete } from '@/app/lib/api';
+import { apiGet, apiPost } from '@/app/lib/api';
 
-export async function validateQr(token: string) {
-  return apiPost<{
-    valid: boolean;
-    message: string;
-    data?: {
-      task: {
-        id: number;
-        title: string;
-        description: string;
-        location: string | null;
-        city: string | null;
-        latitude: string | null;
-        longitude: string | null;
-        start_date: string | null;
-        end_date: string | null;
-        ngo: string | null;
-      };
-    };
-  }>('/volunteer/attendance/validate-qr', { token });
+export interface MarkAttendanceResult {
+  message: string;
+  data: AttendanceLog;
 }
 
+
+export async function markAttendance(
+  taskId: number,
+  latitude: number,
+  longitude: number,
+  gpsAccuracy: number,
+  deviceInfo?: Record<string, string>
+): Promise<MarkAttendanceResult> {
+  return apiPost<MarkAttendanceResult>('/volunteer/attendance/mark', {
+    task_id: taskId,
+    latitude,
+    longitude,
+    gps_accuracy: gpsAccuracy,
+    device_info: deviceInfo,
+  });
+}
+
+
 export async function secureCheckIn(
-  qrToken: string,
+  taskId: number,
   latitude: number,
   longitude: number,
   gpsAccuracy: number,
@@ -32,7 +34,7 @@ export async function secureCheckIn(
     message: string;
     data: AttendanceLog;
   }>('/volunteer/attendance/secure-check-in', {
-    qr_token: qrToken,
+    task_id: taskId,
     latitude,
     longitude,
     gps_accuracy: gpsAccuracy,
@@ -40,8 +42,11 @@ export async function secureCheckIn(
   });
 }
 
+// ---------------------------------------------------------------------------
+// Secure Check-Out (GPS-only — does NOT mark task as completed)
+// ---------------------------------------------------------------------------
+
 export async function secureCheckOut(
-  qrToken: string,
   latitude: number,
   longitude: number,
   gpsAccuracy: number,
@@ -51,13 +56,16 @@ export async function secureCheckOut(
     message: string;
     data: AttendanceLog;
   }>('/volunteer/attendance/secure-check-out', {
-    qr_token: qrToken,
     latitude,
     longitude,
     gps_accuracy: gpsAccuracy,
     device_info: deviceInfo,
   });
 }
+
+// ---------------------------------------------------------------------------
+// Status & History
+// ---------------------------------------------------------------------------
 
 export async function getAttendanceStatus() {
   return apiGet<{
@@ -96,6 +104,10 @@ export async function getAttendanceAnalytics() {
   }>('/volunteer/attendance/analytics');
 }
 
+// ---------------------------------------------------------------------------
+// NGO QR management (retained — NGO dashboard still manages QR codes)
+// ---------------------------------------------------------------------------
+
 export async function generateTaskQr(taskId: number) {
   return apiPost<{
     message: string;
@@ -123,6 +135,7 @@ export async function listQrCodes() {
 }
 
 export async function revokeQrCode(id: number) {
+  const { apiDelete } = await import('@/app/lib/api');
   return apiDelete<{ message: string }>(`/ngo/attendance/qr-codes/${id}`);
 }
 
@@ -145,6 +158,10 @@ export async function getNgoAttendanceAnalytics() {
   }>('/ngo/attendance/analytics');
 }
 
+// ---------------------------------------------------------------------------
+// Types & constants
+// ---------------------------------------------------------------------------
+
 export interface AttendanceLog {
   id: number;
   task_id: number;
@@ -159,6 +176,8 @@ export interface AttendanceLog {
   confidence_level: string | null;
   check_in_distance: number | null;
   check_out_distance: number | null;
+  check_in_latitude: number | null;
+  check_in_longitude: number | null;
   created_at: string;
 }
 
@@ -178,7 +197,7 @@ export const CONFIDENCE_LEVEL_LABELS: Record<string, string> = {
 
 export const STATUS_LABELS: Record<string, string> = {
   assigned: 'Assigned',
-  active: 'Active',
+  active: 'Active — Present',
   completed: 'Completed',
   absent: 'Absent',
 };

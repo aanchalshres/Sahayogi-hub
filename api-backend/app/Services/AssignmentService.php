@@ -4,26 +4,20 @@ declare(strict_types=1);
 
 namespace App\Services;
 
-use App\Algorithms\Contracts\AssignmentSolverInterface;
 use App\Models\Application;
 use App\Models\Task;
+use App\Models\VolunteerProfile;
 use App\Services\ScheduleConflict\ScheduleConflictService;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
+use Illuminate\Database\Eloquent\Collection;
 
 class AssignmentService
 {
     public function __construct(
-        private MatchingService $matchingService,
-        private AssignmentSolverInterface $solver,
+        private RecommendationService $recommendationService,
+        private MinCostMaxFlowService $minCostMaxFlow,
         private ScheduleConflictService $scheduleConflictService,
     ) {}
 
-    /**
-     * @param int[] $applicationIds
-     * @param int[] $taskIds
-     * @return array<int, array{application_id: int, volunteer_id: int, volunteer_name: ?string, task_id: int, task_title: string, match_score: float, status: string, assigned_at: string}>
-     */
     public function batchAssign(array $applicationIds, array $taskIds): array
     {
         $applications = Application::whereIn('id', $applicationIds)
@@ -43,91 +37,76 @@ class AssignmentService
             return [];
         }
 
-        $costMatrix = [];
-
-        foreach ($volunteers as $i => $volunteer) {
-            foreach ($tasks as $j => $task) {
-                $score = $this->matchingService
-                    ->calculateVolunteerTaskScore($volunteer, $task);
+        // WSM suitability matrix [volunteerId][taskId] => score (0-100).
+        $scores = [];
+        foreach ($volunteers as $volunteer) {
+            foreach ($tasks as $task) {
+                $score = $this->recommendationService
+                    ->computeVolunteerTaskMatchScore($volunteer, $task);
 
                 if (config('schedule-conflict.check_on_assign')) {
                     $conflicts = $this->scheduleConflictService->checkTask($volunteer->id, $task->id);
                     if ($conflicts['has_conflicts']) {
-                        $penalty = 0.3;
-                        $score = max(0, $score - $penalty);
+                        $score = max(0, $score - 30);
                     }
                 }
 
-                $costMatrix[$i][$j] = 1 - $score;
+                $scores[$volunteer->id][$task->id] = $score;
             }
         }
 
-        $size = max(count($volunteers), count($tasks));
+        $optimized = $this->minCostMaxFlow->optimize(
+            $volunteers->all(),
+            $tasks->all(),
+            $scores,
+            []
+        );
 
-        for ($i = 0; $i < $size; $i++) {
-            for ($j = 0; $j < $size; $j++) {
-                $costMatrix[$i][$j] = $costMatrix[$i][$j] ?? 1;
-            }
-        }
+        return $this->flattenRecommendations($optimized['assignments'], $applications, $tasks);
+    }
 
-        $assignments = $this->solver->solve($costMatrix);
+    /**
+     * Flatten the MCMF per-task groups into the legacy flat recommendation
+     * list, keeping only pairs backed by one of the input applications.
+     *
+     * @param array<int, array{task_id: int, task_title: string, volunteers: array<int, array{volunteer_id: int, wsm_score: float}>}> $groups
+     * @param Collection<int, Application> $applications
+     * @param Collection<int, Task> $tasks
+     * @return array<int, array{application_id: int, volunteer_id: int, volunteer_name: ?string, task_id: int, task_title: string, match_score: float, status: string, assigned_at: null}>
+     */
+    private function flattenRecommendations(array $groups, Collection $applications, Collection $tasks): array
+    {
+        $result = [];
 
-        try {
-            DB::beginTransaction();
+        foreach ($groups as $group) {
+            foreach ($group['volunteers'] as $pair) {
+                $volunteerId = $pair['volunteer_id'];
+                $taskId = $group['task_id'];
 
-            $result = [];
-
-            foreach ($assignments as $volunteerIndex => $taskIndex) {
-                $volunteer = $volunteers[$volunteerIndex] ?? null;
-                $task = $tasks[$taskIndex] ?? null;
-
-                if (!$volunteer || !$task) {
-                    continue;
-                }
-
-                $matchingApplication = $applications->first(
-                    fn (Application $app) => $app->volunteer_profile_id === $volunteer->id
-                        && $app->task_id === $task->id
+                $application = $applications->first(
+                    fn (Application $app) => $app->volunteer_profile_id === $volunteerId
+                        && $app->task_id === $taskId
                 );
 
-                if (!$matchingApplication) {
+                if (!$application) {
                     continue;
                 }
 
-                $matchingApplication->updateOrFail([
-                    'status' => 'Accepted',
-                    'reviewed_at' => now(),
-                ]);
-
-                $matchScore = round(1 - $costMatrix[$volunteerIndex][$taskIndex], 3);
+                $task = $tasks->firstWhere('id', $taskId);
 
                 $result[] = [
-                    'application_id'   => $matchingApplication->id,
-                    'volunteer_id'     => $volunteer->id,
-                    'volunteer_name'   => $volunteer->user->name ?? null,
-                    'task_id'          => $task->id,
-                    'task_title'       => $task->title,
-                    'match_score'      => $matchScore,
-                    'status'           => 'Accepted',
-                    'assigned_at'      => now()->toIso8601String(),
+                    'application_id'   => $application->id,
+                    'volunteer_id'     => $volunteerId,
+                    'volunteer_name'   => $application->volunteer->user->name ?? null,
+                    'task_id'          => $taskId,
+                    'task_title'       => $task->title ?? $group['task_title'],
+                    'match_score'      => round(($pair['wsm_score'] ?? 0) / 100, 3),
+                    'status'           => 'recommended',
+                    'assigned_at'      => null,
                 ];
             }
-
-            DB::commit();
-
-            return $result;
-
-        } catch (\Throwable $e) {
-            DB::rollBack();
-
-            Log::error('Batch assignment failed', [
-                'application_ids' => $applicationIds,
-                'task_ids'        => $taskIds,
-                'error'           => $e->getMessage(),
-                'trace'           => $e->getTraceAsString(),
-            ]);
-
-            throw $e;
         }
+
+        return $result;
     }
 }

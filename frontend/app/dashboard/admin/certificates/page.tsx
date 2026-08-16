@@ -28,7 +28,6 @@ export default function CertificatesPage() {
   const [error, setError] = useState<string | null>(null);
   const [stats, setStats] = useState<any>(null);
   const [authStats, setAuthStats] = useState<any>(null);
-  const [authStatuses, setAuthStatuses] = useState<Record<number, any>>({});
   const [revoking, setRevoking] = useState<number | null>(null);
   const [revokeReason, setRevokeReason] = useState('');
   const [showRevokeDialog, setShowRevokeDialog] = useState(false);
@@ -46,15 +45,6 @@ export default function CertificatesPage() {
       setCerts(certsRes.data ?? []);
       setStats(statsRes?.data ?? null);
       setAuthStats(authStatsRes?.data ?? null);
-
-      const statuses: Record<number, any> = {};
-      await Promise.all((certsRes.data || []).slice(0, 20).map(async (c: any) => {
-        try {
-          const res = await apiGet<any>(`/api/admin/certificates/${c.id}/verify`);
-          statuses[c.id] = res;
-        } catch { statuses[c.id] = null }
-      }));
-      setAuthStatuses(statuses);
     } catch (err: any) {
       setError(err.message || 'Failed to load certificates');
     } finally {
@@ -119,7 +109,7 @@ export default function CertificatesPage() {
   const handleSetupAuth = async (id: number) => {
     try {
       const res = await apiPost<any>(`/api/admin/certificates/${id}/setup-auth`, {});
-      toast.success('SHA-256 authentication enabled');
+      toast.success('Certificate verification enabled');
       await fetchData();
     } catch (err: any) {
       toast.error(err.message || 'Failed to setup auth');
@@ -128,7 +118,6 @@ export default function CertificatesPage() {
 
   const statCards = stats ? [
     { label: 'Total Issued', value: stats.total ?? 0, color: 'text-[#111827]' },
-    { label: 'Active (Auth)', value: authStats?.active ?? 0, color: 'text-green-600' },
     { label: 'Revoked', value: authStats?.revoked ?? 0, color: 'text-red-600' },
     { label: 'Total Verifications', value: authStats?.total_verifications ?? 0, color: 'text-[#4F46C8]' },
   ] : [];
@@ -142,14 +131,6 @@ export default function CertificatesPage() {
       </div>
     )},
     { key: 'task', header: 'Task', render: (c: any) => <span className="text-sm text-[#111827]">{c.task_title}</span> },
-    { key: 'auth', header: 'Auth', render: (c: any) => {
-      const a = authStatuses[c.id];
-      if (!a) return <span className="text-xs text-gray-400">—</span>;
-      if (a.status === 'revoked') return <StatusBadge status="revoked" />;
-      if (a.verified) return <span className="text-xs text-green-600 bg-green-100 px-2 py-0.5 rounded-full flex items-center gap-1 w-fit"><ShieldCheck className="w-3 h-3" /> Verified</span>;
-      if (a.status === 'tampered') return <span className="text-xs text-red-600 bg-red-100 px-2 py-0.5 rounded-full">Tampered</span>;
-      return <span className="text-xs text-gray-400">Pending</span>;
-    }},
     { key: 'issued_on', header: 'Issued', render: (c: any) => (
       <div className="flex items-center gap-1 text-sm text-[#6B7280]"><Calendar className="w-3 h-3" />{c.issued_at ? new Date(c.issued_at).toLocaleDateString() : (c.created_at ? new Date(c.created_at).toLocaleDateString() : '—')}</div>
     )},
@@ -158,7 +139,7 @@ export default function CertificatesPage() {
   return (
     <div className="p-6 space-y-6">
       <div className="flex justify-between items-center">
-        <div><h1 className="text-2xl font-bold text-[#111827]">Certificate Management</h1><p className="text-sm text-[#6B7280]">Manage volunteer completion certificates with SHA-256 authentication</p></div>
+        <div><h1 className="text-2xl font-bold text-[#111827]">Certificate Management</h1><p className="text-sm text-[#6B7280]">Manage volunteer completion certificates and verification</p></div>
         <Button variant="outline" onClick={fetchData} className="gap-2" disabled={isLoading}><RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />Refresh</Button>
       </div>
       {error && <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700 text-sm">{error}</div>}
@@ -224,7 +205,7 @@ export default function CertificatesPage() {
                 )}
                 {!verifyResult && (
                   <Button variant="outline" size="sm" onClick={() => handleSetupAuth(selected.id)} className="gap-1">
-                    <Shield className="w-4 h-4" /> Enable Auth
+                    <Shield className="w-4 h-4" /> Setup Verification
                   </Button>
                 )}
               </div>

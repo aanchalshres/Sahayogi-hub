@@ -4,13 +4,13 @@ namespace App\Http\Controllers\Volunteer;
 
 use App\Http\Controllers\Controller;
 use App\Models\Application;
-use App\Services\MatchingService;
+use App\Services\RecommendationService;
 use Illuminate\Http\Request;
 
 class DashboardController extends Controller
 {
     public function __construct(
-        private MatchingService $matchingService
+        private RecommendationService $recommendationService
     ) {}
 
     public function index(Request $request)
@@ -108,7 +108,7 @@ class DashboardController extends Controller
         // ── Recommended Opportunities (top 5 using existing algorithm) ──
         $recommended = collect();
         try {
-            $recommended = $this->matchingService
+            $recommended = $this->recommendationService
                 ->rankTasksForVolunteer($profile)
                 ->take(5);
         } catch (\Throwable $e) {

@@ -1,7 +1,7 @@
 import { cn } from '@/app/lib/utils';
 
 interface StatusBadgeProps {
-  status: 'pending' | 'verified' | 'rejected' | 'active' | 'completed' | 'removed' | 'revoked';
+  status: string;
   className?: string;
 }
 
@@ -58,7 +58,13 @@ const statusConfig = {
 };
 
 export function StatusBadge({ status, className }: StatusBadgeProps) {
-  const config = statusConfig[status];
+  const config = statusConfig[status as keyof typeof statusConfig] ?? {
+    label: status.charAt(0).toUpperCase() + status.slice(1),
+    bgColor: 'bg-gray-100',
+    textColor: 'text-gray-600',
+    borderColor: 'border-gray-200',
+    glowClass: '',
+  };
 
   return (
     <span

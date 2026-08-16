@@ -3,109 +3,16 @@
 namespace App\Services;
 
 use App\Models\Application;
-use App\Models\Shortlist;
 use App\Models\Task;
 use App\Models\VolunteerProfile;
-use App\Services\Ranking\Ranker;
 use Illuminate\Database\Eloquent\Collection;
 
 class WorkflowService
 {
     public function __construct(
         private RecommendationService $recommendation,
-        private Ranker $ranker
+        private MinCostMaxFlowService $minCostMaxFlow
     ) {}
-
-    public function generateShortlist(Task $task, ?int $limit = null, ?string $strategy = null): Collection
-    {
-        $limit = $limit ?? config('workflow.shortlist_limit', 10);
-        $strategy = $strategy ?? config('workflow.default_strategy', 'recommendation');
-
-        $volunteers = $this->recommendation->rankVolunteersForTask($task);
-
-        $shortlisted = $volunteers->take($limit);
-
-        $upsertData = [];
-        $shortlistRanks = [];
-        $strategyScores = [];
-        $shortlistData = [];
-        $rank = 1;
-        $now = now();
-
-        foreach ($shortlisted as $volunteer) {
-            $currentRank = $rank++;
-
-            $scores = [
-                'semantic_match_score' => $volunteer->semantic_match_score ?? 0,
-                'distance_score' => $volunteer->distance_score ?? 0,
-                'skill_overlap_score' => $volunteer->skill_overlap_score ?? 0,
-                'availability_score' => $volunteer->availability_score ?? 0,
-                'trust_score' => $volunteer->trust_score ?? 0.5,
-            ];
-
-            $strategyScore = $this->ranker->score($scores, $strategy);
-
-            $upsertData[] = [
-                'task_id' => $task->id,
-                'volunteer_profile_id' => $volunteer->id,
-                'recommendation_score' => $volunteer->recommendation_score,
-                'semantic_match_score' => $volunteer->semantic_match_score ?? 0,
-                'distance_score' => $volunteer->distance_score ?? 0,
-                'skill_overlap_score' => $volunteer->skill_overlap_score ?? 0,
-                'availability_score' => $volunteer->availability_score ?? 0,
-                'trust_score' => $volunteer->trust_score ?? 0.5,
-                'strategy_used' => $strategy,
-                'rank' => $currentRank,
-                'created_at' => $now,
-                'updated_at' => $now,
-            ];
-
-            $shortlistRanks[$volunteer->id] = $currentRank;
-            $strategyScores[$volunteer->id] = $strategyScore;
-            $shortlistData[] = $volunteer;
-        }
-
-        Shortlist::upsert($upsertData, ['task_id', 'volunteer_profile_id']);
-
-        Shortlist::where('task_id', $task->id)
-            ->whereNotIn('volunteer_profile_id', $shortlisted->pluck('id'))
-            ->delete();
-
-        $result = new Collection($shortlistData);
-        $result->each(function ($v) use ($strategy, $shortlistRanks, $strategyScores) {
-            $v->strategy_score = round(($strategyScores[$v->id] ?? 0) * 100, 1);
-            $v->strategy_used = $strategy;
-            $v->shortlist_rank = $shortlistRanks[$v->id] ?? null;
-        });
-
-        return $result->sortBy('shortlist_rank')->values();
-    }
-
-    public function getShortlist(Task $task): Collection
-    {
-        $shortlistEntries = Shortlist::where('task_id', $task->id)
-            ->with('volunteer.user', 'volunteer.skills')
-            ->orderBy('rank')
-            ->get();
-
-        $volunteers = $shortlistEntries->map(function ($entry) {
-            $v = $entry->volunteer;
-            if (!$v) {
-                return null;
-            }
-            $v->shortlist_rank = $entry->rank;
-            $v->recommendation_score = $entry->recommendation_score;
-            $v->semantic_match_score = $entry->semantic_match_score;
-            $v->distance_score = $entry->distance_score;
-            $v->skill_overlap_score = $entry->skill_overlap_score;
-            $v->availability_score = $entry->availability_score;
-            $v->trust_score = $entry->trust_score;
-            $v->strategy_used = $entry->strategy_used;
-            return $v;
-        })->filter()->values();
-
-        return $volunteers;
-    }
 
     public function getPrioritizedApplications(Task $task, ?string $strategy = null): \Illuminate\Support\Collection
     {
@@ -133,8 +40,9 @@ class WorkflowService
             $application->missing_skills = $detailed['missing_skills'];
             $application->distance_km = $detailed['distance_km'];
             $application->recommendation_reason = $detailed['recommendation_reason'];
-            $application->priority_score = round($this->ranker->score($detailed, $strategy) * 100, 1);
-            $application->strategy_used = $strategy;
+            // WSM output is the priority score for the single strategy.
+            $application->priority_score = $detailed['recommendation_score'];
+            $application->strategy_used = 'recommendation';
         });
 
         return $applications->sortByDesc('priority_score')->values();
@@ -164,7 +72,9 @@ class WorkflowService
             }
 
             $scores = $this->recommendation->computeAllScores($volunteer, $task);
-            $strategyScore = $this->ranker->score($scores, $strategy);
+
+            // The single strategy (WSM) score is recommendation_score (0-100).
+            $strategyScore = ($scores['recommendation_score'] ?? 0) / 100;
 
             $ngoId = $task->ngo->id;
 

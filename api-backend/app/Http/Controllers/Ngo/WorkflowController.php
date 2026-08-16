@@ -5,102 +5,13 @@ namespace App\Http\Controllers\Ngo;
 use App\Http\Controllers\Controller;
 use App\Models\Task;
 use App\Services\WorkflowService;
-use App\Services\Ranking\Ranker;
 use Illuminate\Http\Request;
 
 class WorkflowController extends Controller
 {
     public function __construct(
-        private WorkflowService $workflowService,
-        private Ranker $ranker
+        private WorkflowService $workflowService
     ) {}
-
-    public function shortlist(Request $request, $id)
-    {
-        $ngo = $request->user()->ngoProfile;
-
-        $task = Task::where('ngo_id', $ngo->id)
-            ->findOrFail($id);
-
-        $shortlist = $this->workflowService->getShortlist($task);
-
-        return response()->json([
-            'data' => $shortlist->map(function ($v) {
-                return [
-                    'id' => $v->id,
-                    'user_id' => $v->user_id,
-                    'name' => $v->user->name ?? 'Unknown',
-                    'email' => $v->user->email ?? '',
-                    'phone' => $v->user->phone ?? '',
-                    'bio' => $v->bio ?? '',
-                    'city' => $v->city ?? '',
-                    'country' => $v->country ?? '',
-                    'skills' => $v->skills->map(fn ($s) => [
-                        'id' => $s->id,
-                        'name' => $s->name,
-                        'proficiency_level' => $s->pivot->proficiency_level ?? null,
-                    ]),
-                    'shortlist_rank' => $v->shortlist_rank,
-                    'recommendation_score' => $v->recommendation_score,
-                    'semantic_match_score' => $v->semantic_match_score ?? 0,
-                    'skill_overlap_score' => $v->skill_overlap_score ?? 0,
-                    'distance_score' => $v->distance_score ?? 0,
-                    'availability_score' => $v->availability_score ?? 0,
-                    'trust_score' => $v->trust_score ?? 0,
-                    'strategy_used' => $v->strategy_used ?? 'recommendation',
-                ];
-            }),
-        ]);
-    }
-
-    public function generateShortlist(Request $request, $id)
-    {
-        $ngo = $request->user()->ngoProfile;
-
-        $task = Task::where('ngo_id', $ngo->id)
-            ->findOrFail($id);
-
-        $validated = $request->validate([
-            'limit' => 'nullable|integer|min:1|max:50',
-            'strategy' => 'nullable|string|in:' . implode(',', array_keys(Ranker::getAvailableStrategies())),
-        ]);
-
-        $limit = $validated['limit'] ?? null;
-        $strategy = $validated['strategy'] ?? null;
-
-        $shortlist = $this->workflowService->generateShortlist($task, $limit, $strategy);
-
-        return response()->json([
-            'message' => 'Shortlist generated',
-            'strategy_used' => $strategy ?? config('workflow.default_strategy', 'recommendation'),
-            'data' => $shortlist->map(function ($v) {
-                return [
-                    'id' => $v->id,
-                    'user_id' => $v->user_id,
-                    'name' => $v->user->name ?? 'Unknown',
-                    'email' => $v->user->email ?? '',
-                    'phone' => $v->user->phone ?? '',
-                    'bio' => $v->bio ?? '',
-                    'city' => $v->city ?? '',
-                    'country' => $v->country ?? '',
-                    'skills' => $v->skills->map(fn ($s) => [
-                        'id' => $s->id,
-                        'name' => $s->name,
-                        'proficiency_level' => $s->pivot->proficiency_level ?? null,
-                    ]),
-                    'shortlist_rank' => $v->shortlist_rank,
-                    'recommendation_score' => $v->recommendation_score,
-                    'semantic_match_score' => $v->semantic_match_score ?? 0,
-                    'skill_overlap_score' => $v->skill_overlap_score ?? 0,
-                    'distance_score' => $v->distance_score ?? 0,
-                    'availability_score' => $v->availability_score ?? 0,
-                    'trust_score' => $v->trust_score ?? 0,
-                    'strategy_score' => $v->strategy_score,
-                    'strategy_used' => $v->strategy_used,
-                ];
-            }),
-        ]);
-    }
 
     public function prioritizedApplications(Request $request, $id)
     {
@@ -110,7 +21,7 @@ class WorkflowController extends Controller
             ->findOrFail($id);
 
         $validated = $request->validate([
-            'strategy' => 'nullable|string|in:' . implode(',', array_keys(Ranker::getAvailableStrategies())),
+            'strategy' => 'nullable|string',
         ]);
 
         $strategy = $validated['strategy'] ?? null;
@@ -143,19 +54,6 @@ class WorkflowController extends Controller
                     'recommendation_reason'  => $app->recommendation_reason ?? '',
                 ];
             }),
-        ]);
-    }
-
-    public function strategies()
-    {
-        return response()->json([
-            'data' => collect(Ranker::getAvailableStrategies())->map(function ($label, $key) {
-                return [
-                    'key' => $key,
-                    'label' => $label,
-                    'weights' => config("workflow.strategies.{$key}.weights", []),
-                ];
-            })->values(),
         ]);
     }
 }

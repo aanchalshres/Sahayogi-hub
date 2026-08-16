@@ -56,11 +56,6 @@ class RecommendationService
         ];
     }
 
-    /**
-     * Compute all scores PLUS rich metadata:
-     * matched_skills, missing_skills, distance_km, recommendation_reason
-     * Does NOT change any score values — only enriches the payload.
-     */
     public function computeDetailedScores(
         VolunteerProfile $volunteer,
         Task $task
@@ -190,6 +185,19 @@ class RecommendationService
         return $this->computeAllScores($volunteer, $task)['recommendation_score'];
     }
 
+    public function getTaskDetail(int $taskId): Task
+    {
+        return Task::with([
+                'ngo.user',
+                'skills',
+                'category',
+            ])
+            ->whereHas('ngo', function ($query) {
+                $query->where('verification_status', 'verified');
+            })
+            ->findOrFail($taskId);
+    }
+
     public function getTrustScore(VolunteerProfile $volunteer): float
     {
         $id = $volunteer->id;
@@ -208,59 +216,19 @@ class RecommendationService
         return $this->trustScoreCache[$id] = $volunteer->trust_score ?? 0.5;
     }
 
-    public function rankVolunteersForTask(Task $task): Collection
-    {
-        $task->loadMissing('skills');
-
-        $volunteers = VolunteerProfile::with(['user', 'skills', 'documents' => function ($q) {
-                $q->where('status', 'verified');
-            }])
-            ->whereHas('user', function ($q) {
-                $q->where('is_active', true);
-            })
-            ->whereNotNull('tfidf_vector')
-            ->whereRaw("tfidf_vector::text != '[]'")
-            ->whereDoesntHave('applications', function ($q) use ($task) {
-                $q->where('task_id', $task->id)
-                  ->whereIn('status', ['Pending', 'Shortlisted', 'Accepted']);
-            })
-            ->get();
-
-        $volunteers->each(function ($volunteer) use ($task) {
-            $detailed = $this->computeDetailedScores($volunteer, $task);
-            $volunteer->recommendation_score  = $detailed['recommendation_score'];
-            $volunteer->semantic_match_score  = $detailed['semantic_match_score'];
-            $volunteer->distance_score        = $detailed['distance_score'];
-            $volunteer->skill_overlap_score   = $detailed['skill_overlap_score'];
-            $volunteer->availability_score    = $detailed['availability_score'];
-            $volunteer->trust_score           = $detailed['trust_score'];
-            $volunteer->matched_skills        = $detailed['matched_skills'];
-            $volunteer->missing_skills        = $detailed['missing_skills'];
-            $volunteer->distance_km           = $detailed['distance_km'];
-            $volunteer->recommendation_reason = $detailed['recommendation_reason'];
-        });
-
-        $sorted = $volunteers->sortByDesc('recommendation_score')->values();
-
-        $sorted->each(function ($v, $index) {
-            $v->rank = $index + 1;
-        });
-
-        return $sorted;
-    }
-
     public function rankTasksForVolunteer(
         VolunteerProfile $volunteer,
         array $filters = []
     ): Collection {
         $volunteer->loadMissing('skills');
 
+        // Discovery: show all active tasks from verified NGOs.
+        // Matching/TF-IDF scoring must NOT hide tasks before application —
+        // scoring is applied only after a volunteer applies.
         $query = Task::whereIn('status', ['Open', 'Ongoing'])
             ->whereHas('ngo', function ($q) {
                 $q->where('verification_status', 'verified');
             })
-            ->whereNotNull('tfidf_vector')
-            ->whereRaw("tfidf_vector::text != '[]'")
             ->with(['ngo.user', 'skills']);
 
         if (!empty($filters['search'])) {
@@ -308,7 +276,12 @@ class RecommendationService
 
         $tasks = $query->get();
 
-        $tasks->each(function ($task) use ($volunteer) {
+        // Pre-load all applications by this volunteer in one query to avoid N+1.
+        $applications = \App\Models\Application::where('volunteer_profile_id', $volunteer->id)
+            ->whereIn('task_id', $tasks->pluck('id'))
+            ->pluck('status', 'task_id'); // [ task_id => status ]
+
+        $tasks->each(function ($task) use ($volunteer, $applications) {
             $detailed = $this->computeDetailedScores($volunteer, $task);
             $task->recommendation_score  = $detailed['recommendation_score'];
             $task->match_score           = $detailed['recommendation_score'];
@@ -321,6 +294,9 @@ class RecommendationService
             $task->missing_skills        = $detailed['missing_skills'];
             $task->distance_km           = $detailed['distance_km'];
             $task->recommendation_reason = $detailed['recommendation_reason'];
+            // Expose the volunteer's application status so the frontend
+            // can disable the Apply button for already-applied tasks.
+            $task->application_status    = $applications->get($task->id, null);
         });
 
         $sorted = $tasks->sortByDesc('recommendation_score')->values();

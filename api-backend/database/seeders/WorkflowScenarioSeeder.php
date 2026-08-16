@@ -15,7 +15,6 @@ use App\Models\Certificate;
 use App\Models\CertificateAuthentication;
 use App\Models\TrustScoreHistory;
 use App\Models\Notification;
-use App\Models\Shortlist;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -105,23 +104,10 @@ class WorkflowScenarioSeeder extends Seeder
             $sc1Volunteers[] = ['user' => $u, 'profile' => $p];
         }
 
-        // 3. Applications & Shortlist: Accept 3, Reject 1
+        // 3. Applications: Accept 3, Reject 1
         for ($i = 0; $i < 4; $i++) {
             $vol = $sc1Volunteers[$i];
             $status = ($i < 3) ? 'Accepted' : 'Rejected';
-
-            // Shortlist
-            Shortlist::updateOrCreate(
-                [
-                    'task_id'              => $task->id,
-                    'volunteer_profile_id' => $vol['profile']->id,
-                ],
-                [
-                    'recommendation_score' => 0.90 - ($i * 0.05),
-                    'rank'                 => $i + 1,
-                    'strategy_used'        => 'recommendation',
-                ]
-            );
 
             // Application
             $app = Application::updateOrCreate(

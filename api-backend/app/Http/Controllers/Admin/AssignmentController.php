@@ -28,7 +28,7 @@ class AssignmentController extends Controller
         );
 
         return response()->json([
-            'message'     => 'Assignments computed and persisted successfully',
+            'message' => 'Optimized recommendation list computed via MCMF. No applications were auto-accepted — review and approve manually.',
             'assignments' => $assignments,
         ]);
     }

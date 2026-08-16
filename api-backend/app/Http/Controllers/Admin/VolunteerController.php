@@ -78,9 +78,9 @@ class VolunteerController extends Controller
                 'country' => $profile->country,
                 'primary_location' => $profile->primary_location,
                 'availability' => $profile->availability,
-                'trust_score' => $profile->trust_score,
+                'trust_score' => (float) ($profile->trust_score ?? 0),
                 'total_service_hours' => round($profile->total_service_hours ?? 0, 2),
-                'average_rating' => $profile->average_rating,
+                'average_rating' => (float) ($profile->average_rating ?? 0),
                 'document_status' => $docStatus,
                 'applications_count' => $profile->applications_count,
                 'skills' => $profile->skills->map(fn ($s) => [
@@ -154,9 +154,9 @@ class VolunteerController extends Controller
                 'emergency_contact_name' => $profile->emergency_contact_name,
                 'emergency_contact_phone' => $profile->emergency_contact_phone,
                 'availability' => $profile->availability,
-                'trust_score' => $profile->trust_score,
+                'trust_score' => (float) ($profile->trust_score ?? 0),
                 'total_service_hours' => round($profile->total_service_hours ?? 0, 2),
-                'average_rating' => $profile->average_rating,
+                'average_rating' => (float) ($profile->average_rating ?? 0),
                 'profile_photo' => $profile->profile_photo,
                 'document_status' => $docStatus,
                 'skills' => $profile->skills->map(fn ($s) => [

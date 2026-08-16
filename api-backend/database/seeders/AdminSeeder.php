@@ -17,7 +17,7 @@ class AdminSeeder extends Seeder
                 'email' => 'admin@sahayogi.com',
                 'password' => Hash::make('password'),
                 'role' => 'admin',
-                'phone' => '9800000000',
+                'phone' => '0000000000',
                 'is_active' => true,
             ]
         );

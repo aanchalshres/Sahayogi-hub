@@ -19,13 +19,10 @@ use App\Http\Controllers\Admin\CertificateController;
 use App\Http\Controllers\Admin\ReviewController;
 use App\Http\Controllers\Admin\AnalyticsController;
 use App\Http\Controllers\Admin\SettingsController;
-use App\Http\Controllers\Admin\NotificationController as AdminNotificationController;
 use App\Http\Controllers\Admin\UserManagementController;
 use App\Http\Controllers\Admin\ExportController;
 use App\Http\Controllers\Admin\NGOManagementController;
 use App\Http\Controllers\Admin\ActivityLogController;
-use App\Http\Controllers\Admin\CategoryController as AdminCategoryController;
-use App\Http\Controllers\Admin\SkillController as AdminSkillController;
 
 use App\Http\Controllers\Ngo\TaskController as NgoTaskController;
 use App\Http\Controllers\Ngo\ApplicationController as NgoApplicationController;
@@ -33,6 +30,7 @@ use App\Http\Controllers\Ngo\ProfileController as NgoProfileController;
 use App\Http\Controllers\Ngo\DashboardController as NgoDashboardController;
 use App\Http\Controllers\Ngo\NotificationController as NgoNotificationController;
 use App\Http\Controllers\Ngo\DocumentController as NgoDocumentController;
+use App\Http\Controllers\Ngo\EncryptedDocumentController as NgoEncryptedDocumentController;
 use App\Http\Controllers\Ngo\AttendanceController as NgoAttendanceController;
 use App\Http\Controllers\Ngo\ReportsController as NgoReportsController;
 use App\Http\Controllers\Ngo\RatingController as NgoRatingController;
@@ -44,6 +42,7 @@ use App\Http\Controllers\Volunteer\ApplicationController as VolunteerApplication
 use App\Http\Controllers\Volunteer\ProfileController as VolunteerProfileController;
 use App\Http\Controllers\Volunteer\SkillController as VolunteerSkillController;
 use App\Http\Controllers\Volunteer\DocumentController as VolunteerDocumentController;
+use App\Http\Controllers\Volunteer\EncryptedDocumentController as VolunteerEncryptedDocumentController;
 use App\Http\Controllers\Volunteer\DashboardController as VolunteerDashboardController;
 use App\Http\Controllers\Volunteer\NotificationController as VolunteerNotificationController;
 use App\Http\Controllers\Volunteer\AttendanceController as VolunteerAttendanceController;
@@ -484,38 +483,6 @@ Route::middleware([
 
     /*
     |--------------------------------------------------------------------------
-    | Admin Notifications
-    |--------------------------------------------------------------------------
-    */
-
-    Route::get(
-        '/admin/notifications',
-        [AdminNotificationController::class, 'index']
-    );
-
-    Route::get(
-        '/admin/notifications/unread-count',
-        [AdminNotificationController::class, 'unreadCount']
-    );
-
-    Route::post(
-        '/admin/notifications/{id}/read',
-        [AdminNotificationController::class, 'markAsRead']
-    );
-
-    Route::post(
-        '/admin/notifications/read-all',
-        [AdminNotificationController::class, 'markAllAsRead']
-    );
-
-    Route::delete(
-        '/admin/notifications/{id}',
-        [AdminNotificationController::class, 'destroy']
-    );
-
-
-    /*
-    |--------------------------------------------------------------------------
     | Admin User Management
     |--------------------------------------------------------------------------
     */
@@ -617,70 +584,6 @@ Route::middleware([
 
     /*
     |--------------------------------------------------------------------------
-    | Categories Management
-    |--------------------------------------------------------------------------
-    */
-
-    Route::get(
-        '/admin/categories',
-        [AdminCategoryController::class, 'index']
-    );
-
-    Route::post(
-        '/admin/categories',
-        [AdminCategoryController::class, 'store']
-    );
-
-    Route::get(
-        '/admin/categories/{id}',
-        [AdminCategoryController::class, 'show']
-    );
-
-    Route::put(
-        '/admin/categories/{id}',
-        [AdminCategoryController::class, 'update']
-    );
-
-    Route::delete(
-        '/admin/categories/{id}',
-        [AdminCategoryController::class, 'destroy']
-    );
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | Skills Management
-    |--------------------------------------------------------------------------
-    */
-
-    Route::get(
-        '/admin/skills',
-        [AdminSkillController::class, 'index']
-    );
-
-    Route::post(
-        '/admin/skills',
-        [AdminSkillController::class, 'store']
-    );
-
-    Route::get(
-        '/admin/skills/{id}',
-        [AdminSkillController::class, 'show']
-    );
-
-    Route::put(
-        '/admin/skills/{id}',
-        [AdminSkillController::class, 'update']
-    );
-
-    Route::delete(
-        '/admin/skills/{id}',
-        [AdminSkillController::class, 'destroy']
-    );
-
-
-    /*
-    |--------------------------------------------------------------------------
     | Trust Score Management
     |--------------------------------------------------------------------------
     */
@@ -765,11 +668,6 @@ Route::middleware([
     Route::post(
         '/ngo/tasks/{id}/complete',
         [NgoTaskController::class, 'complete']
-    );
-
-    Route::get(
-        '/ngo/tasks/{id}/recommended-volunteers',
-        [NgoTaskController::class, 'recommendedVolunteers']
     );
 
     Route::put(
@@ -866,6 +764,33 @@ Route::get(
 Route::delete(
     '/ngo/documents/{id}',
     [NgoDocumentController::class, 'destroy']
+);
+
+
+/*
+|--------------------------------------------------------------------------
+| Encrypted Documents (AES-256-GCM)
+|--------------------------------------------------------------------------
+*/
+
+Route::get(
+    '/ngo/encrypted-documents',
+    [NgoEncryptedDocumentController::class, 'index']
+);
+
+Route::post(
+    '/ngo/encrypted-documents',
+    [NgoEncryptedDocumentController::class, 'store']
+);
+
+Route::get(
+    '/ngo/encrypted-documents/{id}',
+    [NgoEncryptedDocumentController::class, 'show']
+);
+
+Route::delete(
+    '/ngo/encrypted-documents/{id}',
+    [NgoEncryptedDocumentController::class, 'destroy']
 );
 
 
@@ -1018,23 +943,8 @@ Route::get(
 */
 
 Route::get(
-    '/ngo/tasks/{id}/shortlist',
-    [NgoWorkflowController::class, 'shortlist']
-);
-
-Route::post(
-    '/ngo/tasks/{id}/generate-shortlist',
-    [NgoWorkflowController::class, 'generateShortlist']
-);
-
-Route::get(
     '/ngo/tasks/{id}/prioritized-applications',
     [NgoWorkflowController::class, 'prioritizedApplications']
-);
-
-Route::get(
-    '/ngo/strategies',
-    [NgoWorkflowController::class, 'strategies']
 );
 
 Route::get(
@@ -1197,6 +1107,33 @@ Route::middleware([
 
     /*
     |--------------------------------------------------------------------------
+    | Encrypted Documents (AES-256-GCM)
+    |--------------------------------------------------------------------------
+    */
+
+    Route::get(
+        '/volunteer/encrypted-documents',
+        [VolunteerEncryptedDocumentController::class, 'index']
+    );
+
+    Route::post(
+        '/volunteer/encrypted-documents',
+        [VolunteerEncryptedDocumentController::class, 'store']
+    );
+
+    Route::get(
+        '/volunteer/encrypted-documents/{id}',
+        [VolunteerEncryptedDocumentController::class, 'show']
+    );
+
+    Route::delete(
+        '/volunteer/encrypted-documents/{id}',
+        [VolunteerEncryptedDocumentController::class, 'destroy']
+    );
+
+
+    /*
+    |--------------------------------------------------------------------------
     | Dashboard
     |--------------------------------------------------------------------------
     */
@@ -1268,15 +1205,23 @@ Route::middleware([
 
     /*
     |--------------------------------------------------------------------------
-    | Secure Attendance Verification (QR + GPS)
+    | GPS Attendance Verification (presence-only — does NOT complete tasks)
     |--------------------------------------------------------------------------
+    |
+    | These routes record that a volunteer was physically present at a task
+    | location, verified by GPS / Haversine distance check.
+    |
+    | Task completion, service hours, and certificate generation are handled
+    | separately by the NGO workflow and are NOT triggered by attendance.
     */
 
+    // Primary route: volunteer clicks "Mark Attendance"
     Route::post(
-        '/volunteer/attendance/validate-qr',
-        [SecureAttendanceController::class, 'validateQr']
+        '/volunteer/attendance/mark',
+        [SecureAttendanceController::class, 'markAttendance']
     );
 
+    // Alias for legacy front-end calls (same logic as mark-attendance)
     Route::post(
         '/volunteer/attendance/secure-check-in',
         [SecureAttendanceController::class, 'checkIn']
@@ -1404,11 +1349,6 @@ Route::middleware([
     Route::get(
         '/volunteer/recommended-ngos',
         [VolunteerWorkflowController::class, 'recommendedNgos']
-    );
-
-    Route::get(
-        '/volunteer/strategies',
-        [VolunteerWorkflowController::class, 'strategies']
     );
 
 });

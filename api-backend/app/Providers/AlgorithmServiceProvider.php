@@ -5,12 +5,8 @@ namespace App\Providers;
 use Illuminate\Support\ServiceProvider;
 
 use App\Algorithms\Contracts\SimilarityCalculatorInterface;
-use App\Algorithms\Contracts\AssignmentSolverInterface;
-use App\Algorithms\Contracts\TrustCalculatorInterface;
 
 use App\Algorithms\Matching\CosineSimilarity;
-use App\Algorithms\Assignment\HungarianMatcher;
-use App\Services\TrustScoreService;
 
 class AlgorithmServiceProvider extends ServiceProvider
 {
@@ -19,16 +15,6 @@ class AlgorithmServiceProvider extends ServiceProvider
         $this->app->bind(
             SimilarityCalculatorInterface::class,
             CosineSimilarity::class
-        );
-
-        $this->app->bind(
-            AssignmentSolverInterface::class,
-            HungarianMatcher::class
-        );
-
-        $this->app->bind(
-            TrustCalculatorInterface::class,
-            TrustScoreService::class
         );
     }
 

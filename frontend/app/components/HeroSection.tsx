@@ -231,7 +231,7 @@ export default function Hero() {
               </div>
               <div>
                 <p className="font-bold text-[15px] text-gray-900 flex items-center gap-2">
-                  Sara Patel
+                  Bibek Khadka
                   <span className="inline-flex items-center gap-1 bg-green-100 text-green-800 text-[11px] font-semibold px-2 py-0.5 rounded-full">
                     ✓ Verified
                   </span>

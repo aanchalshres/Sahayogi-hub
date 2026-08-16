@@ -1,7 +1,7 @@
-import { useState } from 'react';
-import { cn } from '@/app/lib/utils';
-import { Input } from '@/app/components/ui/input';
-import { Button } from '@/app/components/ui/button';
+import { useState } from "react";
+import { cn } from "@/app/lib/utils";
+import { Input } from "@/app/components/ui/input";
+import { Button } from "@/app/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -9,18 +9,17 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/app/components/ui/dropdown-menu';
+} from "@/app/components/ui/dropdown-menu";
 import {
   Search,
-  Bell,
   User,
   Settings,
   LogOut,
   ChevronDown,
   Home,
   ChevronRight,
-} from 'lucide-react';
-import { useAuth } from '@/app/providers/AuthProvider';
+} from "lucide-react";
+import { useAuth } from "@/app/providers/AuthProvider";
 
 interface HeaderProps {
   pageTitle: string;
@@ -31,17 +30,16 @@ interface HeaderProps {
 export function Header({ pageTitle, breadcrumbs = [], onSearch }: HeaderProps) {
   const { user } = useAuth();
   const [isSearchFocused, setIsSearchFocused] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [notificationCount] = useState(3);
+  const [searchQuery, setSearchQuery] = useState("");
 
-  const displayName = user?.name || 'Admin';
-  const displayRole = user?.role === 'admin' ? 'Admin' : user?.role || 'Admin';
+  const displayName = user?.name || "Admin";
+  const displayRole = user?.role === "admin" ? "Admin" : user?.role || "Admin";
 
   const getInitials = (name: string) => {
     return name
-      .split(' ')
+      .split(" ")
       .map((n) => n[0])
-      .join('')
+      .join("")
       .toUpperCase();
   };
 
@@ -65,8 +63,12 @@ export function Header({ pageTitle, breadcrumbs = [], onSearch }: HeaderProps) {
                   <a
                     href="#"
                     className="transition-colors flex items-center"
-                    onMouseEnter={(e) => e.currentTarget.style.color = "hsl(234, 100%, 62%)"}
-                    onMouseLeave={(e) => e.currentTarget.style.color = "inherit"}
+                    onMouseEnter={(e) =>
+                      (e.currentTarget.style.color = "hsl(234, 100%, 62%)")
+                    }
+                    onMouseLeave={(e) =>
+                      (e.currentTarget.style.color = "inherit")
+                    }
                   >
                     <Home className="w-3 h-3" />
                   </a>
@@ -78,8 +80,12 @@ export function Header({ pageTitle, breadcrumbs = [], onSearch }: HeaderProps) {
                       <a
                         href={item.href}
                         className="transition-colors"
-                        onMouseEnter={(e) => e.currentTarget.style.color = "hsl(234, 100%, 62%)"}
-                        onMouseLeave={(e) => e.currentTarget.style.color = "inherit"}
+                        onMouseEnter={(e) =>
+                          (e.currentTarget.style.color = "hsl(234, 100%, 62%)")
+                        }
+                        onMouseLeave={(e) =>
+                          (e.currentTarget.style.color = "inherit")
+                        }
                       >
                         {item.label}
                       </a>
@@ -90,7 +96,9 @@ export function Header({ pageTitle, breadcrumbs = [], onSearch }: HeaderProps) {
                 ))}
                 <li className="flex items-center">
                   <ChevronRight className="w-3 h-3 text-[#CACDD3] mx-1" />
-                  <span className="text-[#111827] font-medium">{pageTitle}</span>
+                  <span className="text-[#111827] font-medium">
+                    {pageTitle}
+                  </span>
                 </li>
               </ol>
             </nav>
@@ -102,8 +110,8 @@ export function Header({ pageTitle, breadcrumbs = [], onSearch }: HeaderProps) {
         <form
           onSubmit={handleSearch}
           className={cn(
-            'hidden md:flex items-center relative transition-all duration-300',
-            isSearchFocused ? 'w-80' : 'w-64'
+            "hidden md:flex items-center relative transition-all duration-300",
+            isSearchFocused ? "w-80" : "w-64",
           )}
         >
           <Search
@@ -115,7 +123,15 @@ export function Header({ pageTitle, breadcrumbs = [], onSearch }: HeaderProps) {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-10 bg-[#F0F1F3] border-[#CACDD3] transition-all duration-200"
-            style={isSearchFocused ? { backgroundColor: "white", borderColor: "#4F46C8", boxShadow: "0 10px 15px -3px rgb(0 0 0 / 0.1)" } : {}}
+            style={
+              isSearchFocused
+                ? {
+                    backgroundColor: "white",
+                    borderColor: "#4F46C8",
+                    boxShadow: "0 10px 15px -3px rgb(0 0 0 / 0.1)",
+                  }
+                : {}
+            }
             onFocus={() => setIsSearchFocused(true)}
             onBlur={() => setIsSearchFocused(false)}
           />
@@ -123,49 +139,6 @@ export function Header({ pageTitle, breadcrumbs = [], onSearch }: HeaderProps) {
 
         {/* Right - Actions */}
         <div className="flex items-center gap-3">
-          {/* Notifications */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="relative hover:bg-[#AAB2C8] transition-colors"
-              >
-                <Bell className="w-5 h-5 text-[#6B7280]" />
-                {notificationCount > 0 && (
-                  <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-600 text-white text-xs font-semibold flex items-center justify-center rounded-full animate-pulse">
-                    {notificationCount}
-                  </span>
-                )}
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-80">
-              <DropdownMenuLabel className="font-semibold">Notifications</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <div className="max-h-64 overflow-y-auto">
-                <DropdownMenuItem className="flex flex-col items-start py-3 cursor-pointer">
-                  <span className="text-sm font-medium">New NGO Registration</span>
-                  <span className="text-xs text-[#6B7280]">Himalayan Helpers submitted for verification</span>
-                  <span className="text-xs text-[#9CA3AF] mt-1">2 minutes ago</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem className="flex flex-col items-start py-3 cursor-pointer">
-                  <span className="text-sm font-medium">Task Approved</span>
-                  <span className="text-xs text-[#6B7280]">Blood Donation Camp is now active</span>
-                  <span className="text-xs text-[#9CA3AF] mt-1">15 minutes ago</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem className="flex flex-col items-start py-3 cursor-pointer">
-                  <span className="text-sm font-medium">Volunteer Application</span>
-                  <span className="text-xs text-[#6B7280]">John Doe applied for Tree Plantation</span>
-                  <span className="text-xs text-[#9CA3AF] mt-1">1 hour ago</span>
-                </DropdownMenuItem>
-              </div>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem className="justify-center cursor-pointer" style={{ color: "#4F46C8" }}>
-                View all notifications
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-
           {/* Profile */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -173,18 +146,25 @@ export function Header({ pageTitle, breadcrumbs = [], onSearch }: HeaderProps) {
                 variant="ghost"
                 className="flex items-center gap-2 hover:bg-[#AAB2C8] transition-colors"
               >
-                <div className="w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-bold shadow-lg" style={{ backgroundColor: "#4F46C8" }}>
+                <div
+                  className="w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-bold shadow-lg"
+                  style={{ backgroundColor: "#4F46C8" }}
+                >
                   {getInitials(displayName)}
                 </div>
                 <div className="hidden sm:block text-left">
-                  <p className="text-sm font-medium text-[#111827]">{displayName}</p>
+                  <p className="text-sm font-medium text-[#111827]">
+                    {displayName}
+                  </p>
                   <p className="text-xs text-[#6B7280]">{displayRole}</p>
                 </div>
                 <ChevronDown className="w-4 h-4 text-[#6B7280]" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
-              <DropdownMenuLabel className="font-semibold">My Account</DropdownMenuLabel>
+              <DropdownMenuLabel className="font-semibold">
+                My Account
+              </DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem className="cursor-pointer">
                 <User className="w-4 h-4 mr-2" />

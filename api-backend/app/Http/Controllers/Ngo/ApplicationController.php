@@ -273,8 +273,13 @@ class ApplicationController extends Controller
     {
         $ngo = $request->user()->ngoProfile;
 
-        $query = Application::whereHas('task', function ($q) use ($ngo) {
-            $q->where('ngo_id', $ngo->id);
+        // Active task statuses — tasks that still require monitoring.
+        // Completed and Cancelled tasks are excluded from the default assignment view.
+        $activeTaskStatuses = ['Open', 'Ongoing', 'Draft'];
+
+        $query = Application::whereHas('task', function ($q) use ($ngo, $activeTaskStatuses) {
+            $q->where('ngo_id', $ngo->id)
+              ->whereIn('status', $activeTaskStatuses);
         })->where('status', 'Accepted')
             ->with([
                 'volunteer.user',

@@ -18,6 +18,8 @@ class AttendanceVerificationServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
+        // QrCodeService is still bound for NgoAttendanceController (generate/revoke QR).
+        // It is no longer used by AttendanceVerificationService (GPS-only flow).
         $this->app->bind(QrCodeServiceInterface::class, QrCodeService::class);
         $this->app->bind(GpsValidationServiceInterface::class, GpsValidationService::class);
         $this->app->bind(TimeValidationServiceInterface::class, TimeValidationService::class);
